@@ -2,344 +2,115 @@
 
 namespace App\Models;
 
+use App\Types\StatutDepense;
 use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Depense extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    protected $table = 'depenses';
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var string[]
+     * Champs mass-assignables (incluant les nouveaux champs de la migration)
      */
     protected $fillable = [
-
-
         'libelle',
-        'beneficaire',
+        'beneficiaire',        // Corrigé : 'beneficaire' -> 'beneficiaire'
         'motif_depense',
         'date_depense',
         'montant',
         'annee_id',
         'utilisateur_id',
         'statut_depense',
-       
-       
-
         'etat',
-
+        // 👉 Nouveaux champs ajoutés par migration
+        'validateur_id',
+        'date_validation',
+        'justificatif_demande',
+        'motif_rejet', 
     ];
 
-
+    /**
+     * Casting automatique des types
+     */
+    protected $casts = [
+        'montant'         => 'decimal:2',
+        'date_depense'    => 'date',
+        'date_validation' => 'date',
+    ];
 
     /**
-     * Ajouter une Depense
-     *
-
-     * @param  string $libelle
-     * @param  string $beneficaire
-     * @param  string $motif_depense
-     * @param  date $date_depense
-     * @param  int $montant
-     * @param  int $annee_id
-     * @param  int $utilisateur_id
-     * @param  int $statut_depense
-
-    
-
-     * @return Depense
+     * Valeurs par défaut (remplace le constructeur)
      */
+    protected $attributes = [
+        'etat'           => TypeStatus::ACTIF,
+        'statut_depense' => StatutDepense::EN_ATTENTE,
+    ];
 
-    public static function addDepense(
-        $libelle,
-        $beneficaire,
-        $motif_depense,
-        $date_depense,
-        $montant,
-        $annee_id,
-        $utilisateur_id,
-        $statut_depense
-       
-        
-       
-
-    )
+    /**
+     * 🔹 Scopes de filtrage (remplacent getListe() & getTotal())
+     */
+    public function scopeActif($query)
     {
-        $depense = new Depense();
-
-
-        $depense->libelle = $libelle;
-        $depense->beneficaire = $beneficaire;
-        $depense->motif_depense = $motif_depense;
-        $depense->date_depense = $date_depense;
-        $depense->montant = $montant;
-        $depense->annee_id = $annee_id;
-
-        $depense->utilisateur_id = $utilisateur_id;
-        $depense->statut_depense = $statut_depense;
-       
-        $depense->created_at = Carbon::now();
-
-        $depense->save();
-
-        return $depense;
+        return $query->where('etat', TypeStatus::ACTIF);
     }
 
-    /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Depense
-     */
-
-    public static function rechercheDepenseById($id)
+    public function scopeByAnnee($query, ?int $anneeId)
     {
-
-        return   $depense= Depense::findOrFail($id);
+        return $anneeId ? $query->where('annee_id', $anneeId) : $query;
     }
 
-    /**
-     * Update d'une Depense scolaire
-
-    * @param  string $libelle
-     * @param  string $beneficaire
-     * @param  string $motif_depense
-     * @param  date $date_depense
-     * @param  int $montant
-     * @param  int $annee_id
-     * @param  int $utilisateur_id
-     * @param  int $statut_depense
-    
-    
-
-     * @param int $id
-     * @return  Depense
-     */
-
-    public static function updateDepense(
-         $libelle,
-        $beneficaire,
-        $motif_depense,
-        $date_depense,
-        $montant,
-        $annee_id,
-        $utilisateur_id,
-        $statut_depense,
-       
-       
-        $id)
+    public function scopeByStatut($query, ?int $statut)
     {
-
-
-        return   $depense= Depense::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-            'beneficaire' => $beneficaire,
-            'motif_depense' => $motif_depense,
-            'date_depense' => $date_depense,
-            'montant' => $montant,
-            'annee_id' => $annee_id,
-
-            'utilisateur_id' => $utilisateur_id,
-            'statut_depense' => $statut_depense,
-
-
-           
-            'id' => $id,
-
-
-        ]);
+        return $statut !== null ? $query->where('statut_depense', $statut) : $query;
     }
 
-
-
-
-    /**
-     * Supprimer une Depense
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteDepense($id)
+    public function scopeByUtilisateur($query, ?int $userId)
     {
-
-        $depense= Depense::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($depense) {
-            return 1;
-        }
-        return 0;
+        return $userId ? $query->where('utilisateur_id', $userId) : $query;
     }
 
-
-
     /**
-     * Retourne la liste des Depenses
-
-     * @param  int $annee_id
-     * @param  int $utilisateur_id
-     * @param  int $statut_depense
-  
- 
-
-
-     *
-     * @return  array
+     * 🔗 Relations
      */
-
-    public static function getListe(
-
-        $annee_id = null,
-        $utilisateur_id = null,
-        $statut_depense = null
-      
-
-
-    ) {
-
-      
-
-        $query =  Depense::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        
-
-
-         if ($utilisateur_id != null) {
-
-            $query->where('utilisateur_id', '=', $utilisateur_id);
-        }
-
-
-        if ($statut_depense != null) {
-
-            $query->where('statut_depense', '=', $statut_depense);
-        }
-
-       
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  activités 
-
-
-       * @param  int $annee_id
-     * @param  int $utilisateur_id
-     * @param  int $statut_depense
-  
-    
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-
-
-           $annee_id = null,
-        $utilisateur_id = null,
-        $statut_depense = null
-
-
-    ) {
-
-        $query =   DB::table('depenses')
-
-
-            ->where('depenses.etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        
-
-
-         if ($utilisateur_id != null) {
-
-            $query->where('utilisateur_id', '=', $utilisateur_id);
-        }
-
-
-        if ($statut_depense != null) {
-
-            $query->where('statut_depense', '=', $statut_depense);
-        }
-
-       
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
-     */
-    public function annee()
+    public function anneeScolaire(): BelongsTo
     {
-
-
         return $this->belongsTo(Annee::class, 'annee_id');
     }
 
-
-   
-
-
-     /**
-     * Obtenir un utilisateur
-     *
-     */
-    public function utilisateur()
+    public function demandeur(): BelongsTo
     {
-
-
         return $this->belongsTo(User::class, 'utilisateur_id');
     }
 
+    public function caisse(): BelongsTo
+{
+    return $this->belongsTo(Caisse::class, 'caisse_id');
+}
 
-     
+    public function validateur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validateur_id');
+    }
 
+    public function mouvements(): HasMany
+    {
+        return $this->hasMany(Mouvement::class, 'depense_id');
+    }
 
-
-  
-
+    /**
+     * 🧮 Attribut calculé : montant formaté pour l'affichage
+     */
+    protected function montantFormate(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => number_format($this->montant, 2, ',', ' ') . ' ' . config('app.currency', 'FCFA')
+        );
+    }
 }

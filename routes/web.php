@@ -264,3 +264,7 @@ Route::middleware(['admin', 'comptable', 'directeur'])->group(function () {
     Route::post('/articles/update/{id}', [App\Http\Controllers\Admin\ArticleController::class, 'update'])->name('admin_articles_update');
     Route::post('/articles/delete/{id}', [App\Http\Controllers\Admin\ArticleController::class, 'delete'])->name('admin_articles_delete');
 });
+
+Route::middleware(['auth'])->group(function () {
+    require base_path('routes/gestion_caisse.php');
+});

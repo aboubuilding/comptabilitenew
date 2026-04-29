@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Repositories\Eloquent;
+namespace App\Repositories;
 
 use App\Models\Mouvement;
+use App\Models\Depense;
+use App\Models\Paiement;
 use App\Repositories\Contracts\MouvementRepositoryInterface;
 use App\Repositories\Eloquent\BaseRepository;
-use App\Constants\TypeMouvement;
-use App\Constants\StatutMouvement;
+use App\Types\TypeMouvement;
+use App\Types\StatutMouvement;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -22,10 +24,40 @@ class MouvementRepository extends BaseRepository implements MouvementRepositoryI
 
     public function enregistrer(array $data): Model
     {
+        // Valeurs par défaut
         $data['reference']        = $data['reference'] ?? $this->genererReference();
         $data['statut_mouvement'] = $data['statut_mouvement'] ?? StatutMouvement::ENREGISTRER;
-        $data['etat']             = $data['etat'] ?? BaseRepository::ACTIF;
         $data['date_mouvement']   = $data['date_mouvement'] ?? now();
+        $data['etat']             = $data['etat'] ?? BaseRepository::ACTIF;
+        $data['motif']            = $data['motif'] ?? '';
+
+        // Empêcher le couplage simultané Dépense + Paiement
+        if (!empty($data['depense_id']) && !empty($data['paiement_id'])) {
+            throw new InvalidArgumentException('Un mouvement ne peut pas être lié simultanément à une dépense et à un paiement.');
+        }
+
+        // 🔄 Cas 1 : Mouvement initié par une DÉPENSE (Décaissement)
+        if (!empty($data['depense_id'])) {
+            $depense = Depense::find($data['depense_id']);
+            if (!$depense) {
+                throw new InvalidArgumentException("La dépense ID {$data['depense_id']} est introuvable.");
+            }
+            
+            $data['depense_id']     = $depense->id;
+            $data['motif']          = $depense->motif_depense;
+            $data['type_mouvement'] = $data['type_mouvement'] ?? TypeMouvement::DECAISSEMENT;
+        } 
+        // 🔄 Cas 2 : Mouvement initié par un PAIEMENT (Encaissement)
+        elseif (!empty($data['paiement_id'])) {
+            $paiement = Paiement::find($data['paiement_id']);
+            if (!$paiement) {
+                throw new InvalidArgumentException("Le paiement ID {$data['paiement_id']} est introuvable.");
+            }
+            
+            $data['paiement_id']    = $paiement->id;
+            $data['motif']          = $paiement->motif_paiement;
+            $data['type_mouvement'] = $data['type_mouvement'] ?? TypeMouvement::ENCAISSEMENT;
+        }
 
         $this->validateData($data);
 
@@ -108,7 +140,7 @@ class MouvementRepository extends BaseRepository implements MouvementRepositoryI
             throw new InvalidArgumentException('Type de mouvement invalide.');
         }
 
-        $required = ['caisse_id', 'motif', 'utilisateur_id'];
+        $required = ['caisse_id', 'utilisateur_id'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 throw new InvalidArgumentException("Le champ {$field} est obligatoire.");

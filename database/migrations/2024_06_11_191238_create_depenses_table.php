@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
 
              $table->string('libelle')->nullable();
-            $table->string('beneficaire')->nullable();
+            $table->string('beneficiaire')->nullable();
             $table->text('motif_depense')->nullable();
             $table->date('date_depense')->nullable();
 
@@ -27,7 +27,8 @@ return new class extends Migration
             $table->bigInteger('utilisateur_id')->nullable();
 
             $table->tinyInteger('statut_depense')->nullable();
-         
+
+             
 
             $table->integer('etat')->default(1);
             $table->timestamps();
