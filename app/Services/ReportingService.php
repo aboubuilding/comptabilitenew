@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Repositories\Contracts\DepenseRepositoryInterface;
-use App\Repositories\Contracts\MouvementRepositoryInterface;
+use App\Repositories\Interfaces\DepenseRepositoryInterface;
+use App\Repositories\Interfaces\MouvementRepositoryInterface;
 use App\Constants\TypeMouvement;
 use App\Constants\StatutMouvement;
 use Illuminate\Support\Facades\DB;

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Eloquent;
 
 use App\Models\Depense;
-use App\Repositories\Contracts\DepenseRepositoryInterface;
+use App\Repositories\Interfaces\DepenseRepositoryInterface;
 use App\Repositories\Eloquent\BaseRepository;
 use App\Types\StatutDepense;
 use App\Types\StatutMouvement;

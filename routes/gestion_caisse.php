@@ -1,9 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DepenseController;
-use App\Http\Controllers\DecaissementController;
-use App\Http\Controllers\CaisseController;
+use App\Http\Controllers\Caisse\DepenseController;
+use App\Http\Controllers\Caisse\DecaissementController;
+use App\Http\Controllers\Caisse\CaisseController;
 
 // ─────────────────────────────────────────────────────────────
 // 💰 DÉPENSES
@@ -26,15 +26,25 @@ Route::prefix('decaissements')->name('decaissements.')->group(function () {
     Route::get('/{id}',           [DecaissementController::class, 'show'])->name('show');     // 🟢 JSON
 });
 
-// ─────────────────────────────────────────────────────────────
-// 🏦 CAISSES
-// ─────────────────────────────────────────────────────────────
-Route::prefix('caisses')->name('caisses.')->group(function () {
-    Route::get('/',               [CaisseController::class, 'index'])->name('index');         // 📄 Vue Blade
-    Route::get('/{id}',           [CaisseController::class, 'show'])->name('show');           // 🟢 JSON
-    Route::get('/{id}/solde',     [CaisseController::class, 'solde'])->name('solde');         // 🟢 JSON
-    Route::post('/{id}/ouvrir',   [CaisseController::class, 'ouvrir'])->name('ouvrir');       // 🟢 JSON
-    Route::post('/{id}/cloturer', [CaisseController::class, 'cloturer'])->name('cloturer');   // 🟢 JSON
-    Route::delete('/{id}',        [CaisseController::class, 'destroy'])->name('destroy');     // 🟢 JSON ✅ AJOUTÉ
 
-    });
+// 🏦 CAISSES
+Route::prefix('caisses')->name('caisses.')->group(function () {
+    // 📄 Vues Blade
+    Route::get('/',               [CaisseController::class, 'index'])->name('index');
+    Route::get('/{id}',           [CaisseController::class, 'show'])->name('show'); // ✅ Retourne une Vue
+
+    // 🟢 Routes JSON (API / AJAX / Mobile)
+    Route::post('/',                    [CaisseController::class, 'store'])->name('store');
+    Route::get('/{id}/solde',           [CaisseController::class, 'solde'])->name('solde');
+    Route::post('/{id}/ouvrir',         [CaisseController::class, 'ouvrir'])->name('ouvrir');
+    Route::post('/{id}/cloturer',       [CaisseController::class, 'cloturer'])->name('cloturer');
+    Route::get('/reporting/ecarts',     [CaisseController::class, 'ecartReport'])->name('reporting.ecarts');
+});
+
+// 👥 CAISSIERS
+Route::prefix('caissiers')->name('caissiers.')->group(function () {
+    Route::get('/',                     [CaisseController::class, 'caissiers'])->name('index');
+    Route::post('/',                    [CaisseController::class, 'storeCaissier'])->name('store');
+    Route::delete('/{id}',              [CaisseController::class, 'destroyCaissier'])->name('destroy');
+    Route::get('/{id}/mouvements',      [CaisseController::class, 'caissierMouvements'])->name('mouvements');
+});

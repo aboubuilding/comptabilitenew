@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 abstract class BaseRepository
 {
@@ -19,6 +18,12 @@ abstract class BaseRepository
     public const ACTIF = 1;
     public const SUPPRIME = 2;
 
+    /**
+     * Active/désactive l'injection automatique de annee_id
+     * (Peut être surchargée dans un repository enfant : protected bool $autoInjectAnneId = false;)
+     */
+    protected bool $autoInjectAnneId = true;
+
     public function __construct(Model $model)
     {
         $this->model = $model;
@@ -29,17 +34,11 @@ abstract class BaseRepository
         return $this->model;
     }
 
-    /**
-     * Requête brute (sans filtre d'état)
-     */
     protected function query(): Builder
     {
         return $this->model->query();
     }
 
-    /**
-     * Requête filtrée : exclut les records marqués SUPPRIME
-     */
     protected function activeQuery(): Builder
     {
         return $this->query()->where('etat', self::ACTIF);
@@ -50,9 +49,6 @@ abstract class BaseRepository
         return $this->activeQuery()->find($id);
     }
 
-    /**
-     * ⚠️ Lève ModelNotFoundException si le record est supprimé ou inexistant
-     */
     public function findOrFail(int $id): Model
     {
         return $this->activeQuery()->findOrFail($id);
@@ -74,16 +70,22 @@ abstract class BaseRepository
     }
 
     /**
-     * Création avec état par défaut ACTIF
+     * Création avec état par défaut ACTIF + injection automatique de annee_id
      */
     public function create(array $data): Model
     {
         $data['etat'] = $data['etat'] ?? self::ACTIF;
+        
+        // 🔹 Injection intelligente de l'année scolaire
+        if ($this->autoInjectAnneId) {
+            $data = $this->injectSessionAnneId($data);
+        }
+
         return $this->model->create($data);
     }
 
     /**
-     * Mise à jour classique (ne touche pas à 'etat' sauf si explicitement fourni)
+     * Mise à jour classique
      */
     public function update(int $id, array $data): bool
     {
@@ -92,7 +94,7 @@ abstract class BaseRepository
     }
 
     /**
-     * 🗑️ Suppression logique : change etat = SUPPRIME au lieu de DELETE SQL
+     * Suppression logique
      */
     public function delete(int $id): bool
     {
@@ -101,7 +103,7 @@ abstract class BaseRepository
     }
 
     /**
-     * ♻️ Restauration d'un record "supprimé"
+     * Restauration
      */
     public function restore(int $id): bool
     {
@@ -112,29 +114,60 @@ abstract class BaseRepository
         return $model->update(['etat' => self::ACTIF]);
     }
 
-    /**
-     * 🔓 Accéder aux records supprimés (pour admin, audit, rapports)
-     */
     public function withSupprime(): Builder
     {
         return $this->query()->whereIn('etat', [self::ACTIF, self::SUPPRIME]);
     }
 
-    /**
-     * 🔍 Rechercher uniquement dans les records supprimés
-     */
     public function onlySupprime(): Builder
     {
         return $this->query()->where('etat', self::SUPPRIME);
     }
 
-    /**
-     * 💀 Suppression physique (déconseillée en comptabilité/audit)
-     * À utiliser uniquement pour conformité RGPD ou purge légale
-     */
     public function forceDelete(int $id): bool
     {
         $model = $this->query()->findOrFail($id);
         return $model->forceDelete() ?? $model->delete();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 🔧 Méthodes d'injection automatique
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Injecte annee_id depuis la session si :
+     * 1. Le champ n'est pas déjà fourni dans $data
+     * 2. Le modèle accepte le champ (présent dans $fillable)
+     * 3. L'injection est activée
+     */
+    protected function injectSessionAnneId(array $data): array
+    {
+        // Ne pas écraser une valeur explicite
+        if (isset($data['annee_id'])) {
+            return $data;
+        }
+
+        // Vérification légère : le modèle doit autoriser le mass-assignment
+        if (!in_array('annee_id', $this->model->getFillable(), true)) {
+            return $data;
+        }
+
+        // Récupération sécurisée depuis la session (adaptée à votre structure)
+        $anneeId = session('LoginUser.annee_id') ?? session('annee_id');
+
+        if ($anneeId !== null) {
+            $data['annee_id'] = (int) $anneeId;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Permet de récupérer l'année active sans dépendre du modèle
+     */
+    protected function getCurrentAnneId(): ?int
+    {
+        $id = session('LoginUser.annee_id') ?? session('annee_id');
+        return $id ? (int) $id : null;
     }
 }

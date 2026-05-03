@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Mail;
 
 require base_path('routes/cantine.php');
 require base_path('routes/car.php');
-require base_path('routes/livre.php');
+
 
 /*
 |--------------------------------------------------------------------------

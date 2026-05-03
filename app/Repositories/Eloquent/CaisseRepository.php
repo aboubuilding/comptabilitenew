@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Eloquent;
 
 use App\Models\Caisse;
-use App\Repositories\Contracts\CaisseRepositoryInterface;
+use App\Repositories\Interfaces\CaisseRepositoryInterface;
 use App\Repositories\Eloquent\BaseRepository;
 use App\Types\StatutCaisse;
 use App\Types\StatutMouvement;

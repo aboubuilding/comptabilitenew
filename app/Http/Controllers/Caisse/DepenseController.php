@@ -12,6 +12,7 @@ use Illuminate\View\View;
 use LogicException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use App\Http\Controllers\Controller;
 
 class DepenseController extends Controller
 {

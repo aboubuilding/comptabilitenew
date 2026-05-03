@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Eloquent;
 
 use App\Models\Mouvement;
 use App\Models\Depense;
 use App\Models\Paiement;
-use App\Repositories\Contracts\MouvementRepositoryInterface;
+use App\Repositories\Interfaces\MouvementRepositoryInterface;
 use App\Repositories\Eloquent\BaseRepository;
 use App\Types\TypeMouvement;
 use App\Types\StatutMouvement;

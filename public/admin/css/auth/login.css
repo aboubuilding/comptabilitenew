@@ -1,0 +1,485 @@
+/* =============================================
+   login.css — École Internationale Mariam
+   Police dominante : Kumbh Sans (tous les éléments UI)
+   Accent décoratif : Cormorant Garamond (em uniquement)
+   ============================================= */
+
+/* ── Variables ── */
+:root {
+    /* palette */
+    --navy:        #0d2740;
+    --navy-mid:    #1a5276;
+    --navy-light:  #2471a3;
+    --gold:        #c5a03c;
+    --gold-dim:    rgba(197,160,60,.55);
+    --gold-glow:   rgba(197,160,60,.14);
+    --danger:      #c0392b;
+    --danger-bg:   #fdf0ef;
+    --danger-bd:   #f5c1bc;
+    --success:     #27ae60;
+
+    /* surfaces */
+    --bg-right:    #f4f5f7;
+    --bg-card:     #ffffff;
+
+    /* texte */
+    --t1:  #0b1829;   /* titres foncés */
+    --t2:  #2d3a4a;   /* corps */
+    --t3:  #64748b;   /* secondaire */
+    --t4:  #94a3b8;   /* placeholder / hint */
+
+    /* bordures */
+    --bd:  #dde6f0;
+
+    /* rayon */
+    --r:   10px;
+    --rl:  14px;
+
+    /* transition */
+    --T:   .22s cubic-bezier(.4,0,.2,1);
+
+    /* ── POLICE PRINCIPALE ── */
+    --font-ui:      'Kumbh Sans', 'Segoe UI', system-ui, sans-serif;
+    --font-accent:  'Cormorant Garamond', Georgia, serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--navy);
+    /* Kumbh Sans appliqué à la racine → hérité partout */
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--t2);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ══════════════════════════════
+   LAYOUT GLOBAL
+   ══════════════════════════════ */
+.page-wrapper { display: flex; height: 100vh; }
+
+/* ══════════════════════════════
+   PANNEAU GAUCHE — 55%
+   ══════════════════════════════ */
+.left-panel {
+    width: 55%;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #0a1c30 0%, #122f4e 52%, #0c2338 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 64px;
+    color: #fff;
+}
+
+/* décors fond */
+.left-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 18% 82%, rgba(197,160,60,.16) 0%, transparent 52%),
+        radial-gradient(ellipse at 82% 14%, rgba(46,120,180,.18) 0%, transparent 52%),
+        repeating-linear-gradient(58deg, transparent, transparent 56px,
+            rgba(255,255,255,.013) 56px, rgba(255,255,255,.013) 57px);
+    pointer-events: none;
+}
+
+/* filet doré côté droit */
+.left-panel::after {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(to bottom,
+        transparent, rgba(197,160,60,.7) 28%, rgba(197,160,60,.7) 72%, transparent);
+}
+
+.left-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    max-width: 490px; width: 100%;
+}
+
+/* ── badge haut ── */
+.school-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 20px;
+    border-radius: 40px; margin-bottom: 32px;
+    background: rgba(197,160,60,.11);
+    border: 1px solid rgba(197,160,60,.38);
+    font-family: var(--font-ui);
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(236,212,132,.92);
+}
+.school-badge i { font-size: 10px; }
+
+/* ── anneau logo ── */
+.logo-ring {
+    width: 158px; height: 158px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    border: 2px solid rgba(197,160,60,.48);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; padding: 18px;
+    box-shadow: 0 0 60px rgba(197,160,60,.16), inset 0 0 28px rgba(255,255,255,.03);
+    position: relative;
+}
+.logo-ring::before {
+    content: ''; position: absolute; inset: -9px; border-radius: 50%;
+    border: 1px dashed rgba(197,160,60,.26);
+    animation: ring-rot 20s linear infinite;
+}
+@keyframes ring-rot { to { transform: rotate(360deg); } }
+.logo-ring img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+
+/* ── séparateur doré ── */
+.gold-sep {
+    display: flex; align-items: center; gap: 12px;
+    width: 200px; margin: 0 auto 18px;
+}
+.gold-sep span {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, rgba(197,160,60,.55), transparent);
+}
+.gold-sep i { font-size: 9px; color: rgba(197,160,60,.75); }
+
+/* ── Titre École :
+      "École Internationale" → Kumbh Sans 800
+      "Mariam"              → Cormorant Garamond italic (accent luxe)
+   ── */
+.school-name {
+    font-family: var(--font-ui);
+    font-size: 34px; font-weight: 800;
+    line-height: 1.15; letter-spacing: -.01em;
+    color: #fff; margin-bottom: 10px;
+}
+.school-name em {
+    /* le seul usage de Cormorant dans le panneau gauche */
+    font-family: var(--font-accent);
+    font-size: 46px; font-weight: 700;
+    font-style: italic;
+    color: rgba(236,212,132,.96);
+    letter-spacing: .02em;
+    display: block;
+}
+
+/* ── tagline ── */
+.school-tagline {
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 300;
+    color: rgba(255,255,255,.5);
+    line-height: 1.7; max-width: 350px;
+    margin: 0 auto 30px;
+    letter-spacing: .01em;
+}
+
+/* ── stats ── */
+.stats-grid { display: flex; gap: 12px; width: 100%; margin-bottom: 26px; }
+.stat-item {
+    flex: 1;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.09);
+    border-top: 2px solid rgba(197,160,60,.42);
+    border-radius: var(--r); padding: 14px 10px; text-align: center;
+}
+.stat-value {
+    /* Kumbh 700 — chiffres affichés en gras net */
+    font-family: var(--font-ui);
+    font-size: 18px; font-weight: 700;
+    color: rgba(236,212,132,.96);
+    letter-spacing: .04em;
+}
+.stat-label {
+    font-family: var(--font-ui);
+    font-size: 10px; font-weight: 600;
+    color: rgba(255,255,255,.38);
+    margin-top: 4px; letter-spacing: .1em; text-transform: uppercase;
+}
+
+/* ── citation ── */
+.quote-bar {
+    padding: 14px 20px; width: 100%;
+    background: rgba(255,255,255,.03);
+    border-left: 2px solid rgba(197,160,60,.52);
+    border-radius: 0 8px 8px 0; text-align: left;
+}
+.quote-bar p {
+    font-family: var(--font-ui);
+    font-size: 12.5px; font-weight: 300;
+    font-style: italic;
+    color: rgba(255,255,255,.44); line-height: 1.65;
+}
+.quote-bar strong {
+    font-family: var(--font-ui);
+    font-weight: 600; font-style: normal;
+    color: rgba(236,212,132,.62);
+}
+
+/* ══════════════════════════════
+   PANNEAU DROIT — 45%
+   ══════════════════════════════ */
+.right-panel {
+    flex: 1;
+    background: var(--bg-right);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 52px 56px;
+    overflow-y: auto;
+}
+
+.form-card { width: 100%; max-width: 400px; }
+
+/* ── eyebrow ── */
+.form-eyebrow {
+    font-family: var(--font-ui);
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--navy-mid); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+}
+.form-eyebrow i { font-size: 10px; }
+
+/* ── titre formulaire — Kumbh 800 ── */
+.form-title {
+    font-family: var(--font-ui);
+    font-size: 38px; font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--t1); margin-bottom: 6px;
+    line-height: 1.1;
+}
+
+/* ── description ── */
+.form-desc {
+    font-family: var(--font-ui);
+    font-size: 13.5px; font-weight: 400;
+    color: var(--t3); margin-bottom: 28px; line-height: 1.65;
+}
+
+/* ── Alert serveur ── */
+.alert-box {
+    display: none; align-items: flex-start; gap: 10px;
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-bd);
+    border-left: 3px solid var(--danger);
+    border-radius: var(--r); padding: 13px 14px;
+    margin-bottom: 20px;
+    font-family: var(--font-ui); font-size: 13px; color: #a93226;
+}
+.alert-box.show { display: flex; }
+.alert-box i { margin-top: 2px; flex-shrink: 0; }
+.alert-body { display: flex; flex-direction: column; gap: 2px; }
+.alert-body strong { font-weight: 700; font-size: 13px; }
+.alert-body span { font-weight: 400; }
+.alert-close { margin-left: auto; background: none; border: none; cursor: pointer; color: #a93226; padding: 0; font-size: 12px; }
+
+/* ── Labels de champ ── */
+.field-group { margin-bottom: 18px; }
+
+.field-label {
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: var(--t2); margin-bottom: 7px;
+    display: flex; align-items: center; gap: 6px;
+}
+.field-label i { color: var(--navy-mid); font-size: 11px; }
+
+/* ── Input shell ── */
+.input-shell { position: relative; display: flex; align-items: center; }
+
+.input-icon {
+    position: absolute; left: 14px; font-size: 13px;
+    color: var(--t4); pointer-events: none; z-index: 1;
+    transition: color var(--T);
+}
+
+.field-input {
+    width: 100%; height: 48px; padding: 0 44px 0 42px;
+    border: 1.5px solid var(--bd); border-radius: var(--r);
+    font-family: var(--font-ui); font-size: 14px; font-weight: 400;
+    color: var(--t1); background: var(--bg-card); outline: none;
+    transition: border-color var(--T), box-shadow var(--T);
+}
+.field-input::placeholder {
+    color: var(--t4); font-family: var(--font-ui); font-weight: 300;
+}
+.field-input:focus {
+    border-color: var(--navy-mid);
+    box-shadow: 0 0 0 3px rgba(26,82,118,.1);
+}
+.input-shell:focus-within .input-icon { color: var(--navy-mid); }
+
+/* ── Toggle mot de passe ── */
+.toggle-pw {
+    position: absolute; right: 12px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-ui);
+    color: var(--t4); font-size: 13px; padding: 4px;
+    transition: color var(--T);
+}
+.toggle-pw:hover { color: var(--navy-mid); }
+
+/* ── Erreur inline ── */
+.error-inline {
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 500;
+    color: var(--danger); margin-top: 5px;
+    display: none; align-items: center; gap: 5px;
+}
+.error-inline.show { display: flex; }
+.error-inline i { font-size: 10px; }
+
+/* ── Options (remember + forgot) ── */
+.options-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.custom-check {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.custom-check input[type=checkbox] { display: none; }
+.check-box {
+    width: 16px; height: 16px; border-radius: 4px;
+    border: 1.5px solid var(--bd); background: var(--bg-card);
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--T), border-color var(--T);
+    flex-shrink: 0;
+}
+.custom-check input:checked ~ .check-box {
+    background: var(--navy-mid); border-color: var(--navy-mid);
+}
+.custom-check input:checked ~ .check-box::after {
+    content: ''; width: 8px; height: 5px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translateY(-1px);
+}
+.check-label {
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 400; color: var(--t3);
+}
+
+.forgot-link {
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 600;
+    color: var(--navy-mid); text-decoration: none;
+    display: flex; align-items: center; gap: 5px;
+    transition: color var(--T);
+}
+.forgot-link:hover { color: var(--gold); }
+.forgot-link i { font-size: 11px; }
+
+/* ── Bouton principal ── */
+.btn-submit {
+    width: 100%; height: 50px; border: none; border-radius: var(--r);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 58%, var(--navy-light) 100%);
+    color: #fff;
+    font-family: var(--font-ui); font-size: 14.5px; font-weight: 700;
+    letter-spacing: .04em;
+    cursor: pointer; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 24px rgba(13,39,64,.32);
+    transition: transform var(--T), box-shadow var(--T);
+}
+.btn-submit::after {
+    content: ''; position: absolute; inset: 0; left: -100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.13), transparent);
+    transition: left .55s;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(13,39,64,.44); }
+.btn-submit:hover::after { left: 100%; }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.btn-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .65s linear infinite; display: none;
+}
+.btn-submit.loading .btn-spinner { display: block; }
+.btn-submit.loading .btn-text,
+.btn-submit.loading .btn-arrow  { opacity: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-text { font-family: var(--font-ui); }
+.btn-arrow { font-size: 12px; transition: transform var(--T); }
+.btn-submit:hover .btn-arrow { transform: translateX(4px); }
+
+/* ── Note + footer ── */
+.form-note {
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 400;
+    color: var(--t4); text-align: center;
+    margin-top: 18px; line-height: 1.55;
+}
+
+.form-footer {
+    margin-top: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.footer-copy {
+    font-family: var(--font-ui);
+    font-size: 11.5px; font-weight: 400; color: var(--t4);
+}
+.footer-ssl {
+    font-family: var(--font-ui);
+    font-size: 11.5px; font-weight: 600;
+    color: var(--success);
+    display: flex; align-items: center; gap: 5px;
+}
+.footer-ssl i { font-size: 10px; }
+
+/* ══════════════════════════════
+   TOAST NOTIFICATIONS
+   ══════════════════════════════ */
+#toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.toast {
+    font-family: var(--font-ui);
+    min-width: 280px; padding: 13px 16px;
+    border-radius: var(--r); font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+    color: #fff; box-shadow: 0 8px 28px rgba(0,0,0,.22);
+    animation: toast-in .3s ease;
+}
+.toast.success { background: #1e8449; }
+.toast.error   { background: var(--danger); }
+.toast.info    { background: var(--navy-mid); }
+@keyframes toast-in { from { opacity:0; transform: translateX(32px); } to { opacity:1; transform: translateX(0); } }
+
+/* ══════════════════════════════
+   ANIMATIONS D'ENTRÉE
+   ══════════════════════════════ */
+.animate-in {
+    opacity: 0; transform: translateY(16px);
+    animation: slide-in .52s ease forwards;
+}
+.delay-1 { animation-delay: .10s; }
+.delay-2 { animation-delay: .20s; }
+.delay-3 { animation-delay: .32s; }
+.delay-4 { animation-delay: .44s; }
+@keyframes slide-in { to { opacity: 1; transform: translateY(0); } }
+
+/* ══════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════ */
+@media (max-width: 960px) {
+    .left-panel { display: none; }
+    .right-panel { padding: 40px 24px; }
+    html, body { overflow: auto; }
+}
+@media (max-width: 480px) {
+    .form-title { font-size: 30px; }
+    .right-panel { padding: 32px 16px; }
+}

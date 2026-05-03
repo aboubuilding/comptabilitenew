@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\Depense;
 use App\Models\User;
-use App\Repositories\Contracts\DepenseRepositoryInterface;
-use App\Repositories\Contracts\MouvementRepositoryInterface;
-use App\Repositories\Contracts\CaisseRepositoryInterface;
+use App\Repositories\Interfaces\DepenseRepositoryInterface;
+use App\Repositories\Interfaces\MouvementRepositoryInterface;
+use App\Repositories\Interfaces\CaisseRepositoryInterface;
 use App\Types\StatutDepense;
 use App\Types\StatutCaisse;
 use App\Types\TypeStatus;

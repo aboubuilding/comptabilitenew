@@ -11,8 +11,7 @@ interface DepenseRepositoryInterface extends BaseRepositoryInterface
     /** Retourne le total déjà payé via des mouvements de type SORTIE */
     public function getMontantPaye(int $id): float;
 
-
-
-    /** Liste les dépenses filtrées par statut (ex: 'en_attente', 'validee', 'payee') */
-    public function getDepensesByStatut(string $statut, ?int $anneeId = null): Collection;
+    /** Liste les dépenses filtrées par statut (ex: 1=en_attente, 2=validee, 3=payee) */
+    public function getDepensesByStatut(int $statut, ?int $anneeId = null): Collection;
+    //                                                    ↑ Changé de string à int
 }
