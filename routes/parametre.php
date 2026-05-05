@@ -1,7 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\ParametreController;
-use App\Http\Controllers\Admin\FraisEcoleController;
+use App\Http\Controllers\Admin_old\ParametreController;
+use App\Http\Controllers\Admin_old\FraisEcoleController;
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
 
@@ -27,7 +27,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::post('/', [FraisEcoleController::class, 'store'])->name('store');
         Route::put('/{id}', [FraisEcoleController::class, 'update'])->name('update');
         Route::delete('/{id}', [FraisEcoleController::class, 'destroy'])->name('destroy');
-        
+
         // Endpoints métier
         Route::get('/niveau/{niveauId}/annee/{anneeId}', [FraisEcoleController::class, 'getByNiveauAnnee'])->name('by-niveau-annee');
         Route::post('/clone', [FraisEcoleController::class, 'cloneAnnee'])->name('clone');

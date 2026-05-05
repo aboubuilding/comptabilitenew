@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreAnneeRequest;
-use App\Http\Requests\UpdateAnneeRequest;
+use App\Http\Requests\Parametre\Annee\StoreAnneeRequest;
+use App\Http\Requests\Parametre\Annee\UpdateAnneeRequest;
 use App\Services\AnneeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;

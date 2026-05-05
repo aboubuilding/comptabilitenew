@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreFraisEcoleRequest;
-use App\Http\Requests\UpdateFraisEcoleRequest;
+use App\Http\Requests\Parametre\FraisEcole\StoreFraisEcoleRequest;
+use App\Http\Requests\Parametre\FraisEcole\UpdateFraisEcoleRequest;
 use App\Services\FraisEcoleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;

@@ -19,6 +19,10 @@ return new class extends Migration
             $table->string('libelle')->nullable();
             $table->string('responsable')->nullable();
             $table->mediumText('description')->nullable();
+            $table->text('adresse')->nullable();
+    $table->string('telephone')->nullable();
+    
+    $table->tinyInteger('type')->default(1); // 1=entrepôt, 2=boutique
          
 
             $table->integer('etat')->default(1);

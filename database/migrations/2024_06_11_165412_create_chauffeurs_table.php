@@ -14,16 +14,21 @@ return new class extends Migration
     public function up()
     {
         Schema::create('chauffeurs', function (Blueprint $table) {
-            $table->id();
-            $table->string('nom')->nullable();
-            $table->string('prenom')->nullable();
-            $table->string('telephone')->nullable();
-     
-            $table->bigInteger('annee_id')->nullable();
+    $table->id();
+    $table->string('nom');
+    $table->string('prenom');
+    $table->string('permis_conduire')->nullable()->unique();
+    $table->date('date_validite_permis')->nullable();
+    $table->string('telephone')->nullable();
+    $table->string('email')->nullable();
+    $table->text('adresse')->nullable();
+    $table->tinyInteger('statut')->default(1); // 1=actif, 0=inactif
+    $table->bigInteger('annee_id')->nullable();
 
-            $table->tinyInteger('etat')->default(1);
-            $table->timestamps();
-        });
+     $table->integer('etat')->default(1);
+
+    $table->timestamps();
+});
     }
 
     /**

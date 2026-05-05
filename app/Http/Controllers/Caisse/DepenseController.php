@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Caisse;
 
-use App\Http\Requests\StoreDepenseRequest;
-use App\Http\Requests\RejeterDepenseRequest;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Caisse\RejeterDepenseRequest;
+use App\Http\Requests\Caisse\StoreDepenseRequest;
 use App\Services\DepenseService;
 use App\Types\StatutDepense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use LogicException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use App\Http\Controllers\Controller;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class DepenseController extends Controller
 {
@@ -78,7 +78,7 @@ class DepenseController extends Controller
     {
         try {
             $depense = $this->service->getDepenseById($id);
-            
+
             if (!$depense) {
                 throw new NotFoundHttpException('Dépense introuvable.');
             }

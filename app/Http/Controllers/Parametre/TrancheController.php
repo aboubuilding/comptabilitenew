@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTrancheRequest;
-use App\Http\Requests\UpdateTrancheRequest;
+use App\Http\Requests\Parametre\Tranche\StoreTrancheRequest;
+use App\Http\Requests\Parametre\Tranche\UpdateTrancheRequest;
 use App\Services\TrancheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;

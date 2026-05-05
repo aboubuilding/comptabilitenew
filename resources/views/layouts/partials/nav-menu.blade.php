@@ -107,8 +107,8 @@
                     <li><a href="#"><i class="fas fa-store"></i> Boutiques </a></li>
                     <li><a href="#"><i class="fas fa-cash-register"></i> Ventes  </a></li>
                     <li><a href="#"><i class="fas fa-boxes"></i> Stock & Inventaire</a></li>
-                    <li><a href="#"><i class="fas fa-truck"></i> Fournisseurs</a></li>
-                    <li><a href="#"><i class="fas fa-warehouse"></i> Magasins </a></li>
+                   
+                  
                     <li><a href="#"><i class="fas fa-box-open"></i> Produits  </a></li>
                     <li><a href="#"><i class="fas fa-shopping-cart"></i> Achats   </a></li>
                 </ul>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNiveauRequest;

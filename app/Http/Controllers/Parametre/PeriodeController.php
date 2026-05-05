@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Parametre\Periode\UpdatePeriodeRequest;
 use App\Http\Requests\StorePeriodeRequest;
-use App\Http\Requests\UpdatePeriodeRequest;
 use App\Services\PeriodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Parametre;
+namespace App\Http\Controllers\Admin_old\Parametre;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCycleRequest;
-use App\Http\Requests\UpdateCycleRequest;
+use App\Http\Requests\Parametre\Cycle\StoreCycleRequest;
+use App\Http\Requests\Parametre\Cycle\UpdateCycleRequest;
 use App\Services\CycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;

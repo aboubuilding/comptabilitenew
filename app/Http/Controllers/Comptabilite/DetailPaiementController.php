@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin_old;
 
 use App\Http\Controllers\Controller;
 use App\Services\DetailPaiementService;

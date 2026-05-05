@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Caisse;
 
-use App\Http\Requests\StoreCaisseRequest;
-use App\Http\Requests\OuvrirCaisseRequest;
-use App\Http\Requests\CloturerCaisseRequest;
-use App\Http\Requests\StoreCaissierRequest;
-use App\Http\Requests\FilterRequest;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Caisse\CloturerCaisseRequest;
+use App\Http\Requests\Caisse\FilterRequest;
+use App\Http\Requests\Caisse\OuvrirCaisseRequest;
+use App\Http\Requests\Caisse\StoreCaisseRequest;
+use App\Http\Requests\Caisse\StoreCaissierRequest;
 use App\Services\CaisseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use LogicException;
-use App\Http\Controllers\Controller;
 
 class CaisseController extends Controller
 {
@@ -52,7 +52,7 @@ class CaisseController extends Controller
     {
         try {
             $detail = $this->service->getCaisseDetail($id);
-            
+
             if (!$detail) {
                 abort(404, 'Caisse introuvable ou accès non autorisé.');
             }
