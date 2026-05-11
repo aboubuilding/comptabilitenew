@@ -2,31 +2,26 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Achat extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'achats';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'date_achat',
         'nom_acheteur',
         'reference',
@@ -36,341 +31,109 @@ class Achat extends Model
         'annee_id',
         'statut_paiement',
         'statut_livraison',
-
-
-
+        'montant_total',
+        'type_achat',
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter un achat
+     * The attributes that should be cast.
      *
-
-     * @param  date $date_achat
-     * @param  string $nom_acheteur
-     * @param  string $reference
-     * @param  int $bon_commande
-     * @param  int $commentaire
-     * @param  int $fournisseur_id
-     * @param  int $annee_id
-     * @param  int $statut_paiement
-     * @param  int $statut_livraison
-
-
-
-     * @return Achat
+     * @var array<string, string>
      */
+    protected $casts = [
+        'date_achat'       => 'date',
+        'montant_total'    => 'decimal:2',
+        'statut_paiement'  => 'integer',
+        'statut_livraison' => 'integer',
+        'type_achat'       => 'integer',
+        'etat'             => 'boolean',
+    ];
 
-    public static function addAchat(
-        $date_achat,
-        $nom_acheteur,
-        $reference,
-        $bon_commande,
-        $commentaire,
-        $fournisseur_id,
-        $annee_id,
-        $statut_paiement,
-        $statut_livraison
+    // ===== CONSTANTES POUR `statut_paiement` =====
+    const STATUT_PAIEMENT_IMPAYE   = 0;
+    const STATUT_PAIEMENT_PARTIEL  = 1;
+    const STATUT_PAIEMENT_PAYE     = 2;
 
-    )
-    {
-        $achat = new Achat();
+    // ===== CONSTANTES POUR `statut_livraison` =====
+    const STATUT_LIVRAISON_EN_ATTENTE = 0;
+    const STATUT_LIVRAISON_PARTIELLE  = 1;
+    const STATUT_LIVRAISON_RECUE      = 2;
 
+    // ===== CONSTANTES POUR `type_achat` =====
+    const TYPE_ACHAT_CANTINE  = 1;
+    const TYPE_ACHAT_BOUTIQUE = 2;
 
-        $achat->date_achat = $date_achat;
-        $achat->nom_acheteur = $nom_acheteur;
-        $achat->reference = $reference;
-        $achat->bon_commande = $bon_commande;
-        $achat->fournisseur_id = $fournisseur_id;
-        $achat->annee_id = $annee_id;
-        $achat->statut_paiement = $statut_paiement;
-        $achat->statut_livraison = $statut_livraison;
+    // ===== CONSTANTES POUR `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-
-
-        $achat->created_at = Carbon::now();
-
-        $achat->save();
-
-        return $achat;
-    }
-
+    // ===== RELATIONS =====
     /**
-     * Affichage d'un achat
-     * @param int $id
-     * @return  Achat
-     */
-
-    public static function rechercheAchatById($id)
-    {
-
-        return   $achat = Achat::findOrFail($id);
-    }
-
-    /**
-     * Update d'une Achat scolaire
-
-    * @param  date $date_achat
-     * @param  string $nom_acheteur
-     * @param  string $reference
-     * @param  int $bon_commande
-     * @param  int $commentaire
-     * @param  int $fournisseur_id
-     * @param  int $annee_id
-     * @param  int $statut_paiement
-     * @param  int $statut_livraison
-
-
-
-
-     * @param int $id
-     * @return  Achat
-     */
-
-    public static function updateAchat(
-        $date_achat,
-        $nom_acheteur,
-        $reference,
-        $bon_commande,
-        $commentaire,
-        $fournisseur_id,
-        $annee_id,
-        $statut_paiement,
-        $statut_livraison,
-
-        $id)
-    {
-
-
-        return   $achat = Achat::findOrFail($id)->update([
-
-
-
-            'date_achat' => $date_achat,
-            'nom_acheteur' => $nom_acheteur,
-            'reference' => $reference,
-            'bon_commande' => $bon_commande,
-            'commentaire' => $commentaire,
-            'fournisseur_id' => $fournisseur_id,
-            'annee_id' => $annee_id,
-            'statut_paiement' => $statut_paiement,
-            'statut_livraison' => $statut_livraison,
-
-
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une Achat
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteAchat($id)
-    {
-
-        $achat = Achat::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($achat) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des Achats
-
-
-     * @param  int $annee_id
-     * @param  int $fournisseur_id
-     * @param  int $statut_paiement
-     * @param  int $statut_livraison
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-        $annee_id = null,
-
-        $fournisseur_id = null,
-        $statut_paiement = null,
-        $statut_livraison = null
-
-
-    ) {
-
-
-
-        $query =  Achat::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        if ($fournisseur_id != null) {
-
-            $query->where('fournisseur_id', '=', $fournisseur_id);
-        }
-
-
-
-         if ($statut_paiement != null) {
-
-            $query->where('statut_paiement', '=', $statut_paiement);
-        }
-
-
-            if ($statut_livraison != null) {
-
-            $query->where('statut_livraison', '=', $statut_livraison);
-        }
-
-
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  achats
-
-
-   * @param  int $annee_id
-     * @param  int $fournisseur_id
-     * @param  int $statut_paiement
-     * @param  int $statut_livraison
-
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-         $annee_id = null,
-
-        $fournisseur_id = null,
-        $statut_paiement = null,
-        $statut_livraison = null
-
-
-
-
-
-    ) {
-
-        $query =   DB::table('achats')
-
-
-            ->where('achats.etat', '!=', TypeStatus::SUPPRIME);
-
-
-       if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        if ($fournisseur_id != null) {
-
-            $query->where('fournisseur_id', '=', $fournisseur_id);
-        }
-
-
-
-         if ($statut_paiement != null) {
-
-            $query->where('statut_paiement', '=', $statut_paiement);
-        }
-
-
-            if ($statut_livraison != null) {
-
-            $query->where('statut_livraison', '=', $statut_livraison);
-        }
-
-
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
-     */
-    public function annee()
-    {
-
-
-        return $this->belongsTo(Annee::class, 'annee_id');
-    }
-
-
-    /**
-     * Obtenir un fournisseur
-     *
+     * Relation avec le fournisseur.
      */
     public function fournisseur()
     {
-
-
         return $this->belongsTo(Fournisseur::class, 'fournisseur_id');
     }
 
-
-
-     /**
-     * Generer le  code de paiement
-
-     * @return  string
+    /**
+     * Relation avec l'année scolaire.
      */
+    public function annee()
+    {
+        return $this->belongsTo(Annee::class, 'annee_id');
+    }
 
-     public static function genererNumero()
-     {
+    // ===== MÉTHODES UTILITAIRES =====
+    public function isActif(): bool
+    {
+        return $this->etat == self::ETAT_ACTIF;
+    }
 
-         $numero = "MAR-ACHT-000";
+    public function isPaiementPaye(): bool
+    {
+        return $this->statut_paiement == self::STATUT_PAIEMENT_PAYE;
+    }
 
-         $last =  Achat::orderBy('id', 'DESC')
-             ->latest()->first();;
+    public function isLivraisonRecue(): bool
+    {
+        return $this->statut_livraison == self::STATUT_LIVRAISON_RECUE;
+    }
 
-         if ($last) {
-             $numero = $numero . $last->id;
-         }
+    public function isCantine(): bool
+    {
+        return $this->type_achat == self::TYPE_ACHAT_CANTINE;
+    }
 
+    public function isBoutique(): bool
+    {
+        return $this->type_achat == self::TYPE_ACHAT_BOUTIQUE;
+    }
 
-         return $numero;
-     }
+    public function getStatutPaiementLabelAttribute(): string
+    {
+        return [
+            self::STATUT_PAIEMENT_IMPAYE  => 'Impayé',
+            self::STATUT_PAIEMENT_PARTIEL => 'Paiement partiel',
+            self::STATUT_PAIEMENT_PAYE    => 'Payé',
+        ][$this->statut_paiement] ?? 'Indéfini';
+    }
 
+    public function getStatutLivraisonLabelAttribute(): string
+    {
+        return [
+            self::STATUT_LIVRAISON_EN_ATTENTE => 'En attente',
+            self::STATUT_LIVRAISON_PARTIELLE  => 'Livraison partielle',
+            self::STATUT_LIVRAISON_RECUE      => 'Reçue',
+        ][$this->statut_livraison] ?? 'Indéfini';
+    }
 
+    public function getTypeAchatLabelAttribute(): string
+    {
+        return [
+            self::TYPE_ACHAT_CANTINE  => 'Cantine',
+            self::TYPE_ACHAT_BOUTIQUE => 'Boutique',
+        ][$this->type_achat] ?? 'Indéfini';
+    }
 }

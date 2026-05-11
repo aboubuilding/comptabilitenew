@@ -28,9 +28,8 @@ return new class extends Migration
             $table->bigInteger('cheque_id')->nullable();
             $table->bigInteger('annee_id')->nullable();
             $table->decimal('montant')->nullable();
-
-
             $table->integer('etat')->default(1);
+
             $table->timestamps();
         });
     }

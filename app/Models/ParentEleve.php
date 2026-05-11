@@ -2,31 +2,26 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ParentEleve extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->etat = TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'parent_eleves';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'nom_parent',
         'prenom_parent',
         'telephone',
@@ -36,275 +31,108 @@ class ParentEleve extends Model
         'role',
         'annee_id',
         'nationalite_id',
+        'whatsapp',
         'quartier',
         'adresse',
-        'whatsapp',
         'email',
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une ParentEleve
+     * The attributes that should be cast.
      *
-
-     * @param  string $nom_parent
-     * @param  string $prenom_parent
-     * @param  string $telephone
-     *  @param  string $whatsapp
-     * @param  string $profession
-     * @param  int $espace_id
-     * @param  int $is_principal
-     * @param  int $role
-     * @param int $annee_id
-     * @param int $nationalite_id
-     * @param string $quartier
-     * @param string $adresse
-     * @param string $email
-     *
-     * @return ParentEleve
+     * @var array<string, string>
      */
+    protected $casts = [
+        'espace_id'      => 'integer',
+        'is_principal'   => 'boolean',   // tinyInteger -> booléen
+        'role'           => 'integer',   // tinyInteger
+        'annee_id'       => 'integer',
+        'nationalite_id' => 'integer',
+        'etat'           => 'boolean',   // 0/1
+    ];
 
-    public static function addParentEleve(
-        $nom_parent,
-        $prenom_parent,
-        $telephone,
-        $profession,
-        $whatsapp,
-        $espace_id,
-        $is_principal,
-        $role,
-        $annee_id,
-        $nationalite_id,
-        $quartier,
-        $adresse,
-        $email
+    // ===== CONSTANTES POUR LE CHAMP `role` =====
+    const ROLE_PERE      = 1;
+    const ROLE_MERE      = 2;
+    const ROLE_TUTEUR    = 3;
+    const ROLE_AUTRE     = 4;
 
-    ) {
-        $parenteleve = new ParentEleve();
+    // ===== CONSTANTES POUR LE CHAMP `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-
-        $parenteleve->nom_parent = $nom_parent;
-        $parenteleve->prenom_parent = $prenom_parent;
-        $parenteleve->telephone = $telephone;
-        $parenteleve->whatsapp = $whatsapp;
-        $parenteleve->profession = $profession;
-        $parenteleve->espace_id = $espace_id;
-        $parenteleve->is_principal = $is_principal;
-        $parenteleve->role = $role;
-        $parenteleve->annee_id = $annee_id;
-        $parenteleve->nationalite_id = $nationalite_id;
-        $parenteleve->quartier = $quartier;
-        $parenteleve->adresse = $adresse;
-        $parenteleve->email = $email;
-        $parenteleve->created_at = Carbon::now();
-
-        $parenteleve->save();
-
-        return $parenteleve;
-    }
-
+    // ===== RELATIONS =====
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  ParentEleve
+     * Relation avec l'espace (table `espaces`)
      */
-
-    public static function rechercheParentEleveById($id)
+    public function espace()
     {
-
-        return   $parenteleve = ParentEleve::findOrFail($id);
+        return $this->belongsTo(Espace::class, 'espace_id');
     }
 
     /**
-     * Update d'une ParentEleve scolaire
-     * @param  string $nom_parent
-     * @param  string $prenom_parent
-     * @param  string $telephone
-     * @param  string $whatsapp
-     * @param  string $profession
-     * @param  int $espace_id
-     * @param  int $is_principal
-     * @param  int $role
-     * @param  int $annee_id
-     * @param int $nationalite_id
-     * @param string $quartier
-     * @param string $adresse
-     * @param string $email
-     *
-     *
-     * @param int $id
-     * @return  ParentEleve
+     * Relation avec l'année (table `annees`)
      */
-
-    public static function updateParentEleve(
-        $nom_parent,
-        $prenom_parent,
-        $telephone,
-        $whatsapp,
-        $profession,
-        $espace_id,
-        $is_principal,
-        $role,
-        $annee_id,
-        $nationalite_id,
-        $quartier,
-        $adresse,
-        $email,
-        $id
-    ) {
-
-        return   $parenteleve = ParentEleve::findOrFail($id)->update([
-
-            'nom_parent' => $nom_parent,
-            'prenom_parent' => $prenom_parent,
-            'telephone' => $telephone,
-            'profession' => $profession,
-            'whatsapp' => $whatsapp,
-            'espace_id' => $espace_id,
-            'is_principal' => $is_principal,
-            'role' => $role,
-            'annee_id' => $annee_id,
-            'nationalite_id' => $nationalite_id,
-            'quartier' => $quartier,
-            'adresse' => $adresse,
-            'email' => $email,
-            'id' => $id,
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une ParentEleve
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteParentEleve($id)
+    public function annee()
     {
-
-        $parenteleve = ParentEleve::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($parenteleve) {
-            return 1;
-        }
-        return 0;
+        return $this->belongsTo(Annee::class, 'annee_id');
     }
 
-
-
     /**
-     * Retourne la liste des années
-     * @param  int $annee_id
-     * @param  int $espace_id
-     * @param  int $is_principal
-     * @param  int $role
-
-     *
-     * @return  array
+     * Relation avec la nationalité (table `nationalites`)
      */
-
-    public static function getListe(
-
-        $annee_id = null,
-        $espace_id = null,
-        $is_principal = null,
-        $role = null
-
-    ) {
-
-        $query =  ParentEleve::where('etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        if ($espace_id != null) {
-
-            $query->where('espace_id', '=', $espace_id);
-        }
-
-        if ($role != null) {
-
-            $query->where('role', '=', $role);
-        }
-
-        if ($is_principal != null) {
-
-            $query->where('is_principal', '=', $is_principal);
-        }
-
-        return    $query->get();
+    public function nationalite()
+    {
+        return $this->belongsTo(Nationalite::class, 'nationalite_id');
     }
 
-
+    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Vérifier si le parent est principal
+     */
+    public function isPrincipal(): bool
+    {
+        return (bool) $this->is_principal;
+    }
 
     /**
-     * Retourne le nombre  des  années
-     *
-     * @param int $annee_id
-     * @param  int $espace_id
-     * @param  int $is_principal
-     * @param  int $role
-     *
-     *
-     *
-     * @return  int $total
+     * Vérifier si le parent est actif
      */
+    public function isActif(): bool
+    {
+        return $this->etat == self::ETAT_ACTIF;
+    }
 
-    public static function getTotal(
+    /**
+     * Activer / désactiver le parent
+     */
+    public function setActif(bool $actif): void
+    {
+        $this->etat = $actif ? self::ETAT_ACTIF : self::ETAT_INACTIF;
+        $this->save();
+    }
 
-        $annee_id = null,
-        $espace_id = null,
-        $is_principal = null,
-        $role = null
+    /**
+     * Obtenir le nom complet
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->prenom_parent . ' ' . $this->nom_parent);
+    }
 
-    ) {
+    /**
+     * Obtenir le libellé du rôle
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        $labels = [
+            self::ROLE_PERE   => 'Père',
+            self::ROLE_MERE   => 'Mère',
+            self::ROLE_TUTEUR => 'Tuteur',
+            self::ROLE_AUTRE  => 'Autre',
+        ];
 
-        $query =   DB::table('parent_eleves')
-
-            ->where('parent_eleves.etat', '!=', TypeStatus::SUPPRIME);
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-
-        if ($espace_id != null) {
-
-            $query->where('espace_id', '=', $espace_id);
-        }
-
-
-        if ($role != null) {
-
-            $query->where('role', '=', $role);
-        }
-
-        if ($is_principal != null) {
-
-            $query->where('is_principal', '=', $is_principal);
-        }
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
+        return $labels[$this->role] ?? 'Non défini';
     }
 }

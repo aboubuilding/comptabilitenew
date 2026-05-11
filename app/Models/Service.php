@@ -1,11 +1,12 @@
 <?php
 
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Fournisseur extends Model
+class Service extends Model
 {
     use HasFactory;
 
@@ -14,7 +15,7 @@ class Fournisseur extends Model
      *
      * @var string
      */
-    protected $table = 'fournisseurs';
+    protected $table = 'services';
 
     /**
      * The attributes that are mass assignable.
@@ -22,10 +23,9 @@ class Fournisseur extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'raison_social',
-        'nom_contact',
-        'telephone_contact',
-        'adresse',
+        'libelle',
+        'description',
+        'prix_unitaire',
         'etat',
     ];
 
@@ -35,37 +35,21 @@ class Fournisseur extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'etat' => 'boolean',
+        'prix_unitaire' => 'decimal:2',
+        'etat' => 'integer',
     ];
 
     // ===== CONSTANTES POUR `etat` =====
-    const ETAT_ACTIF   = 1;
+    const ETAT_ACTIF = 1;
     const ETAT_INACTIF = 0;
 
     // ===== MÉTHODES UTILITAIRES =====
+
     /**
-     * Vérifier si le fournisseur est actif.
+     * Vérifier si le service est actif.
      */
     public function isActif(): bool
     {
         return $this->etat == self::ETAT_ACTIF;
-    }
-
-    /**
-     * Activer le fournisseur.
-     */
-    public function activer(): void
-    {
-        $this->etat = self::ETAT_ACTIF;
-        $this->save();
-    }
-
-    /**
-     * Désactiver le fournisseur.
-     */
-    public function desactiver(): void
-    {
-        $this->etat = self::ETAT_INACTIF;
-        $this->save();
     }
 }

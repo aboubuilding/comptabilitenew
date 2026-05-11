@@ -2,202 +2,67 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Nationalite extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'nationalites';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'libelle',
-
-
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une Nationalite
+     * The attributes that should be cast.
      *
-
-     * @param  string $libelle
-
-
-
-     * @return Nationalite
+     * @var array<string, string>
      */
+    protected $casts = [
+        'etat' => 'boolean',
+    ];
 
-    public static function addNationalite(
-        $libelle
+    // ===== CONSTANTES POUR `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-    )
+    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Vérifier si la nationalité est active.
+     */
+    public function isActif(): bool
     {
-        $nationalite = new Nationalite();
-
-
-        $nationalite->libelle = $libelle;
-
-        $nationalite->created_at = Carbon::now();
-
-        $nationalite->save();
-
-        return $nationalite;
+        return $this->etat == self::ETAT_ACTIF;
     }
 
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Nationalite
+     * Activer la nationalité.
      */
-
-    public static function rechercheNationaliteById($id)
+    public function activer(): void
     {
-
-        return   $nationalite = Nationalite::findOrFail($id);
+        $this->etat = self::ETAT_ACTIF;
+        $this->save();
     }
 
     /**
-     * Update d'une Nationalite scolaire
-
-     * @param  string $libelle
-
-
-
-
-
-
-     * @param int $id
-     * @return  Nationalite
+     * Désactiver la nationalité.
      */
-
-    public static function updateNationalite(
-        $libelle,
-
-
-        $id)
+    public function desactiver(): void
     {
-
-
-        return   $nationalite = Nationalite::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-
-
-            'id' => $id,
-
-
-        ]);
+        $this->etat = self::ETAT_INACTIF;
+        $this->save();
     }
-
-
-
-
-    /**
-     * Supprimer une Nationalite
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteNationalite($id)
-    {
-
-        $nationalite = Nationalite::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($nationalite) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des années
-     * @param  int $statut_Nationalite
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-
-
-    ) {
-
-        $query =  Nationalite::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  années
-
-
-
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-
-
-
-
-    ) {
-
-        $query =   DB::table('nationalites')
-
-
-            ->where('classes.etat', '!=', TypeStatus::SUPPRIME);
-
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-
 }

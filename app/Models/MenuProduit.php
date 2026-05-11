@@ -1,11 +1,12 @@
 <?php
 
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VenteDetail extends Model
+class MenuProduit extends Model
 {
     use HasFactory;
 
@@ -14,7 +15,7 @@ class VenteDetail extends Model
      *
      * @var string
      */
-    protected $table = 'vente_details';
+    protected $table = 'menu_produits';
 
     /**
      * The attributes that are mass assignable.
@@ -22,12 +23,11 @@ class VenteDetail extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'vente_id',
+        'menu_id',
         'produit_id',
         'quantite',
-        'prix_unitaire',
-        'remise',
-        'inscription_id',
+        'cout_unitaire',
+        'cout_total',
     ];
 
     /**
@@ -36,20 +36,19 @@ class VenteDetail extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'quantite'       => 'float',
-        'prix_unitaire'  => 'decimal:2',
-        'remise'         => 'decimal:2',
-        'montant_ht'     => 'decimal:2',
-        'montant_ttc'    => 'decimal:2',
+        'quantite' => 'decimal:3',
+        'cout_unitaire' => 'decimal:2',
+        'cout_total' => 'decimal:2',
     ];
 
     // ===== RELATIONS =====
+
     /**
-     * Relation avec la vente parente.
+     * Relation avec le menu parent.
      */
-    public function vente()
+    public function menu()
     {
-        return $this->belongsTo(Vente::class, 'vente_id');
+        return $this->belongsTo(Menu::class, 'menu_id');
     }
 
     /**
@@ -60,11 +59,15 @@ class VenteDetail extends Model
         return $this->belongsTo(Produit::class, 'produit_id');
     }
 
+    // ===== MÉTHODES UTILITAIRES =====
+
     /**
-     * Relation avec l'inscription (élève acheteur).
+     * Calculer et mettre à jour le coût total (quantité * prix unitaire).
      */
-    public function inscription()
+    public function calculerCoutTotal(): void
     {
-        return $this->belongsTo(Inscription::class, 'inscription_id');
+        if ($this->quantite && $this->cout_unitaire) {
+            $this->cout_total = $this->quantite * $this->cout_unitaire;
+        }
     }
 }

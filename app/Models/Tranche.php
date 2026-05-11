@@ -2,294 +2,108 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Tranche extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'tranches';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'libelle',
         'date_butoire',
         'frais_ecole_id',
         'type_frais',
         'taux',
-
-
-
-
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une Tranche
+     * The attributes that should be cast.
      *
-
-     * @param  date $libelle
-     * @param  float $date_butoire
-     * @param  int $frais_ecole_id
-     * @param  int $type_frais
-     * @param  int $taux
-
-
-
-
-     * @return Tranche
+     * @var array<string, string>
      */
+    protected $casts = [
+        'date_butoire'    => 'date',
+        'frais_ecole_id'  => 'integer',
+        'type_frais'      => 'integer',
+        'taux'            => 'integer',
+        'etat'            => 'boolean',   // 0/1
+    ];
 
-    public static function addTranche (
+    // ===== CONSTANTES POUR `type_frais` =====
+    const TYPE_FRAIS_INSCRIPTION   = 1;
+    const TYPE_FRAIS_SCOLARITE     = 2;
+    const TYPE_FRAIS_TRANSPORT     = 3;
+    const TYPE_FRAIS_CANTINE       = 4;
+    const TYPE_FRAIS_DIVERS        = 5;
 
-        $libelle,
-        $date_butoire,
-        $frais_ecole_id,
-        $type_frais,
-        $taux
+    // ===== CONSTANTES POUR `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-
-
-
-    )
+    // ===== RELATIONS =====
+    /**
+     * Relation avec le modèle FraisEcole
+     */
+    public function fraisEcole()
     {
-        $tranche = new Tranche();
-
-
-        $tranche->libelle = $libelle;
-        $tranche->date_butoire = $date_butoire;
-        $tranche->frais_ecole_id = $frais_ecole_id;
-        $tranche->type_frais = $type_frais;
-        $tranche->taux = $taux;
-
-
-
-        $tranche->created_at = Carbon::now();
-
-        $tranche->save();
-
-        return $tranche;
+        return $this->belongsTo(FraisEcole::class, 'frais_ecole_id');
     }
 
+    // ===== MÉTHODES UTILITAIRES =====
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Tranche
+     * Vérifier si la tranche est active
      */
-
-    public static function rechercheTrancheById($id)
+    public function isActif(): bool
     {
-
-        return   $tranche= Tranche::findOrFail($id);
+        return $this->etat == self::ETAT_ACTIF;
     }
 
     /**
-     * Update d'une Tranche scolaire
-
-     ** @param date $libelle
-     * * @param float $date_butoire
-     * * @param int $frais_ecole_id
-     * * @param int $type_frais
-     * * @param int $taux
-
-     *
-     *
-     * @param int $id
-     * @return  Tranche
+     * Activer/désactiver la tranche
      */
-
-    public static function updateTranche(
-        $libelle,
-        $date_butoire,
-        $frais_ecole_id,
-        $type_frais,
-        $taux,
-
-
-
-        $id)
+    public function setActif(bool $actif): void
     {
-
-
-        return   $tranche= Tranche::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-            'date_butoire' => $date_butoire,
-            'frais_ecole_id' => $frais_ecole_id,
-            'type_frais' => $type_frais,
-            'taux' => $taux,
-
-
-
-            'id' => $id,
-
-
-        ]);
+        $this->etat = $actif ? self::ETAT_ACTIF : self::ETAT_INACTIF;
+        $this->save();
     }
 
-
-
-
     /**
-     * Supprimer une Tranche
-     *
-     * @param int $id
-     * @return  boolean
+     * Libellé du type de frais
      */
-
-    public static function deleteTranche($id)
+    public function getTypeFraisLabelAttribute(): string
     {
-
-        $tranche= Tranche::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($tranche) {
-            return 1;
-        }
-        return 0;
+        $labels = [
+            self::TYPE_FRAIS_INSCRIPTION => 'Inscription',
+            self::TYPE_FRAIS_SCOLARITE   => 'Scolarité',
+            self::TYPE_FRAIS_TRANSPORT   => 'Transport',
+            self::TYPE_FRAIS_CANTINE     => 'Cantine',
+            self::TYPE_FRAIS_DIVERS      => 'Divers',
+        ];
+        return $labels[$this->type_frais] ?? 'Non défini';
     }
 
-
-
     /**
-     * Retourne la liste des Tranches
-
-
-     * @param  int $frais_ecole_id
-
-
-
-
-     *
-     * @return  array
+     * Vérifier si la date butoire est dépassée
      */
-
-    public static function getListe(
-
-
-        $frais_ecole_id = null,
-        $type_frais = null
-
-
-    ) {
-
-
-
-        $query =  Tranche::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-
-
-
-        if ($frais_ecole_id != null) {
-
-            $query->where('frais_ecole_id', '=', $frais_ecole_id);
-        }
-
-
-
-          if ($type_frais != null) {
-
-            $query->where('type_frais', '=', $type_frais);
-        }
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  activités
-
-     *
-     *
-
-     * * @param int $frais_ecole_id
-
-
-     *
-     *
-     * @return  int $total
-     */
-
-    public static function getTotal(
-
-        $frais_ecole_id = null
-
-
-
-
-    ) {
-
-        $query =   DB::table('Tranches')
-
-
-            ->where('Tranches.etat', '!=', TypeStatus::SUPPRIME);
-
-
-
-
-        if ($frais_ecole_id != null) {
-
-            $query->where('frais_ecole_id', '=', $frais_ecole_id);
-        }
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
-     */
-    public function fraisecole()
+    public function isDepasse(): bool
     {
-
-
-        return $this->belongsTo(\FraisEcole::class, 'frais_ecole_id');
+        if (!$this->date_butoire) {
+            return false;
+        }
+        return now()->startOfDay()->gt($this->date_butoire);
     }
-
-
-
-
-
-
-
-
-
-
 }

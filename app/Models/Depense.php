@@ -2,13 +2,8 @@
 
 namespace App\Models;
 
-use App\Types\StatutDepense;
-use App\Types\TypeStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Depense extends Model
 {
@@ -16,12 +11,9 @@ class Depense extends Model
 
     protected $table = 'depenses';
 
-    /**
-     * Champs mass-assignables (incluant les nouveaux champs de la migration)
-     */
     protected $fillable = [
         'libelle',
-        'beneficiaire',        // Corrigé : 'beneficaire' -> 'beneficiaire'
+        'beneficiaire',
         'motif_depense',
         'date_depense',
         'montant',
@@ -29,88 +21,37 @@ class Depense extends Model
         'utilisateur_id',
         'statut_depense',
         'etat',
-        // 👉 Nouveaux champs ajoutés par migration
-        'validateur_id',
-        'date_validation',
-        'justificatif_demande',
-        'motif_rejet', 
     ];
 
-    /**
-     * Casting automatique des types
-     */
     protected $casts = [
-        'montant'         => 'decimal:2',
-        'date_depense'    => 'date',
-        'date_validation' => 'date',
+        'date_depense' => 'date',
+        'montant' => 'integer',
+        'statut_depense' => 'integer',
+        'etat' => 'integer',
     ];
 
-    /**
-     * Valeurs par défaut (remplace le constructeur)
-     */
-    protected $attributes = [
-        'etat'           => TypeStatus::ACTIF,
-        'statut_depense' => StatutDepense::EN_ATTENTE,
-    ];
-
-    /**
-     * 🔹 Scopes de filtrage (remplacent getListe() & getTotal())
-     */
-    public function scopeActif($query)
+    public function annee()
     {
-        return $query->where('etat', TypeStatus::ACTIF);
+        return $this->belongsTo(Annee::class);
     }
 
-    public function scopeByAnnee($query, ?int $anneeId)
-    {
-        return $anneeId ? $query->where('annee_id', $anneeId) : $query;
-    }
-
-    public function scopeByStatut($query, ?int $statut)
-    {
-        return $statut !== null ? $query->where('statut_depense', $statut) : $query;
-    }
-
-    public function scopeByUtilisateur($query, ?int $userId)
-    {
-        return $userId ? $query->where('utilisateur_id', $userId) : $query;
-    }
-
-    /**
-     * 🔗 Relations
-     */
-    public function anneeScolaire(): BelongsTo
-    {
-        return $this->belongsTo(Annee::class, 'annee_id');
-    }
-
-    public function demandeur(): BelongsTo
+    public function utilisateur()
     {
         return $this->belongsTo(User::class, 'utilisateur_id');
     }
 
-    public function caisse(): BelongsTo
-{
-    return $this->belongsTo(Caisse::class, 'caisse_id');
-}
-
-    public function validateur(): BelongsTo
+    public function isActive(): bool
     {
-        return $this->belongsTo(User::class, 'validateur_id');
+        return $this->etat == 1;
     }
 
-    public function mouvements(): HasMany
+    public function getStatutLabelAttribute(): string
     {
-        return $this->hasMany(Mouvement::class, 'depense_id');
-    }
-
-    /**
-     * 🧮 Attribut calculé : montant formaté pour l'affichage
-     */
-    protected function montantFormate(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => number_format($this->montant, 2, ',', ' ') . ' ' . config('app.currency', 'FCFA')
-        );
+        return match ($this->statut_depense) {
+            0 => 'En attente',
+            1 => 'Validée',
+            2 => 'Rejetée',
+            default => 'Inconnu',
+        };
     }
 }

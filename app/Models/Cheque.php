@@ -2,32 +2,26 @@
 
 namespace App\Models;
 
-use App\Types\StatutPaiement;
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Cheque extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->etat = TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'cheques';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'numero',
         'emetteur',
         'annee_id',
@@ -36,333 +30,89 @@ class Cheque extends Model
         'statut',
         'date_encaissement',
         'banque_id',
-        'montant',
-
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une Cheque
+     * The attributes that should be cast.
      *
-
-     * @param  string $numero
-     * @param  string $emetteur
-     * @param  int $annee_id
-     * @param  date $paiement_id
-     * @param  date $date_emission
-     * @param  int $statut
-     * @param  date $date_encaissement
-     * @param  int $banque_id
-     
-
-
-
-
-
-     * @return Cheque
+     * @var array<string, string>
      */
+    protected $casts = [
+        'date_emission'    => 'date',
+        'date_encaissement'=> 'date',
+        'etat'             => 'boolean',    // car integer avec 0/1
+        'statut'           => 'integer',    // tinyInteger stocké en base
+        'annee_id'         => 'integer',
+        'paiement_id'      => 'integer',
+        'banque_id'        => 'integer',
+    ];
 
-    public static function addCheque(
-        $numero,
-        $emetteur,
-        $annee_id,
-        $paiement_id,
-        $date_emission,
-        $statut,
-        $date_encaissement,
-        $banque_id,
-        $montant
+    // ===== CONSTANTES POUR LE CHAMP `statut` =====
+    const STATUT_EN_ATTENTE  = 1;  // Exemple : chèque émis mais non encaissé
+    const STATUT_ENCAISSE     = 2;
+    const STATUT_REJETE       = 3;
+    const STATUT_ANNULE       = 4;
 
+    // ===== CONSTANTES POUR LE CHAMP `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-    ) {
-        $cheque = new Cheque();
-
-
-        $cheque->numero = $numero;
-        $cheque->emetteur = $emetteur;
-        $cheque->annee_id = $annee_id;
-        $cheque->paiement_id = $paiement_id;
-        $cheque->date_emission = $date_emission;
-        $cheque->statut = $statut;
-        $cheque->date_encaissement = $date_encaissement;
-        $cheque->banque_id = $banque_id;
-        $cheque->montant = $montant;
-
-
-
-        $cheque->created_at = Carbon::now();
-
-        $cheque->save();
-
-        return $cheque;
-    }
-
+    // ===== RELATIONS =====
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Cheque
-     */
-
-    public static function rechercheChequeById($id)
-    {
-
-        return   $cheque = Cheque::findOrFail($id);
-    }
-
-    public static function rechercheChequeByPaiement_id($paiement_id)
-    {
-
-        return   $cheque = Cheque::where('paiement_id', $paiement_id)->first();
-    }
-    
-
-    /**
-     * Update d'une Cheque scolaire
-
-     * @param  string $numero
-     * @param  string $emetteur
-     * @param  int $annee_id
-     * @param  date $paiement_id
-     * @param  date $date_emission
-     * @param  int $statut
-     * @param  date $date_encaissement
-     * @param  int $banque_id
-     * @param double $montant
-     
-
-
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function updateCheque(
-        $numero,
-        $emetteur,
-        $annee_id,
-        $paiement_id,
-        $date_emission,
-        $statut,
-        $date_encaissement,
-        $banque_id,
-        $montant,
-        $id
-    ) {
-
-
-        return   $cheque = Cheque::findOrFail($id)->update([
-
-
-
-            'numero' => $numero,
-            'emetteur' => $emetteur,
-            'annee_id' => $annee_id,
-            'paiement_id' => $paiement_id,
-            'date_emission' => $date_emission,
-            'statut' => $statut,
-            'date_encaissement' => $date_encaissement,
-            'banque_id' => $banque_id,
-            'montant' => $montant,
-
-
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une Cheque
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteCheque($id)
-    {
-
-        $cheque = Cheque::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($cheque) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des Cheques
-
-     * @param  int $banque_id
-     * @param  int $statut
-     * @param  int $paiement_id
-     * @param  int $annee_id
-
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-        $banque_id = null,
-        $statut = null,
-        $paiement_id = null,
-        $annee_id = null
-
-
-
-
-
-    ) {
-
-
-
-        $query =  Cheque::where('etat', '!=', TypeStatus::SUPPRIME);
-
-        if ($banque_id != null) {
-
-            $query->where('banque_id', '=', $banque_id);
-        }
-
-        if ($statut != null) {
-
-            $query->where('statut', '=', $statut);
-        }
-
-        if ($paiement_id != null) {
-
-            $query->where('paiement_id', '=', $paiement_id);
-        }
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        $query->orderBy('statut', 'asc');
-
-
-
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  activités 
-
-
-     * @param  int $banque_id
-     * @param  int $statut
-     * @param  int $paiement_id
-     * @param  int $annee_id
-
-
-    
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-        $banque_id = null,
-        $statut = null,
-        $paiement_id = null,
-        $annee_id = null
-
-
-
-    ) {
-
-        $query =   DB::table('Cheques')
-
-
-            ->where('Cheques.etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($banque_id != null) {
-
-            $query->where('banque_id', '=', $banque_id);
-        }
-
-
-        if ($statut != null) {
-
-            $query->where('statut', '=', $statut);
-        }
-
-
-        if ($paiement_id != null) {
-
-            $query->where('paiement_id', '=', $paiement_id);
-        }
-
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
+     * Relation avec l'année (si la table `annees` existe)
      */
     public function annee()
     {
-
-
         return $this->belongsTo(Annee::class, 'annee_id');
     }
 
-
     /**
-     * Obtenir une année
-     *
+     * Relation avec le paiement (table `paiements`)
      */
     public function paiement()
     {
-
-
         return $this->belongsTo(Paiement::class, 'paiement_id');
     }
 
-
     /**
-     * Obtenir un utilisateur
-     *
+     * Relation avec la banque (table `banques`)
      */
     public function banque()
     {
-
-
         return $this->belongsTo(Banque::class, 'banque_id');
     }
+
+    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Vérifier si le chèque est actif
+     */
+    public function isActif(): bool
+    {
+        return $this->etat == self::ETAT_ACTIF;
+    }
+
+    /**
+     * Vérifier si le chèque a été encaissé
+     */
+    public function isEncaisse(): bool
+    {
+        return $this->statut == self::STATUT_ENCAISSE;
+    }
+
+    /**
+     * Définir le statut à partir d'une chaîne (si besoin)
+     */
+    public function setStatutFromString(string $status): void
+    {
+        $map = [
+            'en_attente' => self::STATUT_EN_ATTENTE,
+            'encaisse'   => self::STATUT_ENCAISSE,
+            'rejete'     => self::STATUT_REJETE,
+            'annule'     => self::STATUT_ANNULE,
+        ];
+
+        $this->statut = $map[$status] ?? self::STATUT_EN_ATTENTE;
+    }
+
 }

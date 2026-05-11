@@ -2,260 +2,78 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Espace extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'espaces';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'nom_famille',
-      
         'annee_id',
-       
-
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une Espace
+     * The attributes that should be cast.
      *
-
-     * @param  string $nom_famille
-   
-     * @param  int $annee_id
-    
-
-
-
-     * @return Espace
+     * @var array<string, string>
      */
+    protected $casts = [
+        'annee_id' => 'integer',
+        'etat'     => 'boolean',   // puisque valeur 0/1 en base
+    ];
 
-    public static function addEspace(
-        $nom_famille,
-       
-        $annee_id
-       
+    // ===== CONSTANTES POUR LE CHAMP `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-    )
-    {
-        $espace = new Espace();
-
-
-        $espace->nom_famille = $nom_famille;
-     
-        $espace->annee_id = $annee_id;
-       
-        $espace->created_at = Carbon::now();
-
-        $espace->save();
-
-        return $espace;
-    }
-
+    // ===== RELATIONS =====
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Espace
-     */
-
-    public static function rechercheEspaceById($id)
-    {
-
-        return   $espace= Espace::findOrFail($id);
-    }
-
-    /**
-     * Update d'une Espace scolaire
-
-      * @param  string $nom_famille
-     
-     * @param  int $annee_id
-    
-
-     * @param int $id
-     * @return  Espace
-     */
-
-    public static function updateEspace(
-         $nom_famille,
-      
-        $annee_id,
-       
-       
-        $id)
-    {
-
-
-        return   $espace= Espace::findOrFail($id)->update([
-
-
-
-            'nom_famille' => $nom_famille,
-           
-            'annee_id' => $annee_id,
-           
-           
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une Espace
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteEspace($id)
-    {
-
-        $espace= Espace::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($espace) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des Espaces
-
-    
-     * @param  int $annee_id
-   
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-      
-        $annee_id = null
-       
-      
-        
-
-
-    ) {
-
-      
-
-        $query =  Espace::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-       
-
-         if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-        
-       
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  activités 
-
-
-   
-     * @param  int $annee_id
-    
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-       
-        $annee_id = null
-       
-       
-
-
-    ) {
-
-        $query =   DB::table('espaces')
-
-
-            ->where('espaces.etat', '!=', TypeStatus::SUPPRIME);
-
-
-      
-
-         if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-       
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
+     * Relation avec l'année (si la table `annees` existe)
      */
     public function annee()
     {
-
-
         return $this->belongsTo(Annee::class, 'annee_id');
     }
 
+    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Vérifier si l'espace est actif
+     */
+    public function isActif(): bool
+    {
+        return $this->etat == self::ETAT_ACTIF;
+    }
 
-   
+    /**
+     * Activer l'espace
+     */
+    public function activer(): void
+    {
+        $this->etat = self::ETAT_ACTIF;
+        $this->save();
+    }
 
-
-
-
-  
-
+    /**
+     * Désactiver l'espace
+     */
+    public function desactiver(): void
+    {
+        $this->etat = self::ETAT_INACTIF;
+        $this->save();
+    }
 }

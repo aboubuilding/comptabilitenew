@@ -2,32 +2,26 @@
 
 namespace App\Models;
 
-use App\Types\StatutMouvement;
-use App\Types\TypeMouvement;
-use App\Types\TypeStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Mouvement extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->etat = TypeStatus::ACTIF;
-    }
+    /**
+     * Le nom de la table associée.
+     *
+     * @var string
+     */
+    protected $table = 'mouvements';
 
     /**
-     * The attributes that are mass assignable.
+     * Les attributs qui sont mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'libelle',
         'beneficiaire',
         'motif',
@@ -40,508 +34,75 @@ class Mouvement extends Model
         'depense_id',
         'annee_id',
         'file',
+        'statut_mouvement',
         'etat',
-
     ];
 
-
-
-
-
-
-
     /**
-     * Ajouter un mouvement
+     * Les attributs qui doivent être castés.
      *
-
-     * @param  string $libelle
-     * @param  string $beneficiaire
-
-     * @param  string $motif
-     * @param  date $date_mouvement
-     * @param  int $montant
-     * @param  int $type_mouvement
-     * @param  int $caisse_id
-     * @param  int $utilisateur_id
-     * @param  int $paiement_id
-     * @param  int $depense_id
-     * @param  int $annee_id
-     * @param string $file
-     * @param int $statut_mouvement
-
-
-
-     * @return Mouvement
+     * @var array<string, string>
      */
+    protected $casts = [
+        'date_mouvement' => 'date',
+        'montant' => 'float',
+        'type_mouvement' => 'integer',
+        'caisse_id' => 'integer',
+        'utilisateur_id' => 'integer',
+        'paiement_id' => 'integer',
+        'depense_id' => 'integer',
+        'annee_id' => 'integer',
+        'statut_mouvement' => 'integer',
+        'etat' => 'integer',
+    ];
 
-    public static function addMouvement(
-        $libelle,
-        $beneficiaire,
-        $motif,
+    // ─────────────────────────────────────────────────────────────
+    // Relations
+    // ─────────────────────────────────────────────────────────────
 
-        $date_mouvement,
-        $montant,
-        $type_mouvement,
-        $caisse_id,
-        $utilisateur_id,
-        $paiement_id,
-        $depense_id,
-
-        $annee_id,
-          $file,
-          $statut_mouvement
-
-    ) {
-        $mouvement = new Mouvement();
-
-
-        $mouvement->libelle = $libelle;
-        $mouvement->beneficiaire = $beneficiaire;
-        $mouvement->motif = $motif;
-        $mouvement->date_mouvement = $date_mouvement;
-        $mouvement->montant = $montant;
-        $mouvement->type_mouvement = $type_mouvement;
-        $mouvement->caisse_id = $caisse_id;
-        $mouvement->utilisateur_id = $utilisateur_id;
-        $mouvement->paiement_id = $paiement_id;
-        $mouvement->depense_id = $depense_id;
-        $mouvement->annee_id = $annee_id;
-        $mouvement->file = $file;
-        $mouvement->statut_mouvement = $statut_mouvement;
-
-        $mouvement->created_at = Carbon::now();
-
-        $mouvement->save();
-
-        return $mouvement;
-    }
-
-    /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Mouvement
-     */
-
-    public static function rechercheMouvementById($id)
-    {
-
-        return   $mouvement = Mouvement::findOrFail($id);
-    }
-
-    /**
-     * Update d'une mouvement scolaire
-
-     * @param  string $libelle
-     * @param  string $beneficiaire
-     * @param  string $motif
-     * @param  date $date_mouvement
-     * @param  float $montant
-     * @param  int $type_mouvement
-     * @param  int $caisse_id
-     * @param  int $utilisateur_id
-     * @param  int $paiement_id
-     * @param  int $depense_id
-     * @param  int $annee_id
-     * @param string $file
-     * @param int $statut_mouvement
-
-
-
-     * @param int $id
-     * @return  Mouvement
-     */
-
-    public static function updateMouvement(
-        $libelle,
-        $beneficiaire,
-        $motif,
-        $date_mouvement,
-        $montant,
-        $type_mouvement,
-        $caisse_id,
-        $utilisateur_id,
-        $paiement_id,
-        $depense_id,
-        $file,
-        $statut_mouvement,
-        $annee_id,
-
-        $id
-    ) {
-
-
-        return   $mouvement = Mouvement::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-            'beneficiaire' => $beneficiaire,
-            'motif' => $motif,
-            'date_mouvement' => $date_mouvement,
-            'montant' => $montant,
-            'type_mouvement' => $type_mouvement,
-            'caisse_id' => $caisse_id,
-            'utilisateur_id' => $utilisateur_id,
-            'paiement_id' => $paiement_id,
-            'depense_id' => $depense_id,
-            'annee_id' => $annee_id,
-            'file' => $file,
-            'statut_mouvement' => $statut_mouvement,
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une Mouvement
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteMouvement($id)
-    {
-
-        $mouvement = Mouvement::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($mouvement) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-    /**
-     * Obtenir un caisse
-     *
-     */
     public function caisse()
     {
-
-
-        return $this->belongsTo(Caisse::class, 'caisse_id');
+        return $this->belongsTo(Caisse::class);
     }
 
-    /**
-     * Obtenir une utilisateur
-     *
-     */
     public function utilisateur()
     {
-
-
         return $this->belongsTo(User::class, 'utilisateur_id');
     }
 
-
-    /**
-     * Obtenir un paiement
-     *
-     */
     public function paiement()
     {
-
-
-        return $this->belongsTo(Paiement::class, 'paiement_id');
+        return $this->belongsTo(Paiement::class);
     }
 
-    /**
-     * Obtenir une annee
-     *
-     */
-    public function annee()
-    {
-
-
-        return $this->belongsTo(Annee::class, 'annee_id');
-    }
-
-
-
-    /**
-     * Obtenir une annee
-     *
-     */
     public function depense()
     {
-
-
-        return $this->belongsTo(Depense::class, 'depense_id');
+        return $this->belongsTo(Depense::class);
     }
 
-
-
-
-
-
-    /**
-     * Retourne la liste des mouvements par ...
-
-
-     * @param  int $annee_id
-     * @param  int $caisse_id
-     * @param  int $utilisateur_id
-
-     * @param  int $paiement_id
-
-     * @param  int $type_mouvement
-     * @param  int $statut_mouvement
-
-
-
-
-
-     * @return  array
-     */
-
-
-    public static function getListe(
-        $annee_id,
-        $caisse_id = null,
-        $utilisateur_id = null,
-
-        $paiement_id = null,
-        $type_mouvement = null,
-
-        $date1 = null,
-        $date2 = null
-
-    ) {
-
-        $query =  Mouvement::where('mouvements.etat', '!=', TypeStatus::SUPPRIME)
-            ->orderBy('mouvements.created_at', 'DESC')
-            ->where('mouvements.annee_id', '=', $annee_id);
-
-        if ($caisse_id != null) {
-
-            $query->where('mouvements.caisse_id', '=', $caisse_id);
-        }
-
-        if ($utilisateur_id != null) {
-
-            $query->where('mouvements.utilisateur_id', '=', $utilisateur_id);
-        }
-
-
-
-        if ($paiement_id != null) {
-
-            $query->where('mouvements.paiement_id', '=', $paiement_id);
-        }
-
-        if ($type_mouvement != null) {
-
-            $query->where('mouvements.type_mouvement', '=', $type_mouvement);
-        }
-
-
-        if ($date1 != null && $date2 != null) {
-
-            $query->whereBetween(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), [$date1, $date2]);
-        }
-
-
-        if ($date1 != null && $date2 == null) {
-
-            $query->where(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), '=', $date1);
-        }
-
-        if ($date1 == null && $date2 != null) {
-
-            $query->where(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), '=', $date2);
-        }
-
-
-        return     $query->get();
+    public function annee()
+    {
+        return $this->belongsTo(Annee::class);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Méthodes utilitaires
+    // ─────────────────────────────────────────────────────────────
 
-
-
-
-
-    /**
-     * Retourne le total  pour ...
-
-
-     * @param  int $annee_id
-     * @param  int $caisse_id
-     * @param  int $utilisateur_id
-     * @param  int $paiement_id
-     * @param  int $type_mouvement
-     * @param  int $statut_mouvement
-
-
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-        $annee_id,
-        $caisse_id = null,
-        $utilisateur_id = null,
-
-        $paiement_id = null,
-        $type_mouvement = null,
-
-        $date1 = null,
-        $date2 = null
-
-    ) {
-
-        $query =    DB::table('mouvements')
-
-            ->where('mouvements.etat', '!=', TypeStatus::SUPPRIME)
-            ->where('mouvements.annee_id', '=', $annee_id)
-            ;
-
-        if ($caisse_id != null) {
-
-            $query->where('mouvements.caisse_id', '=', $caisse_id);
-        }
-
-        if ($utilisateur_id != null) {
-
-            $query->where('mouvements.utilisateur_id', '=', $utilisateur_id);
-        }
-
-
-
-        if ($paiement_id != null) {
-
-            $query->where('mouvements.paiement_id', '=', $paiement_id);
-        }
-
-        if ($type_mouvement != null) {
-
-            $query->where('mouvements.type_mouvement', '=', $type_mouvement);
-        }
-
-
-        if ($date1 != null && $date2 != null) {
-
-            $query->whereBetween(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), [$date1, $date2]);
-        }
-
-
-        if ($date1 != null && $date2 == null) {
-
-            $query->where(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), '=', $date1);
-        }
-
-        if ($date1 == null && $date2 != null) {
-
-            $query->where(DB::raw("DATE_FORMAT(mouvements.date_mouvement, '%Y-%m-%d')"), '=', $date2);
-        }
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
+    public function isActive(): bool
+    {
+        return $this->etat == 1;
     }
 
-
-
     /**
-     * Retourne le total  pour ...
-
-
-     * @param  int $annee_id
-     * @param  int $caisse_id
-     * @param  int $utilisateur_id
-
-     * @param  int $paiement_id
-
-     * @param  int $type_mouvement
-     * @param  int $statut_mouvement
-
-
-
-     * @return  int $total
+     * Type de mouvement : 1 = entrée, 2 = sortie.
      */
-
-    public static function getMontantTotal(
-        $annee_id,
-        $caisse_id = null,
-        $utilisateur_id = null,
-
-        $paiement_id = null,
-        $type_mouvement = null,
-
-        $date1 = null,
-        $date2 = null
-
-    ) {
-
-        $query =    DB::table('mouvements')
-
-            ->where('mouvements.etat', '!=', TypeStatus::SUPPRIME)
-            ->where('mouvements.annee_id', '=', $annee_id);
-
-        if ($caisse_id != null) {
-
-            $query->where('mouvements.caisse_id', '=', $caisse_id);
-        }
-
-        if ($utilisateur_id != null) {
-
-            $query->where('mouvements.utilisateur_id', '=', $utilisateur_id);
-        }
-
-
-
-        if ($paiement_id != null) {
-
-            $query->where('mouvements.paiement_id', '=', $paiement_id);
-        }
-
-        if ($type_mouvement != null) {
-
-            $query->where('mouvements.type_mouvement', '=', $type_mouvement);
-        }
-
-
-        if ($date1 != null && $date2 != null) {
-
-            $query->whereBetween('mouvements.date_mouvement', [$date1, $date2]);
-        }
-
-
-        if ($date1 != null && $date2 == null) {
-
-            $query->where('mouvements.date_mouvement', '=', $date1);
-        }
-
-        if ($date1 == null && $date2 != null) {
-
-            $query->where('mouvements.date_mouvement', '=', $date2);
-        }
-
-
-
-
-
-        $total = $query->SUM('mouvements.montant');
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
+    public function getTypeLabelAttribute(): string
+    {
+        return match ($this->type_mouvement) {
+            1 => 'Entrée',
+            2 => 'Sortie',
+            default => 'Inconnu',
+        };
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin_old\Parametre;
+namespace App\Http\Controllers\Parametre;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Parametre\Annee\StoreAnneeRequest;

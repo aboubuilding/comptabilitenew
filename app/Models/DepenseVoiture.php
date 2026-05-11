@@ -2,31 +2,26 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class DepenseVoiture extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes=[])
-    {
-        parent::__construct($attributes);
-        $this->etat=TypeStatus::ACTIF;
-    }
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'depense_voitures';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'libelle',
         'date_depense',
         'montant',
@@ -34,314 +29,80 @@ class DepenseVoiture extends Model
         'zone_id',
         'type_depense',
         'annee_id',
-
-
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une DepenseVoiture
+     * The attributes that should be cast.
      *
-
-     * @param  string $libelle
-     * @param  date $date_depense
-     * @param  int $montant
-
-     * @param  int $voiture_id
-     * @param  int $zone_id
-     *
-     *  @param  int $type_depense
-     *  @param  int $annee_id
-
-
-
-     * @return DepenseVoiture
+     * @var array<string, string>
      */
+    protected $casts = [
+        'date_depense' => 'date',
+        'montant'      => 'float',
+        'type_depense' => 'integer',
+        'etat'         => 'boolean',
+    ];
 
-    public static function addDepenseVoiture(
-        $libelle,
-        $date_depense,
-        $montant,
-        $voiture_id,
-        $zone_id,
-        $type_depense,
-        $annee_id,
+    // ===== CONSTANTES POUR `type_depense` =====
+    const TYPE_CARBURANT     = 1;
+    const TYPE_ENTRETIEN     = 2;
+    const TYPE_REPARATION    = 3;
+    const TYPE_ASSURANCE     = 4;
+    const TYPE_AMENDE        = 5;
+    const TYPE_AUTRE         = 6;
 
+    // ===== CONSTANTES POUR `etat` =====
+    const ETAT_ACTIF   = 1;
+    const ETAT_INACTIF = 0;
 
-
-
-
-    )
+    // ===== RELATIONS =====
+    /**
+     * Relation avec la voiture.
+     */
+    public function voiture()
     {
-        $depenseVoiture = new DepenseVoiture();
-
-
-        $depenseVoiture->libelle = $libelle;
-        $depenseVoiture->date_depense = $date_depense;
-        $depenseVoiture->montant = $montant;
-        $depenseVoiture->voiture_id = $voiture_id;
-        $depenseVoiture->zone_id = $zone_id;
-        $depenseVoiture->type_depense = $type_depense;
-
-        $depenseVoiture->annee_id = $annee_id;
-
-
-        $depenseVoiture->created_at = Carbon::now();
-
-        $depenseVoiture->save();
-
-        return $depenseVoiture;
+        return $this->belongsTo(Voiture::class, 'voiture_id');
     }
 
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  DepenseVoiture
+     * Relation avec la zone.
      */
-
-    public static function rechercheDepenseVoitureById($id)
+    public function zone()
     {
-
-        return   $depenseVoiture= DepenseVoiture::findOrFail($id);
+        return $this->belongsTo(Zone::class, 'zone_id');
     }
 
     /**
-     * Update d'une DepenseVoiture scolaire
-
-    * @param  string $libelle
-     * @param  date $date_depense
-     * @param  int $montant
-
-     * @param  int $voiture_id
-     * @param  int $zone_id
-     *
-     *  @param  int $type_depense
-     *  @param  int $annee_id
-
-
-
-
-     * @param int $id
-     * @return  DepenseVoiture
-     */
-
-    public static function updateDepenseVoiture(
-        $libelle,
-        $date_depense,
-        $montant,
-        $voiture_id,
-        $zone_id,
-        $type_depense,
-        $annee_id,
-
-
-        $id)
-    {
-
-
-        return   $depenseVoiture= DepenseVoiture::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-            'date_depense' => $date_depense,
-            'montant' => $montant,
-            'voiture_id' => $voiture_id,
-            'zone_id' => $zone_id,
-            'type_depense' => $type_depense,
-
-            'annee_id' => $annee_id,
-
-
-
-
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une DepenseVoiture
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteDepenseVoiture($id)
-    {
-
-        $depenseVoiture= DepenseVoiture::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($depenseVoiture) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des DepenseVoitures
-
-     * @param  int $annee_id
-     * @param  int $type_depense
-     * @param  int $zone_id
-     * @param  int $voiture_id
-
-
-
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-        $annee_id = null,
-        $type_depense = null,
-        $zone_id = null,
-        $voiture_id = null
-
-
-
-    ) {
-
-
-
-        $query =  DepenseVoiture::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-
-
-
-         if ($voiture_id != null) {
-
-            $query->where('voiture_id', '=', $voiture_id);
-        }
-
-
-        if ($type_depense != null) {
-
-            $query->where('type_depense', '=', $type_depense);
-        }
-
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  activités
-
-
-       * @param  int $annee_id
-     * @param  int $voiture_id
-     * @param  int $type_depense
-
-
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-
-
-           $annee_id = null,
-        $voiture_id = null,
-        $type_depense = null
-
-
-    ) {
-
-        $query =   DB::table('DepenseVoitures')
-
-
-            ->where('DepenseVoitures.etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($annee_id != null) {
-
-            $query->where('annee_id', '=', $annee_id);
-        }
-
-
-
-
-         if ($voiture_id != null) {
-
-            $query->where('voiture_id', '=', $voiture_id);
-        }
-
-
-        if ($type_depense != null) {
-
-            $query->where('type_depense', '=', $type_depense);
-        }
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-    /**
-     * Obtenir une année
-     *
+     * Relation avec l'année scolaire.
      */
     public function annee()
     {
-
-
         return $this->belongsTo(Annee::class, 'annee_id');
     }
 
-
-
-
-
-     /**
-     * Obtenir un utilisateur
-     *
+    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Vérifier si la dépense est active.
      */
-    public function utilisateur()
+    public function isActif(): bool
     {
-
-
-        return $this->belongsTo(User::class, 'voiture_id');
+        return $this->etat == self::ETAT_ACTIF;
     }
 
-
-
-
-
-
-
-
+    /**
+     * Libellé du type de dépense.
+     */
+    public function getTypeDepenseLabelAttribute(): string
+    {
+        $labels = [
+            self::TYPE_CARBURANT  => 'Carburant',
+            self::TYPE_ENTRETIEN  => 'Entretien',
+            self::TYPE_REPARATION => 'Réparation',
+            self::TYPE_ASSURANCE  => 'Assurance',
+            self::TYPE_AMENDE     => 'Amende',
+            self::TYPE_AUTRE      => 'Autre',
+        ];
+        return $labels[$this->type_depense] ?? 'Indéfini';
+    }
 }

@@ -2,402 +2,129 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use App\Types\Role;
-use App\Types\TypeStatus;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory;
-
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->etat = TypeStatus::ACTIF;
-    }
+    use Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Le nom de la table associée.
      *
-     * @var string[]
+     * @var string
+     */
+    protected $table = 'users';
+
+    /**
+     * Les attributs qui sont mass assignable.
+     *
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'nom',
         'prenom',
         'login',
         'email',
         'mot_passe',
-        'role',
+        'password',
         'photo',
+        'role',
         'etat',
-
+        'email_verified_at',
+        'remember_token',
+        'last_login_at',
+        'last_login_ip',
     ];
 
-
-
     /**
-     * Ajouter une User
+     * Les attributs qui doivent être cachés pour les tableaux.
      *
-
-     * @param  string $nom
-     * @param  string $prenom
-     * @param  string $login
-     * @param  string $mot_passe
-     * @param  int $role
-     * @param string $email
-     * @param string $photo
-
-
-
-
-     * @return User
+     * @var array<int, string>
      */
-
-    public static function addUser(
-        $nom,
-        $prenom,
-        $login,
-        $mot_passe,
-        $role,
-        $email,
-        $photo
-
-    ) {
-        $user = new User();
-
-
-        $user->nom = $nom;
-        $user->prenom = $prenom;
-        $user->login = $login;
-        $user->mot_passe = $mot_passe;
-        $user->role = $role;
-        $user->email = $email;
-        $user->photo = $photo;
-
-
-        $user->created_at = Carbon::now();
-
-        $user->save();
-
-        return $user;
-    }
+    protected $hidden = [
+        'mot_passe',
+        'password',
+        'remember_token',
+    ];
 
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  User
-     */
-
-    public static function rechercheUserById($id)
-    {
-
-        return $user = User::findOrFail($id);
-    }
-
-    /**
-     * Update d'une User scolaire
-
-     * @param  string $nom
-     * @param  date $prenom
-     * @param  date $login
-     * @param  int $role
-     * @param string $email
-     * @param string $photo
-
-
-     * @param int $id
-     * @return  User
-     */
-
-    public static function updateUser(
-        $nom,
-        $prenom,
-        $login,
-        $role,
-        $email,
-        $photo,
-
-
-        $id
-    ) {
-
-
-        return $user = User::findOrFail($id)->update([
-
-
-
-            'nom' => $nom,
-            'prenom' => $prenom,
-            'login' => $login,
-            'role' => $role,
-            'email' => $email,
-            'photo' => $photo,
-
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une User
+     * Les attributs qui doivent être castés.
      *
-     * @param int $id
-     * @return  boolean
+     * @var array<string, string>
      */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'etat' => 'integer',
+        'role' => 'integer',
+        'deleted_at' => 'datetime',
+    ];
 
-    public static function deleteUser($id)
+    // ─────────────────────────────────────────────────────────────
+    // Accesseurs & Mutateurs
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Récupère le mot de passe pour l'authentification (priorité à password).
+     */
+    public function getAuthPassword()
     {
-
-        $user = User::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($user) {
-            return 1;
-        }
-        return 0;
+        return $this->password ?? $this->mot_passe;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Relations (optionnelles, à ajouter selon vos besoins)
+    // ─────────────────────────────────────────────────────────────
 
+    // Exemple : un utilisateur peut créer des paiements
+    // public function paiements()
+    // {
+    //     return $this->hasMany(Paiement::class, 'utilisateur_id');
+    // }
 
-    /**
-     * Retourne la liste des années
-     * @param  int $role
-
-
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-        $role = null
-
-
-
-    ) {
-
-        $query = User::where('etat', '!=', TypeStatus::SUPPRIME)
-        ;
-
-
-
-
-        if ($role != null) {
-
-            $query->where('role', '=', $role);
-        }
-
-
-
-        return $query->get();
-    }
-
-
+    // ─────────────────────────────────────────────────────────────
+    // Méthodes utilitaires
+    // ─────────────────────────────────────────────────────────────
 
     /**
-     * Retourne le nombre  des  années
-
-
-     * @param  int $role
-
-
-     * @return  int $total
+     * Vérifie si l'utilisateur est actif.
      */
-
-    public static function getTotal(
-
-        $role = null
-    ) {
-
-        $query = DB::table('Users')
-
-
-            ->where('Users.etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($role != null) {
-
-            $query->where('role', '=', $role);
-        }
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return $total;
-        }
-
-        return 0;
-    }
-
-
-
-
-
-
-    /**
-     * Verifier si l'User   existe deja
-     *
-
-
-     * @param  string $login
-     * @param  string $mot_passe
-
-     * @return  boolean
-     */
-
-    public static function isExiste($login, $mot_passe)
+    public function isActive(): bool
     {
-        $users = User::getTotal();
-
-        if (!$users) {
-
-            User::genererUser();
-        }
-
-
-        $user = User::where('etat', '!=', TypeStatus::SUPPRIME)
-
-
-            ->where('login', '=', $login)
-
-            ->where('mot_passe', '=', $mot_passe)
-
-
-            ->first();
-
-
-        if ($user) {
-
-
-
-            return 1;
-        }
-
-        return 0;
+        return $this->etat == 1;
     }
 
-
     /**
-     * Verification de l' authenttification '
-
-
-     * @param  string $login
-     * @param  string $mot_passe
-
-
-
-     * @return  array
+     * Vérifie si l'utilisateur a un rôle spécifique.
      */
-
-    public static function isAuthenticate($login, $mot_passe)
+    public function hasRole(int $role): bool
     {
-
-        $data = array();
-
-        $isValid = false;
-
-
-
-        $erreurMessage = '';
-
-
-        // Verification de la validité des données
-
-        if (!User::isExiste($login, $mot_passe)) {
-            $erreurMessage = "Le login ou le mot de passe est incorrect";
-
-        } else {
-
-            $erreurMessage = '';
-
-            $isValid = true;
-        }
-
-        return $data = [
-
-
-            'isValid' => $isValid,
-
-            'erreurMessage' => $erreurMessage,
-
-
-        ];
+        return $this->role == $role;
     }
 
-
-
     /**
-     * Verification de l' authenttification '
-
-
-     * @param  string $login
-
-
-
-     * @return  User
+     * Raccourci pour définir le nom complet.
      */
-    public static function login_User($login)
+    public function getFullNameAttribute(): string
     {
-
-        $user = User::where('login', '=', $login)
-            ->orWhere('email', '=', $login)
-            ->first();
-
-        return $user;
+        return trim($this->prenom . ' ' . $this->nom);
     }
 
-
-
-
     /**
-     * Génerer l' administrateur
-     *
-
-     * @return  User $user
+     * Raccourci pour l'affichage du rôle.
      */
-
-    public static function genererUser()
+    public function getRoleLabelAttribute(): string
     {
-
-        $nom = 'Adanlete';
-        $prenom = 'Manivelle';
-        $login = 'admin';
-        $mot_passe = "admin";
-
-
-        $annee = User::addUser(
-
-            $nom,
-            $prenom,
-            $login,
-            $mot_passe,
-            Role::ADMIN,
-            'admin@gmail.com',
-            null
-
-        );
-
-
-
-        return $annee;
+        return match ($this->role) {
+            1 => 'Admin',
+            2 => 'Comptable',
+            3 => 'Directeur',
+            4 => 'Caissier',
+            5 => 'Parent',
+            default => 'Inconnu',
+        };
     }
 }

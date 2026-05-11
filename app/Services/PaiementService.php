@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\Paiement;
-use App\Models\DetailPaiement;
+use App\Models\Detail;
 use App\Models\Inscription;
 use App\Models\Activite;
 use App\Models\Produit;
+use App\Models\AbonnementBus;
+use App\Models\InscriptionCantine;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class PaiementService
@@ -20,16 +21,13 @@ class PaiementService
         $this->user = auth()->user();
     }
 
-    /**
-     * Récupère l'année en session
-     */
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
     }
 
     /**
-     * Liste des paiements selon le rôle
+     * Liste des paiements avec filtres
      */
     public function listPaiements(array $filters = []): array
     {
@@ -42,13 +40,11 @@ class PaiementService
             ->where('annee_id', $anneeId)
             ->where('etat', 1);
 
-        // Filtre par rôle
         if (!in_array($this->user->role, ['admin', 'directeur'])) {
             $query->where('utilisateur_id', $this->user->id);
         }
 
-        // Filtres
-        if (!empty($filters['statut_paiement'])) {
+        if (isset($filters['statut_paiement']) && $filters['statut_paiement'] !== '') {
             $query->where('statut_paiement', $filters['statut_paiement']);
         }
         if (!empty($filters['mode_paiement'])) {
@@ -59,28 +55,27 @@ class PaiementService
         }
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
-            $query->whereHas('inscription.eleve', function ($q) use ($search) {
-                $q->where('nom', 'like', $search)->orWhere('prenom', 'like', $search);
-            })->orWhere('reference', 'like', $search);
+            $query->where(function ($q) use ($search) {
+                $q->where('reference', 'like', $search)
+                    ->orWhereHas('inscription.eleve', fn($sq) => $sq->where('nom', 'like', $search)->orWhere('prenom', 'like', $search));
+            });
         }
 
         $perPage = $filters['per_page'] ?? 15;
         $paiements = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        $data = $paiements->map(function ($paiement) {
-            return [
-                'id'            => $paiement->id,
-                'reference'     => $paiement->reference,
-                'date_paiement' => $paiement->date_paiement,
-                'montant'       => $paiement->montant,
-                'statut'        => $paiement->statut_paiement,
-                'statut_label'  => $this->getStatutLabel($paiement->statut_paiement),
-                'mode_paiement' => $paiement->mode_paiement,
-                'eleve_nom'     => $paiement->inscription?->eleve?->nom . ' ' . $paiement->inscription?->eleve?->prenom,
-                'utilisateur_nom' => $paiement->utilisateur?->name,
-                'payeur'        => $paiement->payeur,
-            ];
-        });
+        $data = $paiements->map(fn($p) => [
+            'id'            => $p->id,
+            'reference'     => $p->reference,
+            'date_paiement' => $p->date_paiement,
+            'montant'       => $p->montant,
+            'statut'        => $p->statut_paiement,
+            'statut_label'  => $this->getStatutLabel($p->statut_paiement),
+            'mode_paiement' => $p->mode_paiement,
+            'eleve_nom'     => $p->inscription?->eleve?->nom . ' ' . $p->inscription?->eleve?->prenom,
+            'utilisateur_nom'=> $p->utilisateur?->name,
+            'payeur'        => $p->payeur,
+        ]);
 
         return [
             'data'       => $data,
@@ -93,18 +88,12 @@ class PaiementService
         ];
     }
 
-    /**
-     * Liste des paiements en attente (non encaissés)
-     */
     public function listPaiementsEnAttente(array $filters = []): array
     {
-        $filters['statut_paiement'] = 0; // ou null selon votre convention
+        $filters['statut_paiement'] = 0;
         return $this->listPaiements($filters);
     }
 
-    /**
-     * Créer un paiement avec ses détails
-     */
     public function store(array $data, int $userId): Paiement
     {
         $anneeId = $this->getCurrentAnneeId();
@@ -113,15 +102,12 @@ class PaiementService
         }
 
         $inscription = Inscription::with('eleve')->findOrFail($data['inscription_id']);
-
-        // Vérifier que l'inscription est pour l'année courante
         if ($inscription->annee_id != $anneeId) {
             throw new \Exception('Cette inscription ne correspond pas à l\'année en cours.');
         }
 
         DB::beginTransaction();
         try {
-            // Vérifier les plafonds pour chaque détail
             $totalDetails = 0;
             foreach ($data['details'] as $detail) {
                 $totalDetails += $detail['montant'];
@@ -134,16 +120,14 @@ class PaiementService
                 ]);
             }
 
-            // Générer référence unique
             $reference = $this->genererReference();
 
-            // Créer paiement
             $paiement = Paiement::create([
                 'reference'        => $reference,
                 'payeur'           => $data['payeur'] ?? null,
                 'telephone_payeur' => $data['telephone_payeur'] ?? null,
                 'date_paiement'    => $data['date_paiement'],
-                'statut_paiement'  => 0, // en attente
+                'statut_paiement'  => 0,
                 'mode_paiement'    => $data['mode_paiement'],
                 'inscription_id'   => $inscription->id,
                 'utilisateur_id'   => $userId,
@@ -152,19 +136,22 @@ class PaiementService
                 'etat'             => 1,
             ]);
 
-            // Créer les détails
             foreach ($data['details'] as $detail) {
-                DetailPaiement::create([
+                Detail::create([
                     'montant'          => $detail['montant'],
                     'libelle'          => $detail['libelle'],
                     'paiement_id'      => $paiement->id,
                     'type_paiement'    => $detail['type_paiement'],
                     'inscription_id'   => $inscription->id,
                     'frais_ecole_id'   => $detail['frais_ecole_id'] ?? null,
+                    'produit_id'       => $detail['produit_id'] ?? null,
+                    'service_id'       => $detail['service_id'] ?? null,
+                    'activite_id'      => $detail['activite_id'] ?? null,
+                    'abonnement_bus_id'=> $detail['abonnement_bus_id'] ?? null,
+                    'inscription_cantine_id'=> $detail['inscription_cantine_id'] ?? null,
                     'statut_paiement'  => 0,
                     'annee_id'         => $anneeId,
                     'date_paiement'    => $data['date_paiement'],
-                    'date_encaissement'=> null,
                     'etat'             => 1,
                 ]);
             }
@@ -177,15 +164,9 @@ class PaiementService
         }
     }
 
-    /**
-     * Valider/encaisser un paiement
-     */
     public function validerPaiement(int $paiementId, int $userId): Paiement
     {
-        $paiement = Paiement::where('id', $paiementId)
-            ->where('etat', 1)
-            ->firstOrFail();
-
+        $paiement = Paiement::where('id', $paiementId)->where('etat', 1)->firstOrFail();
         if ($paiement->statut_paiement == 1) {
             throw new \Exception('Ce paiement est déjà encaissé.');
         }
@@ -195,13 +176,11 @@ class PaiementService
             $paiement->statut_paiement = 1;
             $paiement->save();
 
-            // Mettre à jour les détails
-            DetailPaiement::where('paiement_id', $paiementId)
-                ->update([
-                    'statut_paiement' => 1,
-                    'date_encaissement' => now(),
-                    'caissier_id' => $userId,
-                ]);
+            Detail::where('paiement_id', $paiementId)->update([
+                'statut_paiement' => 1,
+                'date_encaissement' => now(),
+                'caissier_id' => $userId,
+            ]);
 
             DB::commit();
             return $paiement;
@@ -211,42 +190,41 @@ class PaiementService
         }
     }
 
-    /**
-     * Annuler un paiement (soft delete)
-     */
     public function annulerPaiement(int $paiementId, string $motif): Paiement
     {
         $paiement = Paiement::findOrFail($paiementId);
+        if ($paiement->statut_paiement == 1) {
+            // On peut autoriser l'annulation d'un paiement encaissé ? Optionnel
+            // Ici on laisse, il faudrait peut-être restituer le stock etc.
+        }
         $paiement->statut_paiement = 2;
         $paiement->motif_suppression = $motif;
         $paiement->save();
 
-        // Détails aussi annulés
-        DetailPaiement::where('paiement_id', $paiementId)
-            ->update(['statut_paiement' => 2]);
+        Detail::where('paiement_id', $paiementId)->update(['statut_paiement' => 2]);
 
         return $paiement;
     }
 
     /**
-     * Obtenir les totaux par type de paiement pour une inscription donnée (année courante)
+     * Totaux par type pour une inscription (intégrant les remises)
      */
     public function getTotauxParInscription(int $inscriptionId): array
     {
         $anneeId = $this->getCurrentAnneeId();
-        $inscription = Inscription::with('eleve')->findOrFail($inscriptionId);
+        $inscription = Inscription::findOrFail($inscriptionId);
 
-        // Montants prévus depuis l'inscription
+        // Montants prévus après remise (si applicable)
         $prevus = [
-            'scolarite'   => $inscription->frais_scolarite ?? 0,
-            'cantine'     => $inscription->frais_cantine ?? 0,
-            'bus'         => $inscription->frais_bus ?? 0,
-            'inscription' => $inscription->frais_inscription ?? 0,
-            'examen'      => $inscription->frais_examen ?? 0,
+            'inscription' => $inscription->montant_inscription_reel,
+            'scolarite'   => $inscription->montant_scolarite_reel,
+            'assurance'   => $inscription->montant_assurance_reel,
+            'examen'      => $inscription->montant_examen_reel,
+            'cantine'     => $this->getPrevuCantine($inscription, $anneeId),
+            'bus'         => $this->getPrevuBus($inscription, $anneeId),
         ];
 
-        // Paiements déjà effectués (encaissés)
-        $paye = DetailPaiement::where('inscription_id', $inscriptionId)
+        $payeParType = Detail::where('inscription_id', $inscriptionId)
             ->where('annee_id', $anneeId)
             ->where('statut_paiement', 1)
             ->selectRaw('type_paiement, SUM(montant) as total')
@@ -254,50 +232,32 @@ class PaiementService
             ->get()
             ->keyBy('type_paiement');
 
-        // Mappage type_paiement => libellé
-        $types = [
-            1 => 'scolarite',
-            2 => 'cantine',
-            3 => 'bus',
-            4 => 'inscription',
-            5 => 'examen',
+        // Mapping type_paiement => nom
+        $mapping = [
+            1 => 'inscription',
+            2 => 'scolarite',
+            10 => 'assurance',
+            12 => 'examen',
+            8 => 'cantine',   // type 8 = cantine
+            7 => 'bus',       // type 7 = bus
             6 => 'activite',
-            7 => 'produit',
-            8 => 'autre',
+            4 => 'produit',
+            3 => 'service',
+            9 => 'autre',
         ];
 
         $result = [];
-        foreach ($types as $code => $nom) {
+        foreach ($mapping as $code => $nom) {
             $prev = $prevus[$nom] ?? 0;
-            $pay = $paye[$code]->total ?? 0;
-            $reste = $prev - $pay;
+            $pay = $payeParType[$code]->total ?? 0;
+            $reste = max($prev - $pay, 0);
             $result[$nom] = [
                 'type_code' => $code,
-                'prevu'     => $prev,
-                'paye'      => $pay,
-                'reste'     => max($reste, 0),
+                'prevu'     => round($prev, 2),
+                'paye'      => round($pay, 2),
+                'reste'     => round($reste, 2),
             ];
         }
-
-        // Ajout des activités et produits (pas de prévu fixe, on calcule à la demande)
-        // Pour les activités, on peut récupérer les montants par niveau
-        $activitesPayees = DetailPaiement::where('inscription_id', $inscriptionId)
-            ->where('annee_id', $anneeId)
-            ->where('type_paiement', 6)
-            ->whereNotNull('frais_ecole_id') // ou activite_id
-            ->sum('montant');
-
-        $result['activite']['paye'] = $activitesPayees;
-        $result['activite']['prevu'] = 0; // à déterminer par niveau
-        $result['activite']['reste'] = 0;
-
-        $produitsPayes = DetailPaiement::where('inscription_id', $inscriptionId)
-            ->where('annee_id', $anneeId)
-            ->where('type_paiement', 7)
-            ->sum('montant');
-        $result['produit']['paye'] = $produitsPayes;
-        $result['produit']['prevu'] = 0;
-        $result['produit']['reste'] = 0;
 
         return $result;
     }
@@ -310,66 +270,95 @@ class PaiementService
     {
         $type = $detail['type_paiement'];
         $montant = $detail['montant'];
+
         $dejaPaye = $this->getDejaPayePourType($inscription->id, $type, $anneeId);
 
+        // Déterminer le montant dû (plafond) selon le type
+        $totalDu = null;
         switch ($type) {
-            case 1: // scolarité
-            case 2: // cantine
-            case 3: // bus
-            case 4: // inscription
-            case 5: // examen
-                $prevu = $this->getPrevuInscription($inscription, $type);
-                if ($dejaPaye + $montant > $prevu) {
-                    throw ValidationException::withMessages([
-                        'details' => "Le montant dépasse le solde dû pour ce type de frais. Restant : " . ($prevu - $dejaPaye)
-                    ]);
-                }
+            case 1: // Frais inscription
+                $totalDu = $inscription->montant_inscription_reel;
                 break;
-            case 6: // activité
+            case 2: // Scolarité
+                $totalDu = $inscription->montant_scolarite_reel;
+                break;
+            case 10: // Assurance
+                $totalDu = $inscription->montant_assurance_reel;
+                break;
+            case 12: // Examen
+                $totalDu = $inscription->montant_examen_reel;
+                break;
+            case 7: // Bus
+                $abonnement = AbonnementBus::findOrFail($detail['abonnement_bus_id']);
+                $remise = $inscription->taux_remise ?? 0;
+                $totalDu = round($abonnement->montant_total_du * (1 - $remise / 100), 2);
+                break;
+            case 8: // Cantine
+                $cantine = InscriptionCantine::findOrFail($detail['inscription_cantine_id']);
+                $remise = $inscription->taux_remise ?? 0;
+                $totalDu = round($cantine->montant_total_du * (1 - $remise / 100), 2);
+                break;
+            case 6: // Activité
                 $activiteId = $detail['activite_id'] ?? null;
-                if (!$activiteId) {
-                    throw new \Exception('Activité non spécifiée');
-                }
-                $activite = Activite::where('id', $activiteId)
-                    ->where('annee_id', $anneeId)
-                    ->where('niveau_id', $inscription->niveau_id)
-                    ->first();
-                if (!$activite) {
-                    throw new \Exception('Activité non trouvée pour ce niveau');
-                }
-                if ($dejaPaye + $montant > $activite->montant) {
-                    throw ValidationException::withMessages([
-                        'details' => "Montant activité dépasse le tarif fixé ({$activite->montant})"
-                    ]);
-                }
+                if (!$activiteId) throw new \Exception('Activité non spécifiée');
+                $activite = Activite::find($activiteId);
+                if (!$activite) throw new \Exception('Activité introuvable');
+                $totalDu = $activite->montant;
                 break;
-            case 7: // produit - pas de plafond (libre)
-                // pas de vérification
+            case 4: // Produit
+                // Pas de plafond global, mais vérification de stock à faire séparément
+                if (isset($detail['produit_id']) && isset($detail['quantite'])) {
+                    $produit = Produit::find($detail['produit_id']);
+                    if ($produit && $produit->quantite_stock < $detail['quantite']) {
+                        throw new \Exception("Stock insuffisant pour le produit {$produit->libelle}");
+                    }
+                }
+                $totalDu = null; // pas de plafond monétaire
                 break;
-            case 8: // autre
-                // pas de vérification
+            case 3: // Service
+            case 5: // Location livre (à définir)
+            case 9: // Autre
+                // Pas de plafond
+                $totalDu = null;
                 break;
+            default:
+                $totalDu = null;
+        }
+
+        if ($totalDu !== null && ($dejaPaye + $montant) > ($totalDu + 0.01)) {
+            $reste = max($totalDu - $dejaPaye, 0);
+            throw ValidationException::withMessages([
+                'details' => "Montant dépasse le solde dû pour ce type. Reste autorisé : {$reste}"
+            ]);
         }
     }
 
-    private function getPrevuInscription(Inscription $inscription, int $type): float
+    private function getPrevuCantine(Inscription $inscription, int $anneeId): float
     {
-        return match ($type) {
-            1 => $inscription->frais_scolarite ?? 0,
-            2 => $inscription->frais_cantine ?? 0,
-            3 => $inscription->frais_bus ?? 0,
-            4 => $inscription->frais_inscription ?? 0,
-            5 => $inscription->frais_examen ?? 0,
-            default => 0,
-        };
+        $cantine = InscriptionCantine::where('inscription_id', $inscription->id)
+            ->where('annee_id', $anneeId)
+            ->first();
+        if (!$cantine) return 0;
+        $remise = $inscription->taux_remise ?? 0;
+        return round($cantine->montant_total_du * (1 - $remise / 100), 2);
+    }
+
+    private function getPrevuBus(Inscription $inscription, int $anneeId): float
+    {
+        $bus = AbonnementBus::where('inscription_id', $inscription->id)
+            ->where('annee_id', $anneeId)
+            ->first();
+        if (!$bus) return 0;
+        $remise = $inscription->taux_remise ?? 0;
+        return round($bus->montant_total_du * (1 - $remise / 100), 2);
     }
 
     private function getDejaPayePourType(int $inscriptionId, int $type, int $anneeId): float
     {
-        return DetailPaiement::where('inscription_id', $inscriptionId)
+        return Detail::where('inscription_id', $inscriptionId)
             ->where('annee_id', $anneeId)
             ->where('type_paiement', $type)
-            ->where('statut_paiement', 1) // seulement encaissés
+            ->where('statut_paiement', 1)
             ->sum('montant');
     }
 

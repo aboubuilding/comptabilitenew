@@ -2,273 +2,73 @@
 
 namespace App\Models;
 
-use App\Types\TypeStatus;
-use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Niveau extends Model
 {
     use HasFactory;
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->etat = TypeStatus::ACTIF;
-    }
+    /**
+     * Le nom de la table associée.
+     *
+     * @var string
+     */
+    protected $table = 'niveaux';
 
     /**
-     * The attributes that are mass assignable.
+     * Les attributs qui sont mass assignable.
      *
-     * @var string[]
+     * @var array<int, string>
      */
     protected $fillable = [
-
-
         'libelle',
-        'cycle_id',
         'description',
         'numero_ordre',
-
-
-
+        'cycle_id',
         'etat',
-
     ];
 
-
-
     /**
-     * Ajouter une Niveau
+     * Les attributs qui doivent être castés.
      *
-
-     * @param  string $libelle
-     * @param  int $cycle_id
-     * @param  int $description
-     * @param  int $numero_ordre
-
-
-
-     * @return Niveau
+     * @var array<string, string>
      */
+    protected $casts = [
+        'numero_ordre' => 'integer',
+        'cycle_id' => 'integer',
+        'etat' => 'integer',
+    ];
 
-    public static function addNiveau(
-        $libelle,
-        $cycle_id,
-        $description,
-        $numero_ordre
-
-
-    ) {
-        $niveau = new Niveau();
-
-
-        $niveau->libelle = $libelle;
-        $niveau->cycle_id = $cycle_id;
-        $niveau->description = $description;
-        $niveau->numero_ordre = $numero_ordre;
-
-
-        $niveau->created_at = Carbon::now();
-
-        $niveau->save();
-
-        return $niveau;
-    }
+    // ─────────────────────────────────────────────────────────────
+    // Relations
+    // ─────────────────────────────────────────────────────────────
 
     /**
-     * Affichage d'une année scolaire
-     * @param int $id
-     * @return  Niveau
-     */
-
-    public static function rechercheNiveauById($id)
-    {
-
-        return   $niveau = Niveau::findOrFail($id);
-    }
-
-    /**
-     * Update d'une Niveau scolaire
-
-     * @param  string $libelle
-     * @param  int $cycle_id
-     * @param  int $description
-     * @param  int $numero_ordre
-
-
-
-
-     * @param int $id
-     * @return  Niveau
-     */
-
-    public static function updateNiveau(
-        $libelle,
-        $cycle_id,
-        $description,
-        $numero_ordre,
-
-        $id
-    ) {
-
-
-        return   $niveau = Niveau::findOrFail($id)->update([
-
-
-
-            'libelle' => $libelle,
-            'cycle_id' => $cycle_id,
-            'description' => $description,
-            'numero_ordre' => $numero_ordre,
-
-            'id' => $id,
-
-
-        ]);
-    }
-
-
-
-
-    /**
-     * Supprimer une Niveau
-     *
-     * @param int $id
-     * @return  boolean
-     */
-
-    public static function deleteNiveau($id)
-    {
-
-        $niveau = Niveau::findOrFail($id)->update([
-            'etat' => TypeStatus::SUPPRIME
-
-        ]);
-
-        if ($niveau) {
-            return 1;
-        }
-        return 0;
-    }
-
-
-
-    /**
-     * Retourne la liste des niveaux
-     * @param  int $numero_ordre
-     * @param  int $cycle_id
-
-     *
-     * @return  array
-     */
-
-    public static function getListe(
-
-
-        $cycle_id = null,
-        $numero_ordre = null
-
-    ) {
-
-        $numero_ordre_sup  = (int)$numero_ordre + 2;
-
-        $query =  Niveau::where('etat', '!=', TypeStatus::SUPPRIME);
-
-
-
-        if ($cycle_id != null) {
-
-            $query->where('cycle_id', '=', $cycle_id);
-        }
-
-        if ($numero_ordre != null) {
-
-            $query->where('numero_ordre', '>=', $numero_ordre);
-        }
-
-
-
-        return    $query->get();
-    }
-
-
-
-    /**
-     * Retourne le nombre  des  années
-
-
-     * @param  int $cycle_id
-     * @param  int $numero_ordre
-
-
-     * @return  int $total
-     */
-
-    public static function getTotal(
-        $cycle_id = null,
-        $numero_ordre = null
-
-
-
-
-
-    ) {
-
-        $query =   DB::table('niveaux')
-
-
-            ->where('niveaux.etat', '!=', TypeStatus::SUPPRIME);
-
-
-        if ($cycle_id != null) {
-
-            $query->where('niveaux.cycle_id', '=', $cycle_id);
-        }
-
-
-        if ($numero_ordre != null) {
-
-            $query->where('niveaux.numero_ordre', '=', $numero_ordre);
-        }
-
-
-
-
-        $total = $query->count();
-
-        if ($total) {
-
-            return   $total;
-        }
-
-        return 0;
-    }
-
-
-
-
-
-
-    /**
-     * Obtenir une cycle
-     *
+     * Un niveau appartient à un cycle.
      */
     public function cycle()
     {
-
-
-        return $this->belongsTo(Cycle::class, 'cycle_id');
+        return $this->belongsTo(Cycle::class);
     }
 
-
-    function frais_ecole($annee_scolaire_id, $niveau_id)
+    /**
+     * Un niveau peut avoir plusieurs classes.
+     */
+    public function classes()
     {
-        $query = FraisEcole::query()
-            ->where('niveau_id', $niveau_id ?? $this->id)
-            ->where('annee_id', $annee_scolaire_id);
-        return $query->get()->first();
+        return $this->hasMany(Classe::class);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Méthodes utilitaires
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Vérifie si le niveau est actif.
+     */
+    public function isActive(): bool
+    {
+        return $this->etat == 1;
     }
 }
