@@ -2,34 +2,49 @@
 
 namespace App\Services;
 
-use App\Models\Banque;
-use App\Models\Cheque;
-use App\Models\Paiement;
-use Illuminate\Support\Collection;
+use App\Repositories\Eloquent\BanqueRepository;
+use App\Repositories\Eloquent\ChequeRepository;
+use App\Repositories\Eloquent\PaiementRepository;
 use Illuminate\Support\Facades\DB;
 
-class BanqueService
+class BanqueService extends BaseService
 {
+    protected string $entityName = 'Banque';
+    protected BanqueRepository $banqueRepo;
+    protected ChequeRepository $chequeRepo;
+    protected PaiementRepository $paiementRepo;
+
+    public function __construct(
+        BanqueRepository $banqueRepo,
+        ChequeRepository $chequeRepo,
+        PaiementRepository $paiementRepo
+    ) {
+        parent::__construct($banqueRepo);
+        $this->banqueRepo = $banqueRepo;
+        $this->chequeRepo = $chequeRepo;
+        $this->paiementRepo = $paiementRepo;
+    }
+
     /**
      * Récupère toutes les banques avec leurs statistiques (montants, nombres)
      */
-    public function getAllWithStats(): Collection
+    public function getAllWithStats(): array
     {
-        return Banque::where('etat', 1)
+        $banques = $this->banqueRepo->activeQuery()
             ->withCount([
-                'cheques as cheques_recus'   // nombre total de chèques pour cette banque
+                'cheques as cheques_recus'
             ])
             ->withSum([
                 'cheques as montant_total_cheques' => function ($query) {
                     $query->join('paiements', 'cheques.id', '=', 'paiements.cheque_id')
-                          ->where('paiements.etat', 1);
+                        ->where('paiements.etat', 1);
                 }
             ], 'paiements.montant')
             ->withSum([
                 'cheques as montant_cheques_valides' => function ($query) {
                     $query->join('paiements', 'cheques.id', '=', 'paiements.cheque_id')
-                          ->where('cheques.statut', 1)      // 1 = validé/encaissé
-                          ->where('paiements.etat', 1);
+                        ->where('cheques.statut', 1)
+                        ->where('paiements.etat', 1);
                 }
             ], 'paiements.montant')
             ->withCount([
@@ -49,52 +64,36 @@ class BanqueService
                     'etat'                   => $banque->etat,
                 ];
             });
+
+        return $this->formatResponse(true, 'Liste des banques avec statistiques', $banques);
     }
 
     /**
      * Récupère toutes les banques pour les selects (dropdown)
+     * Surcharge la méthode parent pour le format.
      */
-    public function getForSelect(): Collection
+    public function getForSelect(array $filters = [], string $labelField = 'nom', string $valueField = 'id'): array
     {
-        return Banque::where('etat', 1)
-            ->select('id', 'nom')
-            ->orderBy('nom')
-            ->get();
+        $items = $this->banqueRepo->activeQuery()
+            ->select($valueField, $labelField)
+            ->orderBy($labelField)
+            ->get()
+            ->map(fn($item) => ['value' => $item->$valueField, 'label' => $item->$labelField]);
+
+        return $this->formatResponse(true, '', $items);
     }
 
     /**
-     * Récupère une banque par son ID
+     * Trouve une banque par son ID (retour formaté)
      */
-    public function find(int $id): Banque
+    public function find(int $id): array
     {
-        return Banque::findOrFail($id);
-    }
-
-    /**
-     * Crée une nouvelle banque
-     */
-    public function store(array $data): Banque
-    {
-        return Banque::create($data);
-    }
-
-    /**
-     * Met à jour une banque
-     */
-    public function update(int $id, array $data): Banque
-    {
-        $banque = $this->find($id);
-        $banque->update($data);
-        return $banque;
-    }
-
-    /**
-     * Supprime (soft delete) une banque
-     */
-    public function delete(int $id): bool
-    {
-        $banque = $this->find($id);
-        return $banque->delete();
+        try {
+            $banque = $this->banqueRepo->findOrFail($id);
+            return $this->formatResponse(true, '', $banque);
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, 'Banque introuvable');
+        }
     }
 
     /**
@@ -102,6 +101,8 @@ class BanqueService
      */
     public function hasRelatedCheques(int $id): bool
     {
-        return Cheque::where('banque_id', $id)->exists();
+        return $this->chequeRepo->activeQuery()
+            ->where('banque_id', $id)
+            ->exists();
     }
 }

@@ -1,22 +1,41 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\Inscription;
-use App\Models\DetailPaiement;
-use App\Models\Vente;
-use App\Models\Depense;
-use App\Models\AbonnementBus;
-use App\Models\InscriptionCantine;
+use App\Repositories\Eloquent\InscriptionRepository;
+use App\Repositories\Eloquent\DetailRepository;
+use App\Repositories\Eloquent\VenteRepository;
+use App\Repositories\Eloquent\DepenseRepository;
+use App\Repositories\Eloquent\AbonnementBusRepository;
+use App\Repositories\Eloquent\InscriptionCantineRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 class DashboardKpiService
 {
-    protected $anneeId;
+    protected ?int $anneeId;
+    protected InscriptionRepository $inscriptionRepo;
+    protected DetailRepository $detailRepo;
+    protected VenteRepository $venteRepo;
+    protected DepenseRepository $depenseRepo;
+    protected AbonnementBusRepository $busRepo;
+    protected InscriptionCantineRepository $cantineRepo;
 
-    public function __construct()
-    {
+    public function __construct(
+        InscriptionRepository $inscriptionRepo,
+        DetailRepository $detailRepo,
+        VenteRepository $venteRepo,
+        DepenseRepository $depenseRepo,
+        AbonnementBusRepository $busRepo,
+        InscriptionCantineRepository $cantineRepo
+    ) {
+        $this->inscriptionRepo = $inscriptionRepo;
+        $this->detailRepo = $detailRepo;
+        $this->venteRepo = $venteRepo;
+        $this->depenseRepo = $depenseRepo;
+        $this->busRepo = $busRepo;
+        $this->cantineRepo = $cantineRepo;
         $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
     }
 
@@ -46,21 +65,22 @@ class DashboardKpiService
      */
     private function getInscriptionsKpi(): array
     {
-        $query = Inscription::where('annee_id', $this->anneeId)->where('etat', 1);
-
+        $query = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId);
         $total = $query->count();
+
         $garcons = (clone $query)->whereHas('eleve', fn($q) => $q->where('sexe', 1))->count();
         $filles = (clone $query)->whereHas('eleve', fn($q) => $q->where('sexe', 0))->count();
 
-        // Évolution mensuelle (les 12 derniers mois)
-        $evolution = Inscription::where('annee_id', $this->anneeId)
+        $evolution = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as mois'), DB::raw('count(*) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->get();
 
-        // Répartition par niveau
-        $parNiveau = Inscription::with('niveau')
+        $parNiveau = $this->inscriptionRepo->activeQuery()
+            ->with('niveau')
             ->where('annee_id', $this->anneeId)
             ->select('niveau_id', DB::raw('count(*) as total'))
             ->groupBy('niveau_id')
@@ -81,26 +101,24 @@ class DashboardKpiService
      */
     private function getFinanciersKpi(): array
     {
-        // Montant total prévu (frais_scolarite + frais_inscription + etc.)
-        $totalPrevu = Inscription::where('annee_id', $this->anneeId)
+        $totalPrevu = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->sum(DB::raw('COALESCE(frais_scolarite,0) + COALESCE(frais_inscription,0) + COALESCE(frais_assurance,0)'));
 
-        // Montant total encaissé (type_paiement=1 scolarité, statut_paiement=1 encaissé)
-        $totalEncaissé = DetailPaiement::where('annee_id', $this->anneeId)
+        $totalEncaissé = $this->detailRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 1)
             ->where('statut_paiement', 1)
             ->sum('montant');
 
         $tauxRecouvrement = $totalPrevu > 0 ? round(($totalEncaissé / $totalPrevu) * 100, 2) : 0;
-
-        // Impayés (reste à payer)
-        $impayes = $totalPrevu - $totalEncaissé;
+        $impayes = max($totalPrevu - $totalEncaissé, 0);
 
         return [
             'total_prevu'        => $totalPrevu,
             'total_encaisse'     => $totalEncaissé,
             'taux_recouvrement'  => $tauxRecouvrement,
-            'impayes'            => max($impayes, 0),
+            'impayes'            => $impayes,
         ];
     }
 
@@ -109,8 +127,9 @@ class DashboardKpiService
      */
     private function getPaiementsKpi(): array
     {
-        // Répartition par mode de paiement
-        $parMode = DetailPaiement::join('paiements', 'details.paiement_id', '=', 'paiements.id')
+        // Répartition par mode de paiement (jointure avec paiements)
+        $parMode = $this->detailRepo->getModel()->newQuery()
+            ->join('paiements', 'details.paiement_id', '=', 'paiements.id')
             ->where('details.annee_id', $this->anneeId)
             ->where('details.statut_paiement', 1)
             ->select('paiements.mode_paiement', DB::raw('SUM(details.montant) as total'))
@@ -118,16 +137,16 @@ class DashboardKpiService
             ->get()
             ->map(fn($p) => ['mode' => $this->getModeLabel($p->mode_paiement), 'total' => $p->total]);
 
-        // Évolution mensuelle des encaissements
-        $evolution = DetailPaiement::where('annee_id', $this->anneeId)
+        $evolution = $this->detailRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut_paiement', 1)
             ->select(DB::raw('DATE_FORMAT(date_encaissement, "%Y-%m") as mois'), DB::raw('SUM(montant) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->get();
 
-        // Paiements en attente (non encaissés)
-        $enAttente = DetailPaiement::where('annee_id', $this->anneeId)
+        $enAttente = $this->detailRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut_paiement', 0)
             ->count();
 
@@ -143,9 +162,18 @@ class DashboardKpiService
      */
     private function getCantineKpi(): array
     {
-        $inscrits = InscriptionCantine::where('annee_id', $this->anneeId)->where('statut', 1)->count();
-        $totalDu = InscriptionCantine::where('annee_id', $this->anneeId)->where('statut', 1)->sum('montant_total_du');
-        $totalPaye = InscriptionCantine::where('annee_id', $this->anneeId)
+        $inscrits = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->where('statut', 1)
+            ->count();
+
+        $totalDu = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->where('statut', 1)
+            ->sum('montant_total_du');
+
+        $totalPaye = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->get()
             ->sum(fn($i) => $i->montant_paye);
@@ -165,9 +193,18 @@ class DashboardKpiService
      */
     private function getBusKpi(): array
     {
-        $inscrits = AbonnementBus::where('annee_id', $this->anneeId)->where('statut', 1)->count();
-        $totalDu = AbonnementBus::where('annee_id', $this->anneeId)->where('statut', 1)->sum('montant_total_du');
-        $totalPaye = AbonnementBus::where('annee_id', $this->anneeId)
+        $inscrits = $this->busRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->where('statut', 1)
+            ->count();
+
+        $totalDu = $this->busRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->where('statut', 1)
+            ->sum('montant_total_du');
+
+        $totalPaye = $this->busRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->get()
             ->sum(fn($b) => $b->montant_paye);
@@ -185,14 +222,19 @@ class DashboardKpiService
      */
     private function getVentesKpi(): array
     {
-        $totalCA = Vente::where('annee_id', $this->anneeId)->where('etat', 1)->sum('montant_total');
-        $evolution = Vente::where('annee_id', $this->anneeId)
+        $totalCA = $this->venteRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->sum('montant_total');
+
+        $evolution = $this->venteRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->select(DB::raw('DATE_FORMAT(date_vente, "%Y-%m") as mois'), DB::raw('SUM(montant_total) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->get();
 
-        $topProduits = Vente::with('produit')
+        $topProduits = $this->venteRepo->activeQuery()
+            ->with('produit')
             ->where('annee_id', $this->anneeId)
             ->select('produit_id', DB::raw('SUM(quantite) as quantite_totale'))
             ->groupBy('produit_id')
@@ -213,13 +255,18 @@ class DashboardKpiService
      */
     private function getDepensesKpi(): array
     {
-        $totalDepenses = Depense::where('annee_id', $this->anneeId)->where('etat', 1)->sum('montant');
-        $parMotif = Depense::where('annee_id', $this->anneeId)
+        $totalDepenses = $this->depenseRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->sum('montant');
+
+        $parMotif = $this->depenseRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->select('motif', DB::raw('SUM(montant) as total'))
             ->groupBy('motif')
             ->get();
 
-        $evolution = Depense::where('annee_id', $this->anneeId)
+        $evolution = $this->depenseRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->select(DB::raw('DATE_FORMAT(date_depense, "%Y-%m") as mois'), DB::raw('SUM(montant) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
@@ -237,11 +284,13 @@ class DashboardKpiService
      */
     private function getAbandonsKpi(): array
     {
-        $totalAbandons = Inscription::where('annee_id', $this->anneeId)
+        $totalAbandons = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut_abandon', 1)
             ->count();
 
-        $parNiveau = Inscription::where('annee_id', $this->anneeId)
+        $parNiveau = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut_abandon', 1)
             ->with('niveau')
             ->select('niveau_id', DB::raw('count(*) as total'))
@@ -249,9 +298,10 @@ class DashboardKpiService
             ->get()
             ->map(fn($i) => ['niveau' => $i->niveau?->libelle, 'total' => $i->total]);
 
-        $tauxAbandon = Inscription::where('annee_id', $this->anneeId)->count() > 0
-            ? round(($totalAbandons / Inscription::where('annee_id', $this->anneeId)->count()) * 100, 2)
-            : 0;
+        $totalInscrits = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
+            ->count();
+        $tauxAbandon = $totalInscrits > 0 ? round(($totalAbandons / $totalInscrits) * 100, 2) : 0;
 
         return [
             'total_abandons' => $totalAbandons,
@@ -272,8 +322,11 @@ class DashboardKpiService
 
         $result = [];
         foreach ($types as $label => $typeId) {
-            $totalPrevu = Inscription::where('annee_id', $this->anneeId)->sum('frais_examen');
-            $totalPaye = DetailPaiement::where('annee_id', $this->anneeId)
+            $totalPrevu = $this->inscriptionRepo->activeQuery()
+                ->where('annee_id', $this->anneeId)
+                ->sum('frais_examen');
+            $totalPaye = $this->detailRepo->activeQuery()
+                ->where('annee_id', $this->anneeId)
                 ->where('type_paiement', $typeId)
                 ->where('statut_paiement', 1)
                 ->sum('montant');

@@ -59,16 +59,24 @@ class PeriodeService extends BaseService
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Méthodes avec vérification de chevauchement
+    // Méthodes avec vérification de chevauchement (compatibles BaseService)
     // ─────────────────────────────────────────────────────────────
 
-    public function store(array $validatedData): object
+    /**
+     * Création avec vérification des dates
+     * @return array Retour formaté par BaseService::store()
+     */
+    public function store(array $validatedData): array
     {
         $this->checkDateOverlap($validatedData);
         return parent::store($validatedData);
     }
 
-    public function update(int $id, array $validatedData): object
+    /**
+     * Mise à jour avec vérification des dates
+     * @return array Retour formaté par BaseService::update()
+     */
+    public function update(int $id, array $validatedData): array
     {
         $this->checkDateOverlap($validatedData, $id);
         return parent::update($id, $validatedData);
@@ -85,14 +93,14 @@ class PeriodeService extends BaseService
                 $debut = $data['date_debut'];
                 $fin   = $data['date_fin'];
 
-                // Chevauchement : une période existante commence ou finit dans l'intervalle
+                // Chevauchement : une période existante commence ou finit dans l'intervalle,
                 // ou englobe l'intervalle
                 $q->whereBetween('date_debut', [$debut, $fin])
-                  ->orWhereBetween('date_fin', [$debut, $fin])
-                  ->orWhere(function ($sub) use ($debut, $fin) {
-                      $sub->where('date_debut', '<=', $debut)
-                          ->where('date_fin', '>=', $fin);
-                  });
+                    ->orWhereBetween('date_fin', [$debut, $fin])
+                    ->orWhere(function ($sub) use ($debut, $fin) {
+                        $sub->where('date_debut', '<=', $debut)
+                            ->where('date_fin', '>=', $fin);
+                    });
             });
 
         if ($excludeId) {

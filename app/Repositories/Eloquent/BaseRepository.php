@@ -39,7 +39,7 @@ abstract class BaseRepository
         return $this->model->query();
     }
 
-    protected function activeQuery(): Builder
+    public function activeQuery(): Builder
     {
         return $this->query()->where('etat', self::ACTIF);
     }
@@ -75,7 +75,7 @@ abstract class BaseRepository
     public function create(array $data): Model
     {
         $data['etat'] = $data['etat'] ?? self::ACTIF;
-        
+
         // 🔹 Injection intelligente de l'année scolaire
         if ($this->autoInjectAnneId) {
             $data = $this->injectSessionAnneId($data);
@@ -110,7 +110,7 @@ abstract class BaseRepository
         $model = $this->query()
             ->where('etat', self::SUPPRIME)
             ->findOrFail($id);
-            
+
         return $model->update(['etat' => self::ACTIF]);
     }
 

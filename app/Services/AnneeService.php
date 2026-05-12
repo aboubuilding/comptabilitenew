@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\Eloquent\AnneeRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class AnneeService extends BaseService
 {
@@ -22,30 +23,56 @@ class AnneeService extends BaseService
     }
 
     /**
-     * 🔹 Récupère l'année en cours
+     * 🔹 Récupère l'année en cours (active et statut_annee = 1 ou date courante dans intervalle)
      */
-    public function getAnneeEnCours(): ?object
+    public function getCurrentAnnee(): array
     {
-        return $this->repo->activeQuery()
-            ->where('date_rentree', '<=', now())
-            ->where('date_fin', '>=', now())
+        $now = Carbon::now();
+
+        // Priorité : celle avec statut_annee = 1 (explicite)
+        $current = $this->repo->activeQuery()
             ->where('statut_annee', 1)
-            ->first($this->defaultSelectFields);
+            ->first();
+
+        if (!$current) {
+            // Fallback : année dont la date de rentrée <= now <= date_fin
+            $current = $this->repo->activeQuery()
+                ->where('date_rentree', '<=', $now)
+                ->where('date_fin', '>=', $now)
+                ->first();
+        }
+
+        if (!$current) {
+            return $this->formatResponse(false, 'Aucune année scolaire active trouvée');
+        }
+
+        return $this->formatResponse(true, '', $current);
     }
 
     /**
-     * 🔹 Liste simple pour les selects
+     * 🔹 Liste simple pour les selects (id, libelle)
+     * Surcharge la méthode du BaseService pour retourner exactement ce format.
      */
-    public function getForSelect(): Collection
+    public function getForSelect(array $filters = [], string $labelField = 'libelle', string $valueField = 'id'): array
     {
-        return $this->repo->activeQuery()
-            ->select('id', 'libelle')
-            ->orderByDesc('date_rentree')
-            ->get();
+        $query = $this->repo->activeQuery()->select($valueField, $labelField);
+
+        if (!empty($filters['statut_annee'])) {
+            $query->where('statut_annee', $filters['statut_annee']);
+        }
+        if (!empty($filters['etat'])) {
+            $query->where('etat', $filters['etat']);
+        }
+
+        $items = $query->orderBy($labelField)->get()
+            ->map(fn($item) => ['value' => $item->$valueField, 'label' => $item->$labelField]);
+
+        return $this->formatResponse(true, '', $items);
     }
 
     /**
      * 📦 Récupère toutes les années formatées pour l'affichage (utilisé par le contrôleur index)
+     * C'est une surcharge de la méthode `all()` du parent, mais avec un formatage enrichi.
      */
     public function getAllFormatted(): Collection
     {
@@ -81,9 +108,26 @@ class AnneeService extends BaseService
      */
     public function hasRelatedData(int $id): bool
     {
-        // À adapter selon vos tables réelles
         return \DB::table('inscriptions')->where('annee_id', $id)->exists()
             || \DB::table('frais')->where('annee_id', $id)->exists();
+    }
+
+    /**
+     * Active une année (statut_annee = 1) et désactive toutes les autres
+     */
+    public function setAsCurrent(int $id): array
+    {
+        try {
+            // Désactiver toutes les autres années
+            $this->repo->activeQuery()->update(['statut_annee' => 0]);
+            // Activer celle-ci
+            $this->repo->update($id, ['statut_annee' => 1]);
+            return $this->formatResponse(true, 'Année définie comme année en cours');
+        } catch (ModelNotFoundException $e) {
+            return $this->formatResponse(false, 'Année introuvable');
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, 'Erreur lors de l’activation : ' . $e->getMessage());
+        }
     }
 
     /**

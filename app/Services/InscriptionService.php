@@ -2,18 +2,49 @@
 
 namespace App\Services;
 
-use App\Models\Inscription;
-use App\Models\Eleve;
-use App\Models\Paiement;
-use App\Models\DetailPaiement;
+use App\Repositories\Interfaces\InscriptionRepositoryInterface;
+use App\Repositories\Interfaces\EleveRepositoryInterface;
+use App\Repositories\Interfaces\PaiementRepositoryInterface;
+use App\Repositories\Interfaces\DetailPaiementRepositoryInterface;
+use App\Repositories\Interfaces\CycleRepositoryInterface;
+use App\Repositories\Interfaces\NiveauRepositoryInterface;
+use App\Repositories\Interfaces\ClasseRepositoryInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class InscriptionService
+class InscriptionService extends BaseService
 {
-    /**
-     * Récupère l'année en cours depuis la session
-     */
+    protected string $entityName = 'Inscription';
+    protected array $defaultSelectFields = [
+        'id', 'date_inscription', 'type_inscription', 'statut_validation',
+        'cycle_id', 'niveau_id', 'classe_id', 'eleve_id', 'annee_id', 'etat'
+    ];
+
+    protected EleveRepositoryInterface $eleveRepo;
+    protected PaiementRepositoryInterface $paiementRepo;
+    protected DetailPaiementRepositoryInterface $detailRepo;
+    protected CycleRepositoryInterface $cycleRepo;
+    protected NiveauRepositoryInterface $niveauRepo;
+    protected ClasseRepositoryInterface $classeRepo;
+
+    public function __construct(
+        InscriptionRepositoryInterface $inscriptionRepo,
+        EleveRepositoryInterface $eleveRepo,
+        PaiementRepositoryInterface $paiementRepo,
+        DetailPaiementRepositoryInterface $detailRepo,
+        CycleRepositoryInterface $cycleRepo,
+        NiveauRepositoryInterface $niveauRepo,
+        ClasseRepositoryInterface $classeRepo
+    ) {
+        parent::__construct($inscriptionRepo);
+        $this->eleveRepo = $eleveRepo;
+        $this->paiementRepo = $paiementRepo;
+        $this->detailRepo = $detailRepo;
+        $this->cycleRepo = $cycleRepo;
+        $this->niveauRepo = $niveauRepo;
+        $this->classeRepo = $classeRepo;
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -21,9 +52,6 @@ class InscriptionService
 
     /**
      * Liste des inscriptions pour l'année courante avec agrégats et filtres
-     *
-     * @param array $filters
-     * @return array ['data' => Collection, 'aggregates' => array]
      */
     public function listWithAggregates(array $filters = []): array
     {
@@ -32,7 +60,9 @@ class InscriptionService
             return ['data' => collect(), 'aggregates' => $this->emptyAggregates()];
         }
 
-        $query = Inscription::with(['eleve', 'cycle', 'niveau', 'classe'])
+        // Utilisation du query builder brut pour les jointures et relations
+        $query = $this->repo->getModel()->newQuery()
+            ->with(['eleve', 'cycle', 'niveau', 'classe'])
             ->where('annee_id', $anneeId)
             ->where('etat', 1);
 
@@ -46,10 +76,10 @@ class InscriptionService
         if (!empty($filters['classe_id'])) {
             $query->where('classe_id', $filters['classe_id']);
         }
-        if (!empty($filters['sexe']) && in_array($filters['sexe'], [0,1,2])) {
+        if (!empty($filters['sexe']) && in_array($filters['sexe'], [0, 1, 2])) {
             $query->whereHas('eleve', fn($q) => $q->where('sexe', $filters['sexe']));
         }
-        if (!empty($filters['type_inscription'])) { // nouveau = 1, ancien = 2 (à adapter)
+        if (!empty($filters['type_inscription'])) {
             $query->where('type_inscription', $filters['type_inscription']);
         }
         if (!empty($filters['nationalite_id'])) {
@@ -59,19 +89,15 @@ class InscriptionService
             $search = '%' . $filters['search'] . '%';
             $query->whereHas('eleve', function ($q) use ($search) {
                 $q->where('nom', 'like', $search)
-                  ->orWhere('prenom', 'like', $search)
-                  ->orWhere('matricule', 'like', $search);
+                    ->orWhere('prenom', 'like', $search)
+                    ->orWhere('matricule', 'like', $search);
             });
         }
 
-        // Pagination
         $perPage = $filters['per_page'] ?? 15;
         $inscriptions = $query->paginate($perPage);
 
-        // Agrégats (total élèves, garçons, filles, nouveaux)
         $aggregates = $this->computeAggregates($anneeId, $filters);
-
-        // Formatage des données
         $data = $inscriptions->map(fn($ins) => $this->formatInscription($ins));
 
         return [
@@ -92,10 +118,10 @@ class InscriptionService
     public function getFicheEleve(int $eleveId): array
     {
         $anneeId = $this->getCurrentAnneeId();
-        $eleve = Eleve::with(['nationalite'])->findOrFail($eleveId);
+        $eleve = $this->eleveRepo->with('nationalite')->findOrFail($eleveId);
 
-        // Récupérer l'inscription de l'élève pour l'année courante
-        $inscription = Inscription::where('eleve_id', $eleveId)
+        $inscription = $this->repo->activeQuery()
+            ->where('eleve_id', $eleveId)
             ->where('annee_id', $anneeId)
             ->first();
 
@@ -103,30 +129,26 @@ class InscriptionService
             throw new \Exception("Aucune inscription trouvée pour cet élève durant l'année scolaire courante.");
         }
 
-        // Paiements associés à cette inscription
-        $paiements = Paiement::where('inscription_id', $inscription->id)
+        $paiements = $this->paiementRepo->activeQuery()
+            ->where('inscription_id', $inscription->id)
             ->where('annee_id', $anneeId)
             ->with('details')
             ->orderBy('date_paiement', 'desc')
             ->get();
 
         // Calculs financiers
-        $totalCA = $paiements->sum('montant');
-        $totalRemise = $inscription->taux_remise ?? 0; // remise globale en pourcentage, ou montant ?
-        // Si remise en pourcentage, on calcule le montant remisé sur le total des frais
         $montantTotalFrais = ($inscription->frais_scolarite ?? 0)
-                            + ($inscription->frais_inscription ?? 0)
-                            + ($inscription->frais_assurance ?? 0)
-                            + ($inscription->frais_cantine ?? 0)
-                            + ($inscription->frais_bus ?? 0)
-                            + ($inscription->frais_livre ?? 0)
-                            + ($inscription->frais_examen ?? 0);
+            + ($inscription->frais_inscription ?? 0)
+            + ($inscription->frais_assurance ?? 0)
+            + ($inscription->frais_cantine ?? 0)
+            + ($inscription->frais_bus ?? 0)
+            + ($inscription->frais_livre ?? 0)
+            + ($inscription->frais_examen ?? 0);
         $montantRemise = ($inscription->taux_remise / 100) * $montantTotalFrais;
+        $totalCA = $paiements->sum('montant');
 
-        // CA par type de paiement (mode_paiement)
         $caByMode = $paiements->groupBy('mode_paiement')->map(fn($group) => $group->sum('montant'));
 
-        // Détails des paiements : pour chaque paiement, on liste ses lignes de détails
         $paiementsDetails = $paiements->map(function ($paiement) {
             return [
                 'id'            => $paiement->id,
@@ -173,15 +195,122 @@ class InscriptionService
     /**
      * Mise à jour des informations personnelles de l'élève
      */
-    public function updateEleveInfo(int $eleveId, array $data): Eleve
+    public function updateEleveInfo(int $eleveId, array $data)
     {
-        $eleve = Eleve::findOrFail($eleveId);
-        $eleve->update($data);
-        return $eleve;
+        $this->eleveRepo->update($eleveId, $data);
+        return $this->eleveRepo->find($eleveId);
+    }
+
+    /**
+     * Récupère les données pour l'affichage de la liste (server-side)
+     */
+    public function getListForView(array $filters = []): array
+    {
+        $anneeId = $this->getCurrentAnneeId();
+        if (!$anneeId) {
+            return [
+                'inscriptions' => collect(),
+                'aggregates'   => $this->emptyAggregates(),
+                'filters'      => $filters,
+            ];
+        }
+
+        $query = $this->repo->getModel()->newQuery()
+            ->with(['eleve', 'cycle', 'niveau', 'classe'])
+            ->where('annee_id', $anneeId)
+            ->where('etat', 1);
+
+        // Application des filtres
+        if (!empty($filters['cycle_id'])) {
+            $query->where('cycle_id', $filters['cycle_id']);
+        }
+        if (!empty($filters['niveau_id'])) {
+            $query->where('niveau_id', $filters['niveau_id']);
+        }
+        if (!empty($filters['classe_id'])) {
+            $query->where('classe_id', $filters['classe_id']);
+        }
+        if (isset($filters['sexe']) && in_array($filters['sexe'], [0, 1, 2])) {
+            $query->whereHas('eleve', fn($q) => $q->where('sexe', $filters['sexe']));
+        }
+        if (!empty($filters['type_inscription'])) {
+            $query->where('type_inscription', $filters['type_inscription']);
+        }
+        if (!empty($filters['nationalite_id'])) {
+            $query->whereHas('eleve', fn($q) => $q->where('nationalite_id', $filters['nationalite_id']));
+        }
+        if (!empty($filters['search'])) {
+            $search = '%' . $filters['search'] . '%';
+            $query->whereHas('eleve', function ($q) use ($search) {
+                $q->where('nom', 'like', $search)
+                    ->orWhere('prenom', 'like', $search)
+                    ->orWhere('matricule', 'like', $search);
+            });
+        }
+
+        $perPage = $filters['per_page'] ?? 15;
+        $inscriptions = $query->paginate($perPage);
+        $aggregates = $this->computeAggregates($anneeId, $filters);
+
+        return [
+            'inscriptions' => $inscriptions,
+            'aggregates'   => $aggregates,
+            'filters'      => $filters,
+        ];
+    }
+
+    /**
+     * Récupère les données pour la fiche élève (vue)
+     */
+    public function getFicheForView(int $eleveId): array
+    {
+        $anneeId = $this->getCurrentAnneeId();
+        $eleve = $this->eleveRepo->with('nationalite')->findOrFail($eleveId);
+
+        $inscription = $this->repo->activeQuery()
+            ->where('eleve_id', $eleveId)
+            ->where('annee_id', $anneeId)
+            ->first();
+
+        if (!$inscription) {
+            throw new \Exception("Aucune inscription trouvée pour l'année en cours.");
+        }
+
+        $paiements = $this->paiementRepo->activeQuery()
+            ->where('inscription_id', $inscription->id)
+            ->where('annee_id', $anneeId)
+            ->with('details')
+            ->orderBy('date_paiement', 'desc')
+            ->get();
+
+        $montantTotalFrais = ($inscription->frais_scolarite ?? 0)
+            + ($inscription->frais_inscription ?? 0)
+            + ($inscription->frais_assurance ?? 0)
+            + ($inscription->frais_cantine ?? 0)
+            + ($inscription->frais_bus ?? 0)
+            + ($inscription->frais_livre ?? 0)
+            + ($inscription->frais_examen ?? 0);
+        $montantRemise = ($inscription->taux_remise / 100) * $montantTotalFrais;
+        $totalCA = $paiements->sum('montant');
+
+        $caByMode = [];
+        foreach ($paiements->groupBy('mode_paiement') as $mode => $group) {
+            $caByMode[$mode] = $group->sum('montant');
+        }
+
+        return [
+            'eleve'                 => $eleve,
+            'inscription'           => $inscription,
+            'paiements'             => $paiements,
+            'montant_total_frais'   => $montantTotalFrais,
+            'montant_remise'        => $montantRemise,
+            'total_chiffre_affaires'=> $totalCA,
+            'ca_par_mode'           => $caByMode,
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Méthodes privées
+    // Méthodes privées (helpers)
     // ─────────────────────────────────────────────────────────────
 
     private function emptyAggregates(): array
@@ -196,9 +325,9 @@ class InscriptionService
 
     private function computeAggregates(int $anneeId, array $filters): array
     {
-        $query = Inscription::where('annee_id', $anneeId)->where('etat', 1);
+        $query = $this->repo->activeQuery()->where('annee_id', $anneeId);
 
-        // Appliquer les mêmes filtres (sauf pagination)
+        // Appliquer les mêmes filtres
         if (!empty($filters['cycle_id']))     $query->where('cycle_id', $filters['cycle_id']);
         if (!empty($filters['niveau_id']))    $query->where('niveau_id', $filters['niveau_id']);
         if (!empty($filters['classe_id']))    $query->where('classe_id', $filters['classe_id']);
@@ -219,7 +348,7 @@ class InscriptionService
         $total = $query->count();
         $garcons = (clone $query)->whereHas('eleve', fn($q) => $q->where('sexe', 1))->count();
         $filles = (clone $query)->whereHas('eleve', fn($q) => $q->where('sexe', 0))->count();
-        $nouveaux = (clone $query)->where('type_inscription', 1)->count(); // 1 = nouveau
+        $nouveaux = (clone $query)->where('type_inscription', 1)->count();
 
         return [
             'total_eleves' => $total,
@@ -229,7 +358,7 @@ class InscriptionService
         ];
     }
 
-    private function formatInscription(Inscription $ins): array
+    private function formatInscription($ins): array
     {
         return [
             'id' => $ins->id,
@@ -243,7 +372,7 @@ class InscriptionService
         ];
     }
 
-    private function formatEleve(?Eleve $eleve): ?array
+    private function formatEleve($eleve): ?array
     {
         if (!$eleve) return null;
         return [
@@ -262,115 +391,4 @@ class InscriptionService
             'photo' => $eleve->photo,
         ];
     }
-
-    // Dans App\Services\InscriptionService
-
-/**
- * Récupère les données pour l'affichage de la liste (server-side)
- */
-public function getListForView(array $filters = []): array
-{
-    $anneeId = $this->getCurrentAnneeId();
-    if (!$anneeId) {
-        return [
-            'inscriptions' => collect(),
-            'aggregates'   => $this->emptyAggregates(),
-            'filters'      => $filters,
-        ];
-    }
-
-    $query = Inscription::with(['eleve', 'cycle', 'niveau', 'classe'])
-        ->where('annee_id', $anneeId)
-        ->where('etat', 1);
-
-    // Application des filtres (cycle, niveau, classe, sexe, type_inscription, nationalite, search)
-    if (!empty($filters['cycle_id'])) {
-        $query->where('cycle_id', $filters['cycle_id']);
-    }
-    if (!empty($filters['niveau_id'])) {
-        $query->where('niveau_id', $filters['niveau_id']);
-    }
-    if (!empty($filters['classe_id'])) {
-        $query->where('classe_id', $filters['classe_id']);
-    }
-    if (isset($filters['sexe']) && in_array($filters['sexe'], [0,1,2])) {
-        $query->whereHas('eleve', fn($q) => $q->where('sexe', $filters['sexe']));
-    }
-    if (!empty($filters['type_inscription'])) {
-        $query->where('type_inscription', $filters['type_inscription']);
-    }
-    if (!empty($filters['nationalite_id'])) {
-        $query->whereHas('eleve', fn($q) => $q->where('nationalite_id', $filters['nationalite_id']));
-    }
-    if (!empty($filters['search'])) {
-        $search = '%' . $filters['search'] . '%';
-        $query->whereHas('eleve', function ($q) use ($search) {
-            $q->where('nom', 'like', $search)
-              ->orWhere('prenom', 'like', $search)
-              ->orWhere('matricule', 'like', $search);
-        });
-    }
-
-    // Pagination
-    $perPage = $filters['per_page'] ?? 15;
-    $inscriptions = $query->paginate($perPage);
-
-    // Agrégats
-    $aggregates = $this->computeAggregates($anneeId, $filters);
-
-    return [
-        'inscriptions' => $inscriptions,
-        'aggregates'   => $aggregates,
-        'filters'      => $filters,
-    ];
-}
-
-/**
- * Récupère les données pour la fiche élève (vue)
- */
-public function getFicheForView(int $eleveId): array
-{
-    $anneeId = $this->getCurrentAnneeId();
-    $eleve = Eleve::with('nationalite')->findOrFail($eleveId);
-
-    $inscription = Inscription::where('eleve_id', $eleveId)
-        ->where('annee_id', $anneeId)
-        ->first();
-
-    if (!$inscription) {
-        throw new \Exception("Aucune inscription trouvée pour l'année en cours.");
-    }
-
-    $paiements = Paiement::where('inscription_id', $inscription->id)
-        ->where('annee_id', $anneeId)
-        ->with('details')
-        ->orderBy('date_paiement', 'desc')
-        ->get();
-
-    // Calculs financiers
-    $montantTotalFrais = ($inscription->frais_scolarite ?? 0)
-                        + ($inscription->frais_inscription ?? 0)
-                        + ($inscription->frais_assurance ?? 0)
-                        + ($inscription->frais_cantine ?? 0)
-                        + ($inscription->frais_bus ?? 0)
-                        + ($inscription->frais_livre ?? 0)
-                        + ($inscription->frais_examen ?? 0);
-    $montantRemise = ($inscription->taux_remise / 100) * $montantTotalFrais;
-    $totalCA = $paiements->sum('montant');
-
-    $caByMode = [];
-    foreach ($paiements->groupBy('mode_paiement') as $mode => $group) {
-        $caByMode[$mode] = $group->sum('montant');
-    }
-
-    return [
-        'eleve'                 => $eleve,
-        'inscription'           => $inscription,
-        'paiements'             => $paiements,
-        'montant_total_frais'   => $montantTotalFrais,
-        'montant_remise'        => $montantRemise,
-        'total_chiffre_affaires'=> $totalCA,
-        'ca_par_mode'           => $caByMode,
-    ];
-}
 }

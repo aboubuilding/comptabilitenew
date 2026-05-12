@@ -21,7 +21,7 @@ class NiveauService extends BaseService
     public function getAllFormatted(): Collection
     {
         $niveaux = $this->repo->activeQuery()
-            ->with('cycle:id,libelle') // suppose une relation belongsTo
+            ->with('cycle:id,libelle')
             ->select($this->defaultSelectFields)
             ->orderBy('cycle_id')
             ->orderBy('numero_ordre')
@@ -56,9 +56,11 @@ class NiveauService extends BaseService
     }
 
     /**
-     * Liste simplifiée pour les selects (dropdown) - filtre optionnel par cycle
+     * Liste simplifiée pour les selects (dropdown) – version brute avec filtres.
+     * Retourne une collection d'objets (id, libelle, cycle_id).
+     * Pour un format standardisé (value/label), utilisez plutôt la méthode parent getForSelect().
      */
-    public function getForSelect(?int $cycleId = null): Collection
+    public function getSelectList(?int $cycleId = null): Collection
     {
         $query = $this->repo->activeQuery()
             ->where('etat', 1)
@@ -78,7 +80,6 @@ class NiveauService extends BaseService
      */
     public function hasRelatedData(int $id): bool
     {
-        // À adapter selon vos tables
         return \DB::table('classes')->where('niveau_id', $id)->exists()
             || \DB::table('inscriptions')->where('niveau_id', $id)->exists();
     }

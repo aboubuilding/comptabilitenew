@@ -2,13 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\Inscription;
-use App\Models\ParentEleve; // si besoin
+use App\Repositories\Eloquent\InscriptionRepository;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class AbandonService
+class AbandonService extends BaseService
 {
+    protected InscriptionRepository $inscriptionRepo;
+
+    public function __construct(InscriptionRepository $inscriptionRepo)
+    {
+        // On appelle le parent avec le même repository (optionnel)
+        parent::__construct($inscriptionRepo);
+        $this->inscriptionRepo = $inscriptionRepo;
+    }
+
     /**
      * Récupère l'année en session
      */
@@ -24,12 +31,14 @@ class AbandonService
     {
         $anneeId = $this->getCurrentAnneeId();
         if (!$anneeId) {
-            return ['data' => collect(), 'pagination' => []];
+            return $this->formatResponse(true, 'Aucune année active', collect(), []);
         }
 
-        $query = Inscription::with(['eleve', 'parent', 'cycle', 'niveau', 'classe'])
+        // Utilisation du repository pour construire la requête
+        $query = $this->inscriptionRepo->activeQuery()
+            ->with(['eleve', 'parent', 'cycle', 'niveau', 'classe'])
             ->where('annee_id', $anneeId)
-            ->where('statut_abandon', 1); // 1 = abandonné
+            ->where('statut_abandon', 1);
 
         // Filtres
         if (!empty($filters['cycle_id'])) {
@@ -45,15 +54,15 @@ class AbandonService
             $search = '%' . $filters['search'] . '%';
             $query->whereHas('eleve', function ($q) use ($search) {
                 $q->where('nom', 'like', $search)
-                  ->orWhere('prenom', 'like', $search)
-                  ->orWhere('matricule', 'like', $search);
+                    ->orWhere('prenom', 'like', $search)
+                    ->orWhere('matricule', 'like', $search);
             });
         }
 
         $perPage = $filters['per_page'] ?? 15;
         $abandons = $query->paginate($perPage);
 
-        // Formatage
+        // Formatage des données
         $data = $abandons->map(fn($ins) => [
             'id'             => $ins->id,
             'eleve_nom'      => $ins->eleve?->nom . ' ' . $ins->eleve?->prenom,
@@ -66,29 +75,33 @@ class AbandonService
             'parent'         => $ins->parent?->nom_parent . ' ' . $ins->parent?->prenom_parent,
         ]);
 
-        return [
-            'data'       => $data,
+        return $this->formatResponse(true, 'Liste des abandons', $data, [
             'pagination' => [
                 'current_page' => $abandons->currentPage(),
                 'last_page'    => $abandons->lastPage(),
                 'per_page'     => $abandons->perPage(),
                 'total'        => $abandons->total(),
             ]
-        ];
+        ]);
     }
 
     /**
      * Marquer un élève comme abandonné
-     *
-     * @param int $inscriptionId
-     * @param array $data (date_abandon, motif_abandon)
-     * @param int $userId
      */
-    public function marquerAbandon(int $inscriptionId, array $data, int $userId): Inscription
+    public function marquerAbandon(int $inscriptionId, array $data, int $userId): array
     {
-        $inscription = Inscription::where('id', $inscriptionId)
-            ->where('annee_id', $this->getCurrentAnneeId())
-            ->firstOrFail();
+        $anneeId = $this->getCurrentAnneeId();
+        if (!$anneeId) {
+            return $this->formatResponse(false, 'Année scolaire non définie');
+        }
+
+        $inscription = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $anneeId)
+            ->find($inscriptionId);
+
+        if (!$inscription) {
+            return $this->formatResponse(false, 'Inscription introuvable');
+        }
 
         $inscription->date_abandon   = $data['date_abandon'];
         $inscription->motif_abandon  = $data['motif_abandon'];
@@ -96,17 +109,26 @@ class AbandonService
         $inscription->abandonne_par  = $userId;
         $inscription->save();
 
-        return $inscription;
+        return $this->formatResponse(true, 'Abandon enregistré', $inscription);
     }
 
     /**
-     * Annuler l'abandon (réinscrire l'élève)
+     * Annuler l'abandon (réinscrire)
      */
-    public function annulerAbandon(int $inscriptionId): Inscription
+    public function annulerAbandon(int $inscriptionId): array
     {
-        $inscription = Inscription::where('id', $inscriptionId)
-            ->where('annee_id', $this->getCurrentAnneeId())
-            ->firstOrFail();
+        $anneeId = $this->getCurrentAnneeId();
+        if (!$anneeId) {
+            return $this->formatResponse(false, 'Année scolaire non définie');
+        }
+
+        $inscription = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $anneeId)
+            ->find($inscriptionId);
+
+        if (!$inscription) {
+            return $this->formatResponse(false, 'Inscription introuvable');
+        }
 
         $inscription->date_abandon   = null;
         $inscription->motif_abandon  = null;
@@ -114,25 +136,24 @@ class AbandonService
         $inscription->abandonne_par  = null;
         $inscription->save();
 
-        return $inscription;
+        return $this->formatResponse(true, 'Abandon annulé', $inscription);
     }
 
     /**
-     * Statistiques des abandons pour l'année courante
+     * Statistiques des abandons
      */
     public function getStats(): array
     {
         $anneeId = $this->getCurrentAnneeId();
         if (!$anneeId) {
-            return ['total_abandons' => 0];
+            return $this->formatResponse(true, '', ['total_abandons' => 0]);
         }
 
-        $total = Inscription::where('annee_id', $anneeId)
+        $total = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $anneeId)
             ->where('statut_abandon', 1)
             ->count();
 
-        return [
-            'total_abandons' => $total,
-        ];
+        return $this->formatResponse(true, '', ['total_abandons' => $total]);
     }
 }

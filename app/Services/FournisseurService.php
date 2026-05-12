@@ -1,34 +1,49 @@
 <?php
 namespace App\Services;
 
-use App\Models\Fournisseur;
-use App\Models\Achat;
+use App\Repositories\Interfaces\FournisseurRepositoryInterface;
+use App\Repositories\Interfaces\AchatRepositoryInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class FournisseurService
+class FournisseurService extends BaseService
 {
+    protected string $entityName = 'Fournisseur';
+    protected array $defaultSelectFields = ['id', 'raison_social', 'nom_contact', 'telephone_contact', 'adresse', 'etat'];
+    protected AchatRepositoryInterface $achatRepo;
+
+    public function __construct(
+        FournisseurRepositoryInterface $repo,
+        AchatRepositoryInterface $achatRepo
+    ) {
+        parent::__construct($repo);
+        $this->achatRepo = $achatRepo;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Méthodes spécifiques (non héritées)
+    // ─────────────────────────────────────────────────────────────
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
     }
 
     /**
-     * Liste des fournisseurs (paginate)
+     * Liste personnalisée avec format spécifique (remplace la méthode list() si appelée directement)
      */
     public function listFournisseurs(array $filters = []): array
     {
-        $query = Fournisseur::query();
+        $query = $this->repo->activeQuery();
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('raison_social', 'like', $search)
-                  ->orWhere('nom_contact', 'like', $search)
-                  ->orWhere('telephone_contact', 'like', $search);
+                    ->orWhere('nom_contact', 'like', $search)
+                    ->orWhere('telephone_contact', 'like', $search);
             });
         }
-        if (isset($filters['etat']) && in_array($filters['etat'], [0,1])) {
+        if (isset($filters['etat']) && in_array($filters['etat'], [0, 1])) {
             $query->where('etat', $filters['etat']);
         }
 
@@ -57,60 +72,39 @@ class FournisseurService
     }
 
     /**
-     * Récupérer un fournisseur
+     * Surcharge de destroy : on désactive (etat=0) au lieu de suppression logique
      */
-    public function getFournisseur(int $id): Fournisseur
+    public function destroy(int $id): array
     {
-        return Fournisseur::findOrFail($id);
+        try {
+            $this->repo->update($id, ['etat' => 0]);
+            return $this->formatResponse(true, "{$this->entityName} désactivé.");
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "{$this->entityName} introuvable.");
+        }
     }
 
     /**
-     * Créer un fournisseur
-     */
-    public function createFournisseur(array $data): Fournisseur
-    {
-        $data['etat'] = $data['etat'] ?? 1;
-        return Fournisseur::create($data);
-    }
-
-    /**
-     * Mettre à jour un fournisseur
-     */
-    public function updateFournisseur(int $id, array $data): Fournisseur
-    {
-        $fournisseur = $this->getFournisseur($id);
-        $fournisseur->update($data);
-        return $fournisseur;
-    }
-
-    /**
-     * Supprimer (désactiver) un fournisseur
-     */
-    public function deleteFournisseur(int $id): void
-    {
-        $fournisseur = $this->getFournisseur($id);
-        $fournisseur->etat = 0;
-        $fournisseur->save();
-    }
-
-    /**
-     * Liste pour selects (dropdown)
+     * Liste pour selects (dropdown) au format Collection brute
+     * (La méthode parent getForSelect retourne un tableau formaté, donc on garde celle-ci si nécessaire)
      */
     public function getForSelect(): Collection
     {
-        return Fournisseur::where('etat', 1)
+        return $this->repo->activeQuery()
+            ->where('etat', 1)
             ->orderBy('raison_social')
             ->get(['id', 'raison_social']);
     }
 
     /**
-     * Statistiques des achats par fournisseur sur une période
+     * Statistiques des achats par fournisseur
      */
     public function getStatsAchats(int $fournisseurId, ?string $dateDebut, ?string $dateFin): array
     {
         $anneeId = $this->getCurrentAnneeId();
-        $query = Achat::where('fournisseur_id', $fournisseurId)
-            ->where('etat', 1)
+
+        $query = $this->achatRepo->activeQuery()
+            ->where('fournisseur_id', $fournisseurId)
             ->where('annee_id', $anneeId);
 
         if ($dateDebut) {
@@ -123,7 +117,6 @@ class FournisseurService
         $totalDepense = $query->sum('montant_total');
         $nombreAchats = $query->count();
 
-        // Détail des achats (juste pour infos)
         $achats = $query->orderBy('date_achat', 'desc')
             ->get(['id', 'date_achat', 'reference', 'montant_total'])
             ->map(fn($a) => [

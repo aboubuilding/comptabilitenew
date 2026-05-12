@@ -1,19 +1,31 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\Caisse;
-use App\Models\DetailPaiement;
-use App\Models\Depense;
-use App\Models\Paiement;
-use Illuminate\Support\Collection;
+use App\Repositories\Eloquent\CaisseRepository;
+use App\Repositories\Eloquent\DetailRepository;
+use App\Repositories\Eloquent\DepenseRepository;
+use App\Repositories\Eloquent\PaiementRepository;
 use Illuminate\Support\Facades\DB;
 
 class CaisseJournalService
 {
     protected ?int $anneeId;
+    protected CaisseRepository $caisseRepo;
+    protected DetailRepository $detailRepo;
+    protected DepenseRepository $depenseRepo;
+    protected PaiementRepository $paiementRepo;
 
-    public function __construct()
-    {
+    public function __construct(
+        CaisseRepository $caisseRepo,
+        DetailRepository $detailRepo,
+        DepenseRepository $depenseRepo,
+        PaiementRepository $paiementRepo
+    ) {
+        $this->caisseRepo = $caisseRepo;
+        $this->detailRepo = $detailRepo;
+        $this->depenseRepo = $depenseRepo;
+        $this->paiementRepo = $paiementRepo;
         $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
     }
 
@@ -22,15 +34,15 @@ class CaisseJournalService
      */
     public function listeCaisses(array $filters = []): array
     {
-        $query = Caisse::with('utilisateur', 'responsable')
-            ->where('etat', 1);
+        $query = $this->caisseRepo->activeQuery()
+            ->with('utilisateur', 'responsable');
 
         if (!empty($filters['statut'])) {
             $query->where('statut', $filters['statut']);
         }
         if (!empty($filters['annee_id'])) {
             $query->where('annee_id', $filters['annee_id']);
-        } else if ($this->anneeId) {
+        } elseif ($this->anneeId) {
             $query->where('annee_id', $this->anneeId);
         }
 
@@ -65,22 +77,16 @@ class CaisseJournalService
 
     /**
      * Journal de caisse pour une période (encaissements + dépenses)
-     *
-     * @param int|null $caisseId - si null, toutes les caisses
-     * @param string|null $dateDebut Y-m-d
-     * @param string|null $dateFin Y-m-d
-     * @param array $filters supplémentaires
      */
     public function journalCaisse(?int $caisseId, ?string $dateDebut, ?string $dateFin, array $filters = []): array
     {
         $anneeId = $this->anneeId;
-        $queryEncaissements = DetailPaiement::query()
+        $queryEncaissements = $this->detailRepo->activeQuery()
             ->join('paiements', 'details.paiement_id', '=', 'paiements.id')
             ->join('inscriptions', 'details.inscription_id', '=', 'inscriptions.id')
             ->join('eleves', 'inscriptions.eleve_id', '=', 'eleves.id')
-            ->where('details.statut_paiement', 1) // encaissé
+            ->where('details.statut_paiement', 1)
             ->where('details.annee_id', $anneeId)
-            ->where('details.etat', 1)
             ->select(
                 'details.*',
                 'paiements.reference',
@@ -99,37 +105,37 @@ class CaisseJournalService
             $queryEncaissements->whereDate('details.date_encaissement', '<=', $dateFin);
         }
 
-        // Encaisse par type de paiement (agrégat)
+        // Agrégats par type
         $encaissementsParType = (clone $queryEncaissements)
             ->select('details.type_paiement', DB::raw('SUM(details.montant) as total'))
             ->groupBy('details.type_paiement')
             ->get()
             ->map(fn($item) => [
-                'type' => $item->type_paiement,
+                'type'       => $item->type_paiement,
                 'type_label' => $this->typePaiementLabel($item->type_paiement),
-                'total' => $item->total,
+                'total'      => $item->total,
             ]);
 
-        // Liste détaillée des encaissements (paginer)
+        // Liste paginée des encaissements
         $perPage = $filters['per_page'] ?? 15;
         $encaissementsList = $queryEncaissements
             ->orderBy('details.date_encaissement', 'desc')
             ->paginate($perPage)
             ->through(fn($detail) => [
-                'id'            => $detail->id,
-                'reference'     => $detail->reference,
-                'libelle'       => $detail->libelle,
-                'montant'       => $detail->montant,
-                'type_paiement' => $detail->type_paiement,
-                'type_label'    => $this->typePaiementLabel($detail->type_paiement),
-                'mode_paiement' => $detail->mode_paiement,
-                'eleve_nom'     => $detail->eleve_nom,
+                'id'                => $detail->id,
+                'reference'         => $detail->reference,
+                'libelle'           => $detail->libelle,
+                'montant'           => $detail->montant,
+                'type_paiement'     => $detail->type_paiement,
+                'type_label'        => $this->typePaiementLabel($detail->type_paiement),
+                'mode_paiement'     => $detail->mode_paiement,
+                'eleve_nom'         => $detail->eleve_nom,
                 'date_encaissement' => $detail->date_encaissement,
-                'caisse_id'     => $detail->caisse_id,
+                'caisse_id'         => $detail->caisse_id,
             ]);
 
         // Dépenses
-        $queryDepenses = Depense::where('etat', 1)
+        $queryDepenses = $this->depenseRepo->activeQuery()
             ->where('annee_id', $anneeId);
         if ($caisseId) {
             $queryDepenses->where('caisse_id', $caisseId);

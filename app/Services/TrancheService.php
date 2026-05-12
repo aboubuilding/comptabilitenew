@@ -84,9 +84,13 @@ class TrancheService extends BaseService
     }
 
     /**
-     * Liste simplifiée pour selects (dropdown)
+     * Liste simplifiée pour selects (dropdown) – version brute (Collection)
+     * Pour un format standardisé (value/label), utiliser plutôt la méthode parent getForSelect()
+     *
+     * @param int|null $fraisEcoleId
+     * @return Collection
      */
-    public function getForSelect(?int $fraisEcoleId = null): Collection
+    public function getSelectList(?int $fraisEcoleId = null): Collection
     {
         $query = $this->repo->activeQuery()
             ->where('etat', 1)
@@ -105,7 +109,6 @@ class TrancheService extends BaseService
      */
     public function hasRelatedData(int $id): bool
     {
-        // À adapter selon vos tables
         return \DB::table('echeances')->where('tranche_id', $id)->exists()
             || \DB::table('factures_lignes')->where('tranche_id', $id)->exists();
     }

@@ -1,14 +1,36 @@
 <?php
 namespace App\Services;
 
-use App\Models\Menu;
-use App\Models\Produit;
-use App\Models\PreparationRepas;
+use App\Repositories\Interfaces\MenuRepositoryInterface;
+use App\Repositories\Interfaces\ProduitRepositoryInterface;
+use App\Repositories\Interfaces\PreparationRepasRepositoryInterface;
+use App\Repositories\Interfaces\InscriptionCantineRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
-class GestionRepasService
+class GestionRepasService extends BaseService
 {
-    protected function getCurrentAnneeId()
+    protected ProduitRepositoryInterface $produitRepo;
+    protected PreparationRepasRepositoryInterface $preparationRepo;
+    protected InscriptionCantineRepositoryInterface $cantineRepo;
+
+    // Propriétés pour BaseService
+    protected string $entityName = 'Menu';
+    protected array $defaultSelectFields = ['id', 'libelle', 'date_service', 'type_repas', 'quantite_prevue', 'cout_total_prevu', 'etat'];
+
+    public function __construct(
+        MenuRepositoryInterface $menuRepo,
+        ProduitRepositoryInterface $produitRepo,
+        PreparationRepasRepositoryInterface $preparationRepo,
+        InscriptionCantineRepositoryInterface $cantineRepo
+    ) {
+        parent::__construct($menuRepo);
+        $this->produitRepo = $produitRepo;
+        $this->preparationRepo = $preparationRepo;
+        $this->cantineRepo = $cantineRepo;
+    }
+
+    protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
     }
@@ -19,7 +41,8 @@ class GestionRepasService
     public function listMenus(array $filters = []): array
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
-        $query = Menu::with('produits')
+        $query = $this->repo->getModel()->newQuery()
+            ->with('produits')
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(!empty($filters['type_repas']), fn($q) => $q->where('type_repas', $filters['type_repas']))
             ->when(!empty($filters['date_service']), fn($q) => $q->whereDate('date_service', $filters['date_service']))
@@ -59,21 +82,24 @@ class GestionRepasService
     /**
      * Créer un menu avec ses produits
      */
-    public function createMenu(array $data, array $produits): Menu
+    public function createMenu(array $data, array $produits)
     {
         $anneeId = $this->getCurrentAnneeId();
         if (!$anneeId) throw new \Exception('Année non définie');
 
         return DB::transaction(function () use ($data, $produits, $anneeId) {
-            // Calculer le coût total en fonction des produits et de leurs prix actuels
             $total = 0;
-            foreach ($produits as &$item) {
-                $produit = Produit::find($item['produit_id']);
+            $syncData = [];
+            foreach ($produits as $item) {
+                $produit = $this->produitRepo->find($item['produit_id']);
                 if (!$produit) throw new \Exception("Produit introuvable");
                 $coutUnitaire = $produit->prix_unitaire;
                 $coutTotal = $coutUnitaire * $item['quantite'];
-                $item['cout_unitaire'] = $coutUnitaire;
-                $item['cout_total'] = $coutTotal;
+                $syncData[$item['produit_id']] = [
+                    'quantite' => $item['quantite'],
+                    'cout_unitaire' => $coutUnitaire,
+                    'cout_total' => $coutTotal
+                ];
                 $total += $coutTotal;
             }
 
@@ -81,15 +107,8 @@ class GestionRepasService
             $data['cout_total_prevu'] = $total;
             $data['etat'] = 1;
 
-            $menu = Menu::create($data);
-            $menu->produits()->attach(collect($produits)->mapWithKeys(function ($item) {
-                return [$item['produit_id'] => [
-                    'quantite' => $item['quantite'],
-                    'cout_unitaire' => $item['cout_unitaire'],
-                    'cout_total' => $item['cout_total']
-                ]];
-            })->toArray());
-
+            $menu = $this->repo->create($data);
+            $menu->produits()->attach($syncData);
             return $menu;
         });
     }
@@ -97,15 +116,15 @@ class GestionRepasService
     /**
      * Mettre à jour un menu
      */
-    public function updateMenu(int $id, array $data, array $produits = null): Menu
+    public function updateMenu(int $id, array $data, array $produits = null)
     {
-        $menu = Menu::findOrFail($id);
+        $menu = $this->repo->findOrFail($id);
         return DB::transaction(function () use ($menu, $data, $produits) {
             if ($produits !== null) {
                 $total = 0;
                 $syncData = [];
                 foreach ($produits as $item) {
-                    $produit = Produit::find($item['produit_id']);
+                    $produit = $this->produitRepo->find($item['produit_id']);
                     if (!$produit) throw new \Exception("Produit introuvable");
                     $coutUnitaire = $produit->prix_unitaire;
                     $coutTotal = $coutUnitaire * $item['quantite'];
@@ -119,32 +138,31 @@ class GestionRepasService
                 $menu->produits()->sync($syncData);
                 $data['cout_total_prevu'] = $total;
             }
-            $menu->update($data);
-            return $menu;
+            $this->repo->update($menu->id, $data);
+            return $this->repo->find($menu->id);
         });
     }
 
     /**
      * Enregistrer une préparation réelle (production du repas)
      */
-    public function enregistrerPreparation(int $menuId, int $nombreParts, ?float $coutReel = null, string $observations = null): PreparationRepas
+    public function enregistrerPreparation(int $menuId, int $nombreParts, ?float $coutReel = null, string $observations = null)
     {
-        $menu = Menu::findOrFail($menuId);
-        $preparation = PreparationRepas::create([
+        $menu = $this->repo->findOrFail($menuId);
+        $preparation = $this->preparationRepo->create([
             'menu_id' => $menuId,
             'date_preparation' => now(),
             'nombre_parts' => $nombreParts,
             'cout_reel' => $coutReel,
             'observations' => $observations,
-            'responsable_id' => auth()->id()
+            'responsable_id' => Auth::id()
         ]);
 
-        // Mettre à jour le menu avec les quantités réelles
-        $menu->quantite_reellement = $nombreParts;
-        if ($coutReel) {
-            $menu->cout_total_reel = $coutReel;
+        $updateData = ['quantite_reellement' => $nombreParts];
+        if ($coutReel !== null) {
+            $updateData['cout_total_reel'] = $coutReel;
         }
-        $menu->save();
+        $this->repo->update($menuId, $updateData);
 
         return $preparation;
     }
@@ -154,7 +172,8 @@ class GestionRepasService
      */
     public function getCoutMoyenRepas($dateDebut = null, $dateFin = null): array
     {
-        $query = Menu::whereNotNull('cout_total_reel');
+        $query = $this->repo->getModel()->newQuery()
+            ->whereNotNull('cout_total_reel');
         if ($dateDebut) $query->whereDate('date_service', '>=', $dateDebut);
         if ($dateFin) $query->whereDate('date_service', '<=', $dateFin);
 
@@ -171,22 +190,22 @@ class GestionRepasService
     }
 
     /**
-     * Coût par inscrit à la cantine (en utilisant les repas consommés par jour)
-     * Nécessite une table de consommation, ici option simple.
+     * Coût par inscrit à la cantine
      */
     public function getCoutParInscrit($dateDebut = null, $dateFin = null): array
     {
-        // Hypothèse : on récupère le nombre d'inscrits actifs pour la période
-        $inscritsTotal = \App\Models\InscriptionCantine::where('statut', 1)->count();
+        $inscritsTotal = $this->cantineRepo->activeQuery()
+            ->where('statut', 1)
+            ->count();
         if ($inscritsTotal == 0) return ['cout_par_inscrit' => 0];
 
         $stats = $this->getCoutMoyenRepas($dateDebut, $dateFin);
-        $coutParInscrit = $stats['cout_total_periode'] / $inscritsTotal;
+        $coutParInscrit = $inscritsTotal > 0 ? $stats['cout_total_periode'] / $inscritsTotal : 0;
 
         return [
             'nombre_inscrits_periode' => $inscritsTotal,
-            'cout_total_periode' => $stats['cout_total_periode'],
-            'cout_par_inscrit' => $coutParInscrit,
+            'cout_total_periode'      => $stats['cout_total_periode'],
+            'cout_par_inscrit'        => $coutParInscrit,
         ];
     }
 }

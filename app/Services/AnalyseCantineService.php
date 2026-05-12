@@ -1,19 +1,36 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\InscriptionCantine;
-use App\Models\DetailPaiement;
-use App\Models\Recette;
-use App\Models\AchatDetail;
+use App\Repositories\Eloquent\InscriptionCantineRepository;
+use App\Repositories\Eloquent\DetailRepository;
+use App\Repositories\Eloquent\AchatRepository;
+use App\Repositories\Eloquent\MouvementRepository;
+use App\Repositories\Eloquent\PrevisionRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AnalyseCantineService
 {
-    protected $anneeId;
+    protected ?int $anneeId;
+    protected InscriptionCantineRepository $cantineRepo;
+    protected DetailRepository $detailPaiementRepo;
+    protected AchatRepository $achatRepo;
+    protected MouvementRepository $recetteRepo;
+    protected PrevisionRepository $previsionRepo;
 
-    public function __construct()
-    {
+    public function __construct(
+        InscriptionCantineRepository $cantineRepo,
+        DetailRepository $detailPaiementRepo,
+        AchatRepository $achatRepo,
+        MouvementRepository $recetteRepo,
+        PrevisionRepository $previsionRepo
+    ) {
+        $this->cantineRepo = $cantineRepo;
+        $this->detailPaiementRepo = $detailPaiementRepo;
+        $this->achatRepo = $achatRepo;
+        $this->recetteRepo = $recetteRepo;
+        $this->previsionRepo = $previsionRepo;
         $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
     }
 
@@ -23,16 +40,19 @@ class AnalyseCantineService
     public function getIndicateursGlobaux(): array
     {
         // Inscriptions actives
-        $inscrits = InscriptionCantine::where('annee_id', $this->anneeId)
+        $inscrits = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->count();
 
         // Montants prévus, payés, restant
-        $totalDu = InscriptionCantine::where('annee_id', $this->anneeId)
+        $totalDu = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->sum('montant_total_du');
 
-        $totalPaye = DetailPaiement::where('annee_id', $this->anneeId)
+        $totalPaye = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 2) // 2 = cantine
             ->where('statut_paiement', 1)
             ->sum('montant');
@@ -40,23 +60,21 @@ class AnalyseCantineService
         $tauxRecouvrement = $totalDu > 0 ? round(($totalPaye / $totalDu) * 100, 2) : 0;
 
         // Dépenses cantine (achats de produits pour cantine)
-        // On suppose qu'il y a un champ `type_achat` = 1 pour cantine dans la table `achats`
-        $totalDepenses = DB::table('achats')
+        // type_achat = 1 pour cantine
+        $totalDepenses = $this->achatRepo->activeQuery()
             ->where('annee_id', $this->anneeId)
-            ->where('type_achat', 1) // 1 = cantine
-            ->where('etat', 1)
+            ->where('type_achat', 1)
             ->sum('montant_total');
 
-        // Solde (marge) = encaissements - dépenses
         $solde = $totalPaye - $totalDepenses;
 
         return [
-            'inscrits'           => $inscrits,
-            'total_du'           => $totalDu,
-            'total_paye'         => $totalPaye,
-            'taux_recouvrement'  => $tauxRecouvrement,
-            'total_depenses'     => $totalDepenses,
-            'solde'              => $solde,
+            'inscrits'          => $inscrits,
+            'total_du'          => $totalDu,
+            'total_paye'        => $totalPaye,
+            'taux_recouvrement' => $tauxRecouvrement,
+            'total_depenses'    => $totalDepenses,
+            'solde'             => $solde,
         ];
     }
 
@@ -65,17 +83,18 @@ class AnalyseCantineService
      */
     public function getEvolutionMensuelle(): array
     {
-        // On prend les 12 derniers mois (ou depuis début année scolaire)
         $mois = collect(range(1, 12))->map(fn($m) => Carbon::create(null, $m, 1)->format('m-Y'));
 
-        $inscriptions = InscriptionCantine::where('annee_id', $this->anneeId)
+        $inscriptions = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->select(DB::raw('DATE_FORMAT(created_at, "%m-%Y") as mois'), DB::raw('count(*) as total'))
             ->groupBy('mois')
             ->get()
             ->keyBy('mois');
 
-        $paiements = DetailPaiement::where('annee_id', $this->anneeId)
+        $paiements = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 2)
             ->where('statut_paiement', 1)
             ->select(DB::raw('DATE_FORMAT(date_encaissement, "%m-%Y") as mois'), DB::raw('SUM(montant) as total'))
@@ -85,9 +104,9 @@ class AnalyseCantineService
 
         $evolution = $mois->map(function ($m) use ($inscriptions, $paiements) {
             return [
-                'mois'          => $m,
-                'inscriptions'  => $inscriptions[$m]->total ?? 0,
-                'paiements'     => $paiements[$m]->total ?? 0,
+                'mois'         => $m,
+                'inscriptions' => $inscriptions[$m]->total ?? 0,
+                'paiements'    => $paiements[$m]->total ?? 0,
             ];
         });
 
@@ -95,13 +114,14 @@ class AnalyseCantineService
     }
 
     /**
-     * Performance par niveau (ou classe) – montant prévu vs payé
+     * Performance par niveau (ou classe)
      */
     public function getPerformanceParNiveau(): array
     {
-        return InscriptionCantine::with('inscription.niveau')
+        $data = $this->cantineRepo->activeQuery()
             ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
+            ->with('inscription.niveau')
             ->get()
             ->groupBy(fn($i) => $i->inscription->niveau?->libelle ?? 'N/C')
             ->map(function ($group) {
@@ -113,25 +133,25 @@ class AnalyseCantineService
                     'reste'      => $totalDu - $totalPaye,
                     'taux'       => $totalDu > 0 ? round(($totalPaye / $totalDu) * 100, 2) : 0,
                 ];
-            })
-            ->toArray();
+            });
+
+        return $data->toArray();
     }
 
     /**
-     * Taux de couverture des dépenses par les recettes
-     * (Rentabilité de la cantine)
+     * Rentabilité : recettes vs dépenses
      */
     public function getRentabilite(): array
     {
-        $totalRecettes = DetailPaiement::where('annee_id', $this->anneeId)
+        $totalRecettes = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 2)
             ->where('statut_paiement', 1)
             ->sum('montant');
 
-        $totalDepenses = DB::table('achats')
+        $totalDepenses = $this->achatRepo->activeQuery()
             ->where('annee_id', $this->anneeId)
             ->where('type_achat', 1)
-            ->where('etat', 1)
             ->sum('montant_total');
 
         $marge = $totalRecettes - $totalDepenses;
@@ -146,74 +166,71 @@ class AnalyseCantineService
     }
 
     /**
-     * Coût moyen par repas (si vous avez le nombre de repas servis)
-     * Si vous n’avez pas de comptage des repas, vous pouvez estimer à partir du nombre d’inscrits * jours de présence.
+     * Coût moyen par repas (estimé)
      */
     public function getCoutMoyenParRepas(): array
     {
-        // Nombre total de repas servis (à adapter selon votre logique – exemple : 20 jours/mois * nombre_inscrits)
-        $inscritsMoyens = InscriptionCantine::where('annee_id', $this->anneeId)
+        $inscritsMoyens = $this->cantineRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->count();
 
-        $moisActifs = 9; // à ajuster
-        $joursParMois = 20;
+        $moisActifs = 9;    // à ajuster selon calendrier scolaire
+        $joursParMois = 20; // jours de présence moyenne
         $totalRepas = $inscritsMoyens * $moisActifs * $joursParMois;
 
-        $depensesTotal = DB::table('achats')
+        $depensesTotal = $this->achatRepo->activeQuery()
             ->where('annee_id', $this->anneeId)
             ->where('type_achat', 1)
-            ->where('etat', 1)
             ->sum('montant_total');
 
         $coutMoyen = $totalRepas > 0 ? $depensesTotal / $totalRepas : 0;
 
         return [
-            'total_repas_estimes' => $totalRepas,
-            'cout_moyen_par_repas'=> round($coutMoyen, 2),
+            'total_repas_estimes'     => $totalRepas,
+            'cout_moyen_par_repas'    => round($coutMoyen, 2),
         ];
     }
 
     /**
-     * Liste des repas (menus) les plus utilisés (consommés)
-     * Nécessite une table `consommations_repas` ou bien vous pouvez compter depuis `recettes`.
+     * Top repas les plus consommés (via recettes et consommations)
+     * Nécessite la relation `consommations` sur le modèle Recette.
      */
     public function getTopRepas(): array
     {
-        // Exemple : si vous avez une table `consommations` avec `recette_id` et `quantite`
-        // Ici on retourne un échantillon
-        return Recette::withCount('consommations')
+        $top = $this->recetteRepo->activeQuery()
+            ->withCount('consommations')
             ->orderBy('consommations_count', 'desc')
             ->limit(5)
-            ->get()
-            ->map(fn($r) => [
-                'libelle' => $r->libelle,
-                'fois_servi' => $r->consommations_count,
-            ])
-            ->toArray();
+            ->get();
+
+        return $top->map(fn($r) => [
+            'libelle'    => $r->libelle,
+            'fois_servi' => $r->consommations_count,
+        ])->toArray();
     }
 
     /**
-     * Prévisions vs réalisations (pour la cantine uniquement)
+     * Prévisions vs réalisations (recettes cantine)
      */
     public function getPrevisionVsReel(): array
     {
-        // Prévisions de recettes cantine (type=cantine dans previsions ? ou libelle contient 'cantine')
-        $prevu = DB::table('previsions')
+        $prevu = $this->previsionRepo->activeQuery()
             ->where('annee_id', $this->anneeId)
             ->where('type', 'recette')
             ->where('libelle', 'like', '%cantine%')
             ->sum('montant');
 
-        $reel = DetailPaiement::where('annee_id', $this->anneeId)
+        $reel = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 2)
             ->where('statut_paiement', 1)
             ->sum('montant');
 
         return [
-            'prevu' => $prevu,
-            'reel'  => $reel,
-            'ecart' => $reel - $prevu,
+            'prevu'            => $prevu,
+            'reel'             => $reel,
+            'ecart'            => $reel - $prevu,
             'taux_realisation' => $prevu > 0 ? round(($reel / $prevu) * 100, 2) : 0,
         ];
     }

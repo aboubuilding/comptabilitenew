@@ -1,16 +1,31 @@
 <?php
 namespace App\Services;
 
-use App\Models\StockActuel;
-use App\Models\Magasin;
-use App\Models\Produit;
-use App\Models\MouvementStock;
-use Illuminate\Support\Collection;
+use App\Repositories\Interfaces\StockActuelRepositoryInterface;
+use App\Repositories\Interfaces\ProduitRepositoryInterface;
+use App\Repositories\Interfaces\MagasinRepositoryInterface;
+use App\Repositories\Interfaces\MouvementStockRepositoryInterface;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
-class StockBoutiqueService
+class StockBoutiqueService extends BaseService
 {
+    protected string $entityName = 'Stock';
+    protected ProduitRepositoryInterface $produitRepo;
+    protected MagasinRepositoryInterface $magasinRepo;
+    protected MouvementStockRepositoryInterface $mouvementRepo;
+
+    public function __construct(
+        StockActuelRepositoryInterface $stockRepo,
+        ProduitRepositoryInterface $produitRepo,
+        MagasinRepositoryInterface $magasinRepo,
+        MouvementStockRepositoryInterface $mouvementRepo
+    ) {
+        parent::__construct($stockRepo);
+        $this->produitRepo = $produitRepo;
+        $this->magasinRepo = $magasinRepo;
+        $this->mouvementRepo = $mouvementRepo;
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -24,11 +39,12 @@ class StockBoutiqueService
     {
         $anneeId = $this->getCurrentAnneeId();
 
-        $query = StockActuel::with(['produit', 'magasin'])
+        $query = $this->repo->activeQuery()
+            ->with(['produit', 'magasin'])
             ->whereHas('magasin', function ($q) {
-                $q->where('type', 2); // 2 = boutique
+                $q->where('type', 2);
             })
-            ->where('annee_id', $anneeId); // si votre table stock_actuel a annee_id
+            ->where('annee_id', $anneeId);
 
         if (!empty($filters['magasin_id'])) {
             $query->where('magasin_id', $filters['magasin_id']);
@@ -90,14 +106,16 @@ class StockBoutiqueService
      */
     public function getStockDetail(int $produitId, int $magasinId): array
     {
-        $produit = Produit::findOrFail($produitId);
-        $magasin = Magasin::findOrFail($magasinId);
+        $produit = $this->produitRepo->findOrFail($produitId);
+        $magasin = $this->magasinRepo->findOrFail($magasinId);
 
-        $stock = StockActuel::where('produit_id', $produitId)
+        $stock = $this->repo->activeQuery()
+            ->where('produit_id', $produitId)
             ->where('magasin_id', $magasinId)
             ->first();
 
-        $mouvements = MouvementStock::with('utilisateur')
+        $mouvements = $this->mouvementRepo->activeQuery()
+            ->with('utilisateur')
             ->where('produit_id', $produitId)
             ->where('magasin_id', $magasinId)
             ->orderBy('date_mouvement', 'desc')
@@ -142,7 +160,8 @@ class StockBoutiqueService
      */
     public function ajusterInventaire(int $produitId, int $magasinId, float $quantiteReelle, string $motif): void
     {
-        $stock = StockActuel::firstOrNew([
+        $stockModel = $this->repo->getModel();
+        $stock = $stockModel::firstOrNew([
             'produit_id' => $produitId,
             'magasin_id' => $magasinId,
         ]);
@@ -150,21 +169,21 @@ class StockBoutiqueService
         $difference = $quantiteReelle - $ancienne;
 
         if (abs($difference) < 0.0001) {
-            return; // pas de changement
+            return;
         }
 
-        DB::transaction(function () use ($produitId, $magasinId, $quantiteReelle, $motif, $difference) {
+        DB::transaction(function () use ($produitId, $magasinId, $quantiteReelle, $motif, $difference, $stockModel) {
             // Mettre à jour stock_actuel
-            StockActuel::updateOrCreate(
+            $stockModel::updateOrCreate(
                 ['produit_id' => $produitId, 'magasin_id' => $magasinId],
                 ['quantite' => $quantiteReelle]
             );
 
             // Enregistrer le mouvement d'ajustement
-            MouvementStock::create([
+            $this->mouvementRepo->create([
                 'produit_id'     => $produitId,
                 'magasin_id'     => $magasinId,
-                'type'           => 'ajustement', // ou 4 selon votre enum
+                'type'           => 'ajustement',
                 'quantite'       => abs($difference),
                 'motif'          => $motif . " (écart: " . ($difference > 0 ? '+' : '') . $difference . ")",
                 'reference_id'   => null,
@@ -179,7 +198,8 @@ class StockBoutiqueService
      */
     public function alertesStockBas(): array
     {
-        $alertes = StockActuel::with(['produit', 'magasin'])
+        $alertes = $this->repo->activeQuery()
+            ->with(['produit', 'magasin'])
             ->whereHas('magasin', fn($q) => $q->where('type', 2))
             ->whereColumn('quantite', '<=', 'seuil_alerte')
             ->where('seuil_alerte', '>', 0)
@@ -203,8 +223,9 @@ class StockBoutiqueService
      */
     public function rapportInventaire(int $magasinId): array
     {
-        $magasin = Magasin::findOrFail($magasinId);
-        $stocks = StockActuel::with('produit')
+        $magasin = $this->magasinRepo->findOrFail($magasinId);
+        $stocks = $this->repo->activeQuery()
+            ->with('produit')
             ->where('magasin_id', $magasinId)
             ->where('quantite', '>', 0)
             ->get();
@@ -234,7 +255,8 @@ class StockBoutiqueService
      */
     public function mouvementsPeriode(array $filters = []): array
     {
-        $query = MouvementStock::with(['produit', 'magasin', 'utilisateur'])
+        $query = $this->mouvementRepo->activeQuery()
+            ->with(['produit', 'magasin', 'utilisateur'])
             ->whereHas('magasin', fn($q) => $q->where('type', 2));
 
         if (!empty($filters['magasin_id'])) {

@@ -1,18 +1,29 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\AbonnementBus;
-use App\Models\DetailPaiement;
-use App\Models\Inscription;
+use App\Repositories\Eloquent\AbonnementBusRepository;
+use App\Repositories\Eloquent\DetailRepository;
+use App\Repositories\Eloquent\InscriptionRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AnalyseBusService
 {
-    protected $anneeId;
+    protected ?int $anneeId;
+    protected AbonnementBusRepository $abonnementRepo;
+    protected DetailRepository $detailPaiementRepo;
+    protected InscriptionRepository $inscriptionRepo;
 
-    public function __construct()
-    {
+    public function __construct(
+        AbonnementBusRepository $abonnementRepo,
+        DetailRepository $detailPaiementRepo,
+        InscriptionRepository $inscriptionRepo
+    ) {
+        $this->abonnementRepo = $abonnementRepo;
+        $this->detailPaiementRepo = $detailPaiementRepo;
+        $this->inscriptionRepo = $inscriptionRepo;
         $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
     }
 
@@ -21,7 +32,8 @@ class AnalyseBusService
      */
     public function getIndicateursGlobaux(): array
     {
-        $query = AbonnementBus::where('annee_id', $this->anneeId)
+        $query = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1); // actifs
 
         $totalInscrits = $query->count();
@@ -33,12 +45,14 @@ class AnalyseBusService
         // Nombre d’abonnements par zone (si zone_id existe)
         $parZone = [];
         if (Schema::hasColumn('abonnements_bus', 'zone_id')) {
-            $parZone = AbonnementBus::where('annee_id', $this->anneeId)
+            $parZone = $this->abonnementRepo->activeQuery()
+                ->where('annee_id', $this->anneeId)
                 ->with('zone')
                 ->select('zone_id', DB::raw('count(*) as total'))
                 ->groupBy('zone_id')
                 ->get()
-                ->map(fn($z) => ['zone' => $z->zone?->libelle, 'total' => $z->total]);
+                ->map(fn($z) => ['zone' => $z->zone?->libelle, 'total' => $z->total])
+                ->toArray();
         }
 
         return [
@@ -57,14 +71,16 @@ class AnalyseBusService
     public function getEvolutionMensuelle(): array
     {
         // Inscriptions par mois
-        $inscriptionsMensuelles = AbonnementBus::where('annee_id', $this->anneeId)
+        $inscriptionsMensuelles = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as mois'), DB::raw('count(*) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->get();
 
         // Paiements encaissés (type_paiement = 3 pour bus, statut_paiement=1)
-        $paiementsMensuels = DetailPaiement::where('annee_id', $this->anneeId)
+        $paiementsMensuels = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 3)
             ->where('statut_paiement', 1)
             ->select(DB::raw('DATE_FORMAT(date_encaissement, "%Y-%m") as mois'), DB::raw('SUM(montant) as total'))
@@ -83,7 +99,8 @@ class AnalyseBusService
      */
     public function getPerformanceParNiveau(): array
     {
-        $data = AbonnementBus::where('annee_id', $this->anneeId)
+        $data = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->with('inscription.niveau')
             ->get()
@@ -108,7 +125,8 @@ class AnalyseBusService
      */
     public function getTopClasses(): array
     {
-        return AbonnementBus::where('annee_id', $this->anneeId)
+        $classeIds = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->with('inscription.classe')
             ->select('inscription_id', DB::raw('count(*) as total'))
             ->groupBy('inscription_id')
@@ -119,6 +137,8 @@ class AnalyseBusService
                 'classe' => $a->inscription->classe?->libelle ?? 'Inconnue',
                 'total'  => $a->total,
             ]);
+
+        return $classeIds->toArray();
     }
 
     /**
@@ -126,11 +146,12 @@ class AnalyseBusService
      */
     public function getImpayes(): array
     {
-        $abonnements = AbonnementBus::where('annee_id', $this->anneeId)
+        $abonnements = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 1)
             ->with('inscription.eleve', 'inscription.classe')
             ->get()
-            ->filter(fn($a) => $a->montant_reste > 0)
+            ->filter(fn($a) => ($a->montant_reste ?? 0) > 0)
             ->map(fn($a) => [
                 'eleve'            => $a->inscription->eleve->nom . ' ' . $a->inscription->eleve->prenom,
                 'classe'           => $a->inscription->classe?->libelle,
@@ -141,7 +162,7 @@ class AnalyseBusService
 
         return [
             'total_impayes' => $abonnements->count(),
-            'liste'         => $abonnements,
+            'liste'         => $abonnements->values(),
         ];
     }
 
@@ -150,10 +171,13 @@ class AnalyseBusService
      */
     public function getAbandons(): array
     {
-        $totalAbandons = AbonnementBus::where('annee_id', $this->anneeId)
+        $totalAbandons = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 0)
             ->count();
-        $parMois = AbonnementBus::where('annee_id', $this->anneeId)
+
+        $parMois = $this->abonnementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('statut', 0)
             ->select(DB::raw('DATE_FORMAT(date_abandon, "%Y-%m") as mois'), DB::raw('count(*) as total'))
             ->groupBy('mois')
@@ -172,12 +196,12 @@ class AnalyseBusService
     public function getAll(): array
     {
         return [
-            'indicateurs_globaux' => $this->getIndicateursGlobaux(),
-            'evolution_mensuelle' => $this->getEvolutionMensuelle(),
-            'performance_par_niveau' => $this->getPerformanceParNiveau(),
-            'top_classes'       => $this->getTopClasses(),
-            'impayes'           => $this->getImpayes(),
-            'abandons'          => $this->getAbandons(),
+            'indicateurs_globaux'      => $this->getIndicateursGlobaux(),
+            'evolution_mensuelle'      => $this->getEvolutionMensuelle(),
+            'performance_par_niveau'   => $this->getPerformanceParNiveau(),
+            'top_classes'              => $this->getTopClasses(),
+            'impayes'                  => $this->getImpayes(),
+            'abandons'                 => $this->getAbandons(),
         ];
     }
 }

@@ -2,35 +2,41 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use Illuminate\Support\Collection;
+use App\Repositories\Eloquent\UserRepository;
 use Illuminate\Support\Facades\Hash;
 
 class ComptableService
 {
-    const ROLE_COMPTABLE = 2; // À adapter selon votre config
+    const ROLE_COMPTABLE = 2;
+
+    protected UserRepository $userRepo;
+
+    public function __construct(UserRepository $userRepo)
+    {
+        $this->userRepo = $userRepo;
+    }
 
     /**
      * Liste des comptables (rôle comptable) avec pagination
      */
     public function listeComptables(array $filters = []): array
     {
-        $query = User::where('role', self::ROLE_COMPTABLE)
-                     ->where('etat', 1); // actifs par défaut, mais on peut filtrer
+        // On utilise getModel()->newQuery() pour obtenir le query builder brut
+        $query = $this->userRepo->getModel()->newQuery()
+            ->where('role', self::ROLE_COMPTABLE)
+            ->where('etat', 1);
 
-        // Filtre par état (actif/inactif)
-        if (isset($filters['etat']) && in_array($filters['etat'], [0,1])) {
+        if (isset($filters['etat']) && in_array($filters['etat'], [0, 1])) {
             $query->where('etat', $filters['etat']);
         }
 
-        // Recherche (nom, prénom, login, email)
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nom', 'like', $search)
-                  ->orWhere('prenom', 'like', $search)
-                  ->orWhere('login', 'like', $search)
-                  ->orWhere('email', 'like', $search);
+                    ->orWhere('prenom', 'like', $search)
+                    ->orWhere('login', 'like', $search)
+                    ->orWhere('email', 'like', $search);
             });
         }
 
@@ -65,26 +71,29 @@ class ComptableService
     /**
      * Récupère un comptable par son ID
      */
-    public function getComptable(int $id): User
+    public function getComptable(int $id)
     {
-        return User::where('role', self::ROLE_COMPTABLE)->findOrFail($id);
+        return $this->userRepo->getModel()->newQuery()
+            ->where('role', self::ROLE_COMPTABLE)
+            ->findOrFail($id);
     }
 
     /**
      * Crée un nouveau comptable
      */
-    public function createComptable(array $data): User
+    public function createComptable(array $data)
     {
         $data['role'] = self::ROLE_COMPTABLE;
         $data['mot_passe'] = Hash::make($data['mot_passe']);
         $data['etat'] = $data['etat'] ?? 1;
-        return User::create($data);
+        $data['etat'] = 1;
+        return $this->userRepo->create($data);
     }
 
     /**
      * Met à jour un comptable
      */
-    public function updateComptable(int $id, array $data): User
+    public function updateComptable(int $id, array $data)
     {
         $comptable = $this->getComptable($id);
         if (!empty($data['mot_passe'])) {
@@ -92,8 +101,8 @@ class ComptableService
         } else {
             unset($data['mot_passe']);
         }
-        $comptable->update($data);
-        return $comptable;
+        $this->userRepo->update($id, $data);
+        return $this->getComptable($id);
     }
 
     /**
@@ -101,9 +110,7 @@ class ComptableService
      */
     public function suspendre(int $id): void
     {
-        $comptable = $this->getComptable($id);
-        $comptable->etat = 0;
-        $comptable->save();
+        $this->userRepo->update($id, ['etat' => 0]);
     }
 
     /**
@@ -111,17 +118,14 @@ class ComptableService
      */
     public function reactiver(int $id): void
     {
-        $comptable = $this->getComptable($id);
-        $comptable->etat = 1;
-        $comptable->save();
+        $this->userRepo->update($id, ['etat' => 1]);
     }
 
     /**
-     * Suppression définitive (si nécessaire)
+     * Suppression définitive (hard delete)
      */
     public function deleteComptable(int $id): void
     {
-        $comptable = $this->getComptable($id);
-        $comptable->delete();
+        $this->userRepo->forceDelete($id);
     }
 }

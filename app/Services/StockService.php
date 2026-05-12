@@ -1,13 +1,27 @@
 <?php
 namespace App\Services;
 
-use App\Models\Produit;
-use App\Models\StockMouvement;
-use Illuminate\Support\Collection;
+use App\Repositories\Interfaces\ProduitRepositoryInterface;
+use App\Repositories\Interfaces\StockMouvementRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
-class StockService
+class StockService extends BaseService
 {
+    protected string $entityName = 'Produit';
+    protected array $defaultSelectFields = [
+        'id', 'libelle', 'prix_unitaire', 'unite_stock', 'quantite_stock',
+        'seuil_alerte', 'stock_min', 'stock_max', 'type_produit', 'etat'
+    ];
+    protected StockMouvementRepositoryInterface $mouvementRepo;
+
+    public function __construct(
+        ProduitRepositoryInterface $produitRepo,
+        StockMouvementRepositoryInterface $mouvementRepo
+    ) {
+        parent::__construct($produitRepo);
+        $this->mouvementRepo = $mouvementRepo;
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -20,8 +34,8 @@ class StockService
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
 
-        $query = Produit::where('etat', 1)
-            ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId)) // si annee_id dans produits
+        $query = $this->repo->activeQuery()
+            ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(!empty($filters['search']), function ($q) use ($filters) {
                 $search = '%' . $filters['search'] . '%';
                 $q->where('libelle', 'like', $search);
@@ -68,8 +82,9 @@ class StockService
      */
     public function getStockDetail(int $produitId): array
     {
-        $produit = Produit::findOrFail($produitId);
-        $mouvements = StockMouvement::with('utilisateur')
+        $produit = $this->repo->findOrFail($produitId);
+        $mouvements = $this->mouvementRepo->activeQuery()
+            ->with('utilisateur')
             ->where('produit_id', $produitId)
             ->orderBy('date_mouvement', 'desc')
             ->get()
@@ -104,21 +119,21 @@ class StockService
     public function getStats(): array
     {
         $anneeId = $this->getCurrentAnneeId();
-        // Valeur totale du stock (quantité * prix_unitaire)
-        $valeurStock = Produit::where('etat', 1)
+        $produits = $this->repo->activeQuery()
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
-            ->get()
-            ->sum(fn($p) => $p->quantite_stock * $p->prix_unitaire);
+            ->get();
+        $valeurStock = $produits->sum(fn($p) => $p->quantite_stock * $p->prix_unitaire);
 
-        // Entrées sur les 30 derniers jours
-        $entrees30j = StockMouvement::where('type', 'entree')
+        $entrees30j = $this->mouvementRepo->activeQuery()
+            ->where('type', 'entree')
             ->where('date_mouvement', '>=', now()->subDays(30))
             ->sum('quantite');
-        $sorties30j = StockMouvement::where('type', 'sortie')
+        $sorties30j = $this->mouvementRepo->activeQuery()
+            ->where('type', 'sortie')
             ->where('date_mouvement', '>=', now()->subDays(30))
             ->sum('quantite');
 
-        $produitsBas = Produit::where('etat', 1)
+        $produitsBas = $this->repo->activeQuery()
             ->whereRaw('quantite_stock <= seuil_alerte')
             ->count();
 
@@ -135,7 +150,8 @@ class StockService
      */
     public function getMouvementsPeriode(?string $dateDebut, ?string $dateFin, array $filters = []): array
     {
-        $query = StockMouvement::with('produit', 'utilisateur')
+        $query = $this->mouvementRepo->activeQuery()
+            ->with('produit', 'utilisateur')
             ->when($dateDebut, fn($q) => $q->whereDate('date_mouvement', '>=', $dateDebut))
             ->when($dateFin, fn($q) => $q->whereDate('date_mouvement', '<=', $dateFin))
             ->when(!empty($filters['type']), fn($q) => $q->where('type', $filters['type']))

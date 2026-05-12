@@ -1,12 +1,23 @@
 <?php
 namespace App\Services;
 
-use App\Models\Produit;
+use App\Repositories\Interfaces\ProduitRepositoryInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class ProduitService
+class ProduitService extends BaseService
 {
+    protected string $entityName = 'Produit';
+    protected array $defaultSelectFields = [
+        'id', 'code', 'libelle', 'categorie', 'type_produit', 'unite_base', 'unite_achat', 'conversion_achat',
+        'unite_vente', 'conversion_vente', 'prix_achat', 'prix_vente', 'quantite_stock', 'seuil_alerte',
+        'stock_min', 'stock_max', 'etat'
+    ];
+
+    public function __construct(ProduitRepositoryInterface $repo)
+    {
+        parent::__construct($repo);
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -17,13 +28,13 @@ class ProduitService
      */
     public function listProduits(array $filters = []): array
     {
-        $query = Produit::where('etat', 1);
+        $query = $this->repo->activeQuery();
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('libelle', 'like', $search)
-                  ->orWhere('code', 'like', $search);
+                    ->orWhere('code', 'like', $search);
             });
         }
         if (!empty($filters['categorie'])) {
@@ -85,7 +96,7 @@ class ProduitService
      */
     public function getProduit(int $id): array
     {
-        $produit = Produit::findOrFail($id);
+        $produit = $this->repo->findOrFail($id);
         return [
             'id'               => $produit->id,
             'code'             => $produit->code,
@@ -114,9 +125,8 @@ class ProduitService
     /**
      * Créer un produit
      */
-    public function createProduit(array $data): Produit
+    public function createProduit(array $data): \App\Models\Produit
     {
-        // Défaut des conversions si non renseignées
         $data['conversion_achat'] = $data['conversion_achat'] ?? 1;
         $data['conversion_vente'] = $data['conversion_vente'] ?? 1;
         if (empty($data['unite_vente'])) {
@@ -125,17 +135,16 @@ class ProduitService
         $data['etat'] = $data['etat'] ?? 1;
         $data['quantite_stock'] = $data['quantite_stock'] ?? 0;
 
-        return Produit::create($data);
+        return $this->repo->create($data);
     }
 
     /**
      * Mettre à jour un produit
      */
-    public function updateProduit(int $id, array $data): Produit
+    public function updateProduit(int $id, array $data): \App\Models\Produit
     {
-        $produit = Produit::findOrFail($id);
-        $produit->update($data);
-        return $produit;
+        $this->repo->update($id, $data);
+        return $this->repo->find($id);
     }
 
     /**
@@ -143,9 +152,7 @@ class ProduitService
      */
     public function deleteProduit(int $id): void
     {
-        $produit = Produit::findOrFail($id);
-        $produit->etat = 0;
-        $produit->save();
+        $this->repo->update($id, ['etat' => 0]);
     }
 
     /**
@@ -153,7 +160,7 @@ class ProduitService
      */
     public function getForSelect(): Collection
     {
-        return Produit::where('etat', 1)
+        return $this->repo->activeQuery()
             ->orderBy('libelle')
             ->get(['id', 'libelle', 'prix_vente', 'unite_vente', 'quantite_stock'])
             ->map(fn($p) => [

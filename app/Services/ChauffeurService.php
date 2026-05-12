@@ -1,12 +1,20 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\Chauffeur;
+use App\Repositories\Eloquent\ChauffeurRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ChauffeurService
 {
+    protected ChauffeurRepository $chauffeurRepo;
+
+    public function __construct(ChauffeurRepository $chauffeurRepo)
+    {
+        $this->chauffeurRepo = $chauffeurRepo;
+    }
+
     /**
      * Récupère l'année en session
      */
@@ -22,8 +30,8 @@ class ChauffeurService
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
 
-        $query = Chauffeur::query()
-            ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
+        $query = $this->chauffeurRepo->activeQuery() // filtre etat = 1 (actif non supprimé)
+        ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(isset($filters['statut']) && $filters['statut'] !== '', fn($q) => $q->where('statut', $filters['statut']))
             ->when(!empty($filters['search']), function ($q) use ($filters) {
                 $search = '%' . $filters['search'] . '%';
@@ -66,15 +74,15 @@ class ChauffeurService
     /**
      * Récupère un chauffeur par ID
      */
-    public function getChauffeur(int $id): Chauffeur
+    public function getChauffeur(int $id): \App\Models\Chauffeur
     {
-        return Chauffeur::findOrFail($id);
+        return $this->chauffeurRepo->findOrFail($id);
     }
 
     /**
      * Crée un chauffeur
      */
-    public function createChauffeur(array $data): Chauffeur
+    public function createChauffeur(array $data): \App\Models\Chauffeur
     {
         $anneeId = $data['annee_id'] ?? $this->getCurrentAnneeId();
         if (!$anneeId) {
@@ -82,18 +90,18 @@ class ChauffeurService
         }
         $data['annee_id'] = $anneeId;
         $data['statut'] = $data['statut'] ?? 1;
+        $data['etat'] = 1; // actif pour le soft delete
 
-        return Chauffeur::create($data);
+        return $this->chauffeurRepo->create($data);
     }
 
     /**
      * Met à jour un chauffeur
      */
-    public function updateChauffeur(int $id, array $data): Chauffeur
+    public function updateChauffeur(int $id, array $data): \App\Models\Chauffeur
     {
-        $chauffeur = $this->getChauffeur($id);
-        $chauffeur->update($data);
-        return $chauffeur;
+        $this->chauffeurRepo->update($id, $data);
+        return $this->chauffeurRepo->find($id);
     }
 
     /**
@@ -101,9 +109,7 @@ class ChauffeurService
      */
     public function deleteChauffeur(int $id): void
     {
-        $chauffeur = $this->getChauffeur($id);
-        $chauffeur->statut = 0;
-        $chauffeur->save();
+        $this->chauffeurRepo->update($id, ['statut' => 0]);
     }
 
     /**
@@ -111,7 +117,8 @@ class ChauffeurService
      */
     public function getForSelect(): Collection
     {
-        return Chauffeur::where('statut', 1)
+        return $this->chauffeurRepo->activeQuery()
+            ->where('statut', 1)
             ->orderBy('nom')
             ->orderBy('prenom')
             ->get(['id', 'nom', 'prenom'])

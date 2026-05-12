@@ -1,15 +1,33 @@
 <?php
 namespace App\Services;
 
-use App\Models\Achat;
-use App\Models\DetailAchat;
-use App\Models\Produit;
-use App\Models\StockMouvement;
+use App\Repositories\Eloquent\AchatRepository;
+use App\Repositories\Eloquent\DetailAchatRepository;
+use App\Repositories\Eloquent\ProduitRepository;
+use App\Repositories\Eloquent\MouvementStockRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
-class AchatService
+class AchatService extends BaseService
 {
+    protected AchatRepository $achatRepo;
+    protected DetailAchatRepository $detailRepo;
+    protected ProduitRepository $produitRepo;
+    protected MouvementStockRepository $mouvementRepo;
+
+    public function __construct(
+        AchatRepository $achatRepo,
+        DetailAchatRepository $detailRepo,
+        ProduitRepository $produitRepo,
+        MouvementStockRepository $mouvementRepo
+    ) {
+        parent::__construct($achatRepo);
+        $this->achatRepo = $achatRepo;
+        $this->detailRepo = $detailRepo;
+        $this->produitRepo = $produitRepo;
+        $this->mouvementRepo = $mouvementRepo;
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -21,9 +39,9 @@ class AchatService
     public function listAchats(array $filters = []): array
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
-        $query = Achat::with(['fournisseur', 'details.produit'])
-            ->where('annee_id', $anneeId)
-            ->where('etat', 1);
+        $query = $this->achatRepo->activeQuery()
+            ->with(['fournisseur', 'details.produit'])
+            ->where('annee_id', $anneeId);
 
         if (!empty($filters['date_debut'])) {
             $query->whereDate('date_achat', '>=', $filters['date_debut']);
@@ -65,15 +83,31 @@ class AchatService
             ];
         });
 
+        // Pour les aggregates, on clone la requête originale
+        $baseQuery = $this->achatRepo->activeQuery()
+            ->where('annee_id', $anneeId);
+        // Appliquer les mêmes filtres (sans pagination)
+        if (!empty($filters['date_debut'])) {
+            $baseQuery->whereDate('date_achat', '>=', $filters['date_debut']);
+        }
+        if (!empty($filters['date_fin'])) {
+            $baseQuery->whereDate('date_achat', '<=', $filters['date_fin']);
+        }
+        if (isset($filters['type_achat']) && in_array($filters['type_achat'], [1,2])) {
+            $baseQuery->where('type_achat', $filters['type_achat']);
+        }
+        if (!empty($filters['fournisseur_id'])) {
+            $baseQuery->where('fournisseur_id', $filters['fournisseur_id']);
+        }
+
         $aggregates = [
-            'total_depenses' => (clone $query)->sum('montant_total'),
-            'nombre_achats'  => (clone $query)->count(),
-            'total_cantine'  => (clone $query)->where('type_achat', 1)->sum('montant_total'),
-            'total_boutique' => (clone $query)->where('type_achat', 2)->sum('montant_total'),
+            'total_depenses' => (clone $baseQuery)->sum('montant_total'),
+            'nombre_achats'  => (clone $baseQuery)->count(),
+            'total_cantine'  => (clone $baseQuery)->where('type_achat', 1)->sum('montant_total'),
+            'total_boutique' => (clone $baseQuery)->where('type_achat', 2)->sum('montant_total'),
         ];
 
-        return [
-            'data'       => $data,
+        return $this->formatResponse(true, 'Liste des achats', $data, [
             'aggregates' => $aggregates,
             'pagination' => [
                 'current_page' => $achats->currentPage(),
@@ -81,23 +115,23 @@ class AchatService
                 'per_page'     => $achats->perPage(),
                 'total'        => $achats->total(),
             ]
-        ];
+        ]);
     }
 
     /**
      * Créer un achat (avec plusieurs produits)
      */
-    public function createAchat(array $data): Achat
+    public function createAchat(array $data): array
     {
         $anneeId = $this->getCurrentAnneeId();
         if (!$anneeId) {
-            throw new \Exception("Année scolaire non définie en session.");
+            return $this->formatResponse(false, 'Année scolaire non définie en session.');
         }
 
         DB::beginTransaction();
         try {
             // 1. Créer l'entête de l'achat
-            $achat = Achat::create([
+            $achatData = [
                 'date_achat'       => $data['date_achat'],
                 'fournisseur_id'   => $data['fournisseur_id'] ?? null,
                 'nom_acheteur'     => $data['nom_acheteur'] ?? null,
@@ -109,15 +143,16 @@ class AchatService
                 'statut_paiement'  => $data['statut_paiement'] ?? 0,
                 'statut_livraison' => $data['statut_livraison'] ?? 0,
                 'etat'             => 1,
-                'montant_total'    => 0, // sera calculé
-            ]);
+                'montant_total'    => 0,
+            ];
+            $achat = $this->achatRepo->create($achatData);
 
             $totalGeneral = 0;
             foreach ($data['produits'] as $item) {
                 $montantLigne = $item['quantite'] * $item['prix_unitaire'];
                 $totalGeneral += $montantLigne;
 
-                DetailAchat::create([
+                $this->detailRepo->create([
                     'achat_id'      => $achat->id,
                     'produit_id'    => $item['produit_id'],
                     'annee_id'      => $anneeId,
@@ -127,14 +162,14 @@ class AchatService
                     'etat'          => 1,
                 ]);
 
-                // Mise à jour du stock du produit (entrée)
-                $produit = Produit::find($item['produit_id']);
+                // Mise à jour du stock du produit
+                $produit = $this->produitRepo->find($item['produit_id']);
                 if ($produit) {
                     $produit->quantite_stock += $item['quantite'];
                     $produit->save();
 
                     // Traçabilité : mouvement de stock
-                    StockMouvement::create([
+                    $this->mouvementRepo->create([
                         'produit_id'     => $produit->id,
                         'type'           => 'entree',
                         'quantite'       => $item['quantite'],
@@ -146,53 +181,68 @@ class AchatService
                 }
             }
 
-            $achat->montant_total = $totalGeneral;
-            $achat->save();
+            $this->achatRepo->update($achat->id, ['montant_total' => $totalGeneral]);
 
             DB::commit();
-            return $achat;
+            return $this->formatResponse(true, 'Achat créé avec succès', $achat);
         } catch (\Exception $e) {
             DB::rollBack();
-            throw $e;
+            return $this->formatResponse(false, 'Erreur lors de la création : ' . $e->getMessage());
         }
     }
 
     /**
      * Mettre à jour les statuts (paiement/livraison) d'un achat
      */
-    public function updateAchatStatus(int $id, array $data): Achat
+    public function updateAchatStatus(int $id, array $data): array
     {
-        $achat = Achat::findOrFail($id);
-        if (isset($data['statut_paiement'])) {
-            $achat->statut_paiement = $data['statut_paiement'];
+        try {
+            $achat = $this->achatRepo->findOrFail($id);
+            $updateData = [];
+            if (isset($data['statut_paiement'])) {
+                $updateData['statut_paiement'] = $data['statut_paiement'];
+            }
+            if (isset($data['statut_livraison'])) {
+                $updateData['statut_livraison'] = $data['statut_livraison'];
+            }
+            if (isset($data['commentaire'])) {
+                $updateData['commentaire'] = $data['commentaire'];
+            }
+            if (!empty($updateData)) {
+                $this->achatRepo->update($id, $updateData);
+            }
+            return $this->formatResponse(true, 'Statut mis à jour', $achat);
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, 'Achat introuvable');
         }
-        if (isset($data['statut_livraison'])) {
-            $achat->statut_livraison = $data['statut_livraison'];
-        }
-        if (isset($data['commentaire'])) {
-            $achat->commentaire = $data['commentaire'];
-        }
-        $achat->save();
-        return $achat;
     }
 
     /**
      * Annuler un achat (soft delete / annulation logique)
      */
-    public function deleteAchat(int $id): void
+    public function deleteAchat(int $id): array
     {
-        $achat = Achat::findOrFail($id);
-        // Optionnel : on pourrait inverser les mouvements de stock
-        // Mais on préfère garder la traçabilité. On se contente de passer etat=0
-        $achat->etat = 0;
-        $achat->save();
+        try {
+            $this->achatRepo->findOrFail($id);
+            $this->achatRepo->update($id, ['etat' => 0]);
+            return $this->formatResponse(true, 'Achat annulé');
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, 'Achat introuvable');
+        }
     }
 
     /**
      * Récupérer un achat avec ses détails
      */
-    public function getAchat(int $id): Achat
+    public function getAchat(int $id): array
     {
-        return Achat::with(['fournisseur', 'details.produit'])->findOrFail($id);
+        try {
+            $achat = $this->achatRepo->activeQuery()
+                ->with(['fournisseur', 'details.produit'])
+                ->findOrFail($id);
+            return $this->formatResponse(true, '', $achat);
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, 'Achat introuvable');
+        }
     }
 }

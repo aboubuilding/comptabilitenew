@@ -1,12 +1,22 @@
 <?php
 namespace App\Services;
 
-use App\Models\Prevision;
-use Illuminate\Support\Facades\DB;
+use App\Repositories\Interfaces\PrevisionRepositoryInterface;
 
-class PrevisionService
+class PrevisionService extends BaseService
 {
-    protected function getCurrentAnneeId()
+    protected string $entityName = 'Prévision';
+    protected array $defaultSelectFields = [
+        'id', 'libelle', 'type', 'montant', 'date_prevision', 'date_fin',
+        'periode', 'annee_id', 'commentaire', 'etat'
+    ];
+
+    public function __construct(PrevisionRepositoryInterface $repo)
+    {
+        parent::__construct($repo);
+    }
+
+    protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
     }
@@ -18,7 +28,8 @@ class PrevisionService
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
 
-        $query = Prevision::with('annee')
+        $query = $this->repo->activeQuery()
+            ->with('annee')
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(!empty($filters['type']), fn($q) => $q->where('type', $filters['type']))
             ->when(!empty($filters['search']), function ($q) use ($filters) {
@@ -44,7 +55,6 @@ class PrevisionService
             'commentaire'   => $p->commentaire,
         ]);
 
-        // Agrégats : total recettes, total dépenses, solde prévisionnel
         $totalRecettes = (clone $query)->where('type', 'recette')->sum('montant');
         $totalDepenses = (clone $query)->where('type', 'depense')->sum('montant');
 
@@ -64,44 +74,28 @@ class PrevisionService
         ];
     }
 
-    /**
-     * Créer une prévision
-     */
-    public function createPrevision(array $data): Prevision
+    public function createPrevision(array $data): array
     {
         $anneeId = $data['annee_id'] ?? $this->getCurrentAnneeId();
         if (!$anneeId) {
-            throw new \Exception("Année scolaire non définie.");
+            return $this->formatResponse(false, 'Année scolaire non définie.');
         }
         $data['annee_id'] = $anneeId;
-        return Prevision::create($data);
+        return $this->store($data);
     }
 
-    /**
-     * Mettre à jour une prévision
-     */
-    public function updatePrevision(int $id, array $data): Prevision
+    public function updatePrevision(int $id, array $data): array
     {
-        $prevision = Prevision::findOrFail($id);
-        $prevision->update($data);
-        return $prevision;
+        return $this->update($id, $data);
     }
 
-    /**
-     * Supprimer une prévision (soft delete = etat=0)
-     */
-    public function deletePrevision(int $id): void
+    public function deletePrevision(int $id): array
     {
-        $prevision = Prevision::findOrFail($id);
-        $prevision->etat = 0;
-        $prevision->save();
+        return $this->destroy($id);
     }
 
-    /**
-     * Récupérer une prévision
-     */
-    public function getPrevision(int $id): Prevision
+    public function getPrevision(int $id): array
     {
-        return Prevision::findOrFail($id);
+        return $this->show($id);
     }
 }

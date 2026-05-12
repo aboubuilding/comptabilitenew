@@ -1,17 +1,27 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\Inscription;
-use App\Models\DetailPaiement;
+use App\Repositories\Eloquent\InscriptionRepository;
+use App\Repositories\Eloquent\DetailRepository;
+use App\Repositories\Eloquent\PaiementRepository;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class AnalyseScolariteService
 {
-    protected $anneeId;
+    protected ?int $anneeId;
+    protected InscriptionRepository $inscriptionRepo;
+    protected DetailRepository $detailPaiementRepo;
+    protected PaiementRepository $paiementRepo;
 
-    public function __construct()
-    {
+    public function __construct(
+        InscriptionRepository $inscriptionRepo,
+        DetailRepository $detailPaiementRepo,
+        PaiementRepository $paiementRepo
+    ) {
+        $this->inscriptionRepo = $inscriptionRepo;
+        $this->detailPaiementRepo = $detailPaiementRepo;
+        $this->paiementRepo = $paiementRepo;
         $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
     }
 
@@ -20,10 +30,13 @@ class AnalyseScolariteService
      */
     public function getRecapitulatifGlobal(): array
     {
-        $query = Inscription::where('annee_id', $this->anneeId)->where('etat', 1);
+        $query = $this->inscriptionRepo->activeQuery()
+            ->where('annee_id', $this->anneeId);
 
         $totalPrevu = $query->sum(DB::raw('frais_scolarite - COALESCE(remise_scolarite, 0)'));
-        $totalPaye = DetailPaiement::where('annee_id', $this->anneeId)
+
+        $totalPaye = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 1)
             ->where('statut_paiement', 1)
             ->sum('montant');
@@ -41,9 +54,9 @@ class AnalyseScolariteService
      */
     public function getAnalyseParNiveau(): array
     {
-        $inscriptions = Inscription::with('niveau')
+        $inscriptions = $this->inscriptionRepo->activeQuery()
+            ->with('niveau')
             ->where('annee_id', $this->anneeId)
-            ->where('etat', 1)
             ->get();
 
         $result = [];
@@ -58,9 +71,9 @@ class AnalyseScolariteService
 
             if (!isset($result[$niveauId])) {
                 $result[$niveauId] = [
-                    'niveau' => $niveauLib,
-                    'total_prevu' => 0,
-                    'total_paye' => 0,
+                    'niveau'        => $niveauLib,
+                    'total_prevu'   => 0,
+                    'total_paye'    => 0,
                     'nombre_eleves' => 0,
                 ];
             }
@@ -69,7 +82,6 @@ class AnalyseScolariteService
             $result[$niveauId]['nombre_eleves']++;
         }
 
-        // Calcul des taux
         foreach ($result as &$item) {
             $item['total_impaye'] = max($item['total_prevu'] - $item['total_paye'], 0);
             $item['taux_recouvrement'] = $item['total_prevu'] > 0
@@ -84,11 +96,10 @@ class AnalyseScolariteService
      */
     public function getElevesImpayes(array $filters = []): array
     {
-        $query = Inscription::with(['eleve', 'classe', 'niveau'])
-            ->where('annee_id', $this->anneeId)
-            ->where('etat', 1);
+        $query = $this->inscriptionRepo->activeQuery()
+            ->with(['eleve', 'classe', 'niveau'])
+            ->where('annee_id', $this->anneeId);
 
-        // Filtres
         if (!empty($filters['classe_id'])) {
             $query->where('classe_id', $filters['classe_id']);
         }
@@ -106,7 +117,7 @@ class AnalyseScolariteService
         $perPage = $filters['per_page'] ?? 15;
         $inscriptions = $query->paginate($perPage);
 
-        $data = $inscriptions->map(function ($ins) {
+        $data = $inscriptions->getCollection()->map(function ($ins) {
             $prevu = $ins->frais_scolarite - ($ins->remise_scolarite ?? 0);
             $paye = $ins->detailsPaiement()
                 ->where('type_paiement', 1)
@@ -115,31 +126,36 @@ class AnalyseScolariteService
             $reste = max($prevu - $paye, 0);
 
             return [
-                'id'           => $ins->id,
-                'eleve'        => $ins->eleve?->nom . ' ' . $ins->eleve?->prenom,
-                'matricule'    => $ins->eleve?->matricule,
-                'classe'       => $ins->classe?->libelle,
-                'niveau'       => $ins->niveau?->libelle,
-                'montant_prevu'=> $prevu,
-                'montant_paye' => $paye,
-                'reste_a_payer'=> $reste,
-                'remise'       => $ins->remise_scolarite ?? 0,
+                'id'            => $ins->id,
+                'eleve'         => $ins->eleve?->nom . ' ' . $ins->eleve?->prenom,
+                'matricule'     => $ins->eleve?->matricule,
+                'classe'        => $ins->classe?->libelle,
+                'niveau'        => $ins->niveau?->libelle,
+                'montant_prevu' => $prevu,
+                'montant_paye'  => $paye,
+                'reste_a_payer' => $reste,
+                'remise'        => $ins->remise_scolarite ?? 0,
             ];
-        })->filter(fn($item) => $item['reste_a_payer'] > 0); // seulement les impayés
+        })->filter(fn($item) => $item['reste_a_payer'] > 0);
 
         // Agrégats
         $totalPrevu = $data->sum('montant_prevu');
         $totalPaye = $data->sum('montant_paye');
 
         return [
-            'data' => $data,
-            'aggregates' => [
-                'total_prevu' => $totalPrevu,
-                'total_paye'  => $totalPaye,
-                'total_impaye'=> $totalPrevu - $totalPaye,
+            'data'        => $data->values(),
+            'aggregates'  => [
+                'total_prevu'    => $totalPrevu,
+                'total_paye'     => $totalPaye,
+                'total_impaye'   => $totalPrevu - $totalPaye,
                 'nombre_impayes' => $data->count(),
             ],
-            'pagination' => $inscriptions->toArray(),
+            'pagination' => [
+                'current_page' => $inscriptions->currentPage(),
+                'last_page'    => $inscriptions->lastPage(),
+                'per_page'     => $inscriptions->perPage(),
+                'total'        => $inscriptions->total(),
+            ],
         ];
     }
 
@@ -148,7 +164,8 @@ class AnalyseScolariteService
      */
     public function getEvolutionMensuelle(): array
     {
-        $encaissements = DetailPaiement::where('annee_id', $this->anneeId)
+        $encaissements = $this->detailPaiementRepo->activeQuery()
+            ->where('annee_id', $this->anneeId)
             ->where('type_paiement', 1)
             ->where('statut_paiement', 1)
             ->select(DB::raw('DATE_FORMAT(date_encaissement, "%Y-%m") as mois'), DB::raw('SUM(montant) as total'))
@@ -164,7 +181,8 @@ class AnalyseScolariteService
      */
     public function getRepartitionParMode(): array
     {
-        $repartition = DetailPaiement::join('paiements', 'details.paiement_id', '=', 'paiements.id')
+        $repartition = $this->detailPaiementRepo->activeQuery()
+            ->join('paiements', 'details.paiement_id', '=', 'paiements.id')
             ->where('details.annee_id', $this->anneeId)
             ->where('details.type_paiement', 1)
             ->where('details.statut_paiement', 1)
@@ -172,8 +190,8 @@ class AnalyseScolariteService
             ->groupBy('paiements.mode_paiement')
             ->get()
             ->map(fn($item) => [
-                'mode' => $this->getModeLabel($item->mode_paiement),
-                'total'=> $item->total,
+                'mode'  => $this->getModeLabel($item->mode_paiement),
+                'total' => $item->total,
             ]);
 
         return $repartition->toArray();

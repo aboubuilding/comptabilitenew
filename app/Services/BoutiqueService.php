@@ -1,26 +1,45 @@
 <?php
 namespace App\Services;
 
-use App\Models\Magasin;
-use App\Models\Vente;
-use App\Models\StockActuel;
+use App\Repositories\Eloquent\MagasinRepository;
+use App\Repositories\Eloquent\VenteRepository;
+use App\Repositories\Eloquent\StockActuelRepository;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 
-class BoutiqueService
+class BoutiqueService extends BaseService
 {
-    // Liste des boutiques (type=2) avec pagination
+    protected string $entityName = 'Boutique';
+    protected MagasinRepository $magasinRepo;
+    protected VenteRepository $venteRepo;
+    protected StockActuelRepository $stockRepo;
+
+    public function __construct(
+        MagasinRepository $magasinRepo,
+        VenteRepository $venteRepo,
+        StockActuelRepository $stockRepo
+    ) {
+        parent::__construct($magasinRepo);
+        $this->magasinRepo = $magasinRepo;
+        $this->venteRepo = $venteRepo;
+        $this->stockRepo = $stockRepo;
+    }
+
+    /**
+     * Liste des boutiques (type=2) avec pagination et filtres
+     */
     public function listBoutiques(array $filters = []): array
     {
-        $query = Magasin::where('type', 2)->where('etat', 1);
+        $query = $this->magasinRepo->activeQuery()
+            ->where('type', 2);
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $query->where(function($q) use ($search) {
                 $q->where('libelle', 'like', $search)
-                  ->orWhere('responsable', 'like', $search);
+                    ->orWhere('responsable', 'like', $search);
             });
         }
+
         $perPage = $filters['per_page'] ?? 15;
         $boutiques = $query->orderBy('libelle')->paginate($perPage);
 
@@ -34,24 +53,33 @@ class BoutiqueService
             'created_at'  => $b->created_at->format('d/m/Y'),
         ]);
 
-        return [
-            'data' => $data,
+        return $this->formatResponse(true, 'Liste des boutiques', $data, [
             'pagination' => [
                 'current_page' => $boutiques->currentPage(),
                 'last_page'    => $boutiques->lastPage(),
                 'per_page'     => $boutiques->perPage(),
                 'total'        => $boutiques->total(),
             ]
-        ];
+        ]);
     }
 
-    // Détail d’une boutique (stock actuel + ventes)
+    /**
+     * Détail d’une boutique (stock actuel + ventes)
+     */
     public function getBoutiqueDetail(int $id, array $filters = []): array
     {
-        $boutique = Magasin::where('id', $id)->where('type', 2)->firstOrFail();
+        // Récupérer la boutique
+        $boutique = $this->magasinRepo->activeQuery()
+            ->where('type', 2)
+            ->find($id);
 
-        // Stock actuel des produits dans cette boutique
-        $stocks = StockActuel::with('produit')
+        if (!$boutique) {
+            return $this->formatResponse(false, 'Boutique introuvable');
+        }
+
+        // Stock actuel
+        $stocks = $this->stockRepo->activeQuery()
+            ->with('produit')
             ->where('magasin_id', $id)
             ->where('quantite', '>', 0)
             ->get()
@@ -63,10 +91,10 @@ class BoutiqueService
                 'seuil_alerte' => $s->seuil_alerte,
             ]);
 
-        // Ventes filtrées par dates
-        $query = Vente::with('produit')
-            ->where('magasin_id', $id)
-            ->where('etat', 1);
+        // Ventes
+        $query = $this->venteRepo->activeQuery()
+            ->with('produit')
+            ->where('magasin_id', $id);
 
         if (!empty($filters['date_debut'])) {
             $query->whereDate('date_vente', '>=', $filters['date_debut']);
@@ -92,14 +120,16 @@ class BoutiqueService
             'client'       => $v->inscription?->eleve?->nom ?? ($v->paiement?->payeur ?? ''),
         ]);
 
-        // Agrégats des ventes
         $aggs = [
             'total_ventes' => (clone $query)->count(),
             'montant_total'=> (clone $query)->sum(DB::raw('quantite * prix_unitaire')),
-            'periodes' => compact('filters.date_debut', 'filters.date_fin'),
+            'periodes' => [
+                'date_debut' => $filters['date_debut'] ?? null,
+                'date_fin'   => $filters['date_fin'] ?? null,
+            ],
         ];
 
-        return [
+        $detail = [
             'boutique' => [
                 'id'          => $boutique->id,
                 'libelle'     => $boutique->libelle,
@@ -118,32 +148,56 @@ class BoutiqueService
                 'total'        => $ventes->total(),
             ]
         ];
+
+        return $this->formatResponse(true, 'Détail de la boutique', $detail);
     }
 
-    // CRUD classique
-    public function createMagasin(array $data): Magasin
+    /**
+     * Crée une boutique (type forcé à 2)
+     */
+    public function store(array $validatedData): array
     {
-        $data['type'] = 2; // forcé boutique
-        $data['etat'] = $data['etat'] ?? 1;
-        return Magasin::create($data);
+        $validatedData['type'] = 2;
+        $validatedData['etat'] = $validatedData['etat'] ?? 1;
+        return parent::store($validatedData);
     }
 
-    public function updateMagasin(int $id, array $data): Magasin
+    /**
+     * Met à jour une boutique
+     */
+    public function update(int $id, array $validatedData): array
     {
-        $magasin = Magasin::findOrFail($id);
-        $magasin->update($data);
-        return $magasin;
+        return parent::update($id, $validatedData);
     }
 
-    public function deleteMagasin(int $id): void
+    /**
+     * Supprime une boutique (soft delete) avec vérification des ventes associées
+     */
+    public function destroy(int $id): array
     {
-        $magasin = Magasin::findOrFail($id);
         // Vérifier si des ventes existent
-        if (Vente::where('magasin_id', $id)->exists()) {
-            throw new \Exception("Impossible de supprimer : des ventes sont associées à cette boutique.");
+        $hasVentes = $this->venteRepo->activeQuery()
+            ->where('magasin_id', $id)
+            ->exists();
+        if ($hasVentes) {
+            return $this->formatResponse(false, 'Impossible de supprimer : des ventes sont associées à cette boutique.');
         }
-        $magasin->deleted_at = now(); // soft delete
-        $magasin->etat = 0;
-        $magasin->save();
+        return parent::destroy($id);
+    }
+
+    /**
+     * Récupère les boutiques pour les selects (type=2)
+     */
+    public function getForSelect(array $filters = [], string $labelField = 'libelle', string $valueField = 'id'): array
+    {
+        $query = $this->magasinRepo->activeQuery()
+            ->where('type', 2)
+            ->select($valueField, $labelField);
+        if (!empty($filters['search'])) {
+            $query->where('libelle', 'like', '%' . $filters['search'] . '%');
+        }
+        $items = $query->orderBy($labelField)->get()
+            ->map(fn($item) => ['value' => $item->$valueField, 'label' => $item->$labelField]);
+        return $this->formatResponse(true, '', $items);
     }
 }

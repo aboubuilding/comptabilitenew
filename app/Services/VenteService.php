@@ -1,17 +1,28 @@
 <?php
 namespace App\Services;
 
-use App\Models\Vente;
-use App\Models\VenteDetail;
+use App\Repositories\Interfaces\VenteRepositoryInterface;
+use App\Repositories\Interfaces\VenteDetailRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
-class VenteService
+class VenteService extends BaseService
 {
+    protected string $entityName = 'Vente';
+    protected array $defaultSelectFields = [
+        'id', 'reference', 'date_vente', 'magasin_id', 'type_vente',
+        'statut_paiement', 'client_id', 'total_ht', 'total_ttc', 'etat'
+    ];
+    protected VenteDetailRepositoryInterface $detailRepo;
     protected StockManagerService $stockService;
 
-    public function __construct(StockManagerService $stockService)
-    {
+    public function __construct(
+        VenteRepositoryInterface $venteRepo,
+        VenteDetailRepositoryInterface $detailRepo,
+        StockManagerService $stockService
+    ) {
+        parent::__construct($venteRepo);
+        $this->detailRepo = $detailRepo;
         $this->stockService = $stockService;
     }
 
@@ -32,7 +43,7 @@ class VenteService
             }
 
             // 2. Créer l'entête
-            $vente = Vente::create([
+            $vente = $this->repo->create([
                 'reference'      => $this->genererReference(),
                 'date_vente'     => $data['date_vente'],
                 'magasin_id'     => $data['magasin_id'],
@@ -47,7 +58,7 @@ class VenteService
             $total = 0;
             // 3. Créer les lignes et déduire le stock
             foreach ($data['details'] as $item) {
-                $detail = VenteDetail::create([
+                $detail = $this->detailRepo->create([
                     'vente_id'       => $vente->id,
                     'produit_id'     => $item['produit_id'],
                     'quantite'       => $item['quantite'],
@@ -64,9 +75,10 @@ class VenteService
                 );
             }
 
-            $vente->total_ht = $total;
-            $vente->total_ttc = $total;
-            $vente->save();
+            $this->repo->update($vente->id, [
+                'total_ht'  => $total,
+                'total_ttc' => $total,
+            ]);
 
             return $vente;
         });
@@ -77,15 +89,16 @@ class VenteService
      */
     public function annulerVente(int $id): void
     {
-        $vente = Vente::with('details')->findOrFail($id);
+        $vente = $this->repo->with('details')->findOrFail($id);
         if ($vente->etat == 0) {
             throw new \Exception("Vente déjà annulée");
         }
 
         DB::transaction(function () use ($vente) {
-            $vente->etat = 0;
-            $vente->statut_paiement = 2; // annulé
-            $vente->save();
+            $this->repo->update($vente->id, [
+                'etat' => 0,
+                'statut_paiement' => 2,
+            ]);
 
             foreach ($vente->details as $detail) {
                 $this->stockService->entreeStock(
@@ -103,12 +116,21 @@ class VenteService
      */
     public function listVentes(array $filters = []): array
     {
-        $query = Vente::with(['magasin', 'utilisateur', 'details.produit'])->where('etat', 1);
+        $query = $this->repo->activeQuery()
+            ->with(['magasin', 'utilisateur', 'details.produit']);
 
-        if (!empty($filters['magasin_id'])) $query->where('magasin_id', $filters['magasin_id']);
-        if (!empty($filters['date_debut'])) $query->whereDate('date_vente', '>=', $filters['date_debut']);
-        if (!empty($filters['date_fin'])) $query->whereDate('date_vente', '<=', $filters['date_fin']);
-        if (!empty($filters['reference'])) $query->where('reference', 'like', '%'.$filters['reference'].'%');
+        if (!empty($filters['magasin_id'])) {
+            $query->where('magasin_id', $filters['magasin_id']);
+        }
+        if (!empty($filters['date_debut'])) {
+            $query->whereDate('date_vente', '>=', $filters['date_debut']);
+        }
+        if (!empty($filters['date_fin'])) {
+            $query->whereDate('date_vente', '<=', $filters['date_fin']);
+        }
+        if (!empty($filters['reference'])) {
+            $query->where('reference', 'like', '%' . $filters['reference'] . '%');
+        }
 
         $perPage = $filters['per_page'] ?? 15;
         $ventes = $query->orderBy('date_vente', 'desc')->paginate($perPage);
@@ -134,10 +156,16 @@ class VenteService
         ];
     }
 
+    /**
+     * Génère une référence unique pour la vente
+     */
     private function genererReference(): string
     {
         $prefix = 'VTE' . date('Ymd');
-        $last = Vente::where('reference', 'like', $prefix.'%')->orderBy('id', 'desc')->first();
+        $last = $this->repo->getModel()->newQuery()
+            ->where('reference', 'like', $prefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
         $num = $last ? intval(substr($last->reference, -4)) + 1 : 1;
         return $prefix . str_pad($num, 4, '0', STR_PAD_LEFT);
     }

@@ -1,12 +1,22 @@
 <?php
 namespace App\Services;
 
-use App\Models\Zone;
+use App\Repositories\Interfaces\ZoneRepositoryInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class ZoneService
+class ZoneService extends BaseService
 {
+    protected string $entityName = 'Zone';
+    protected array $defaultSelectFields = [
+        'id', 'code', 'libelle', 'description', 'tarif_base', 'ordre',
+        'couleur', 'points_arret', 'chauffeur_id', 'voiture_id', 'annee_id', 'etat'
+    ];
+
+    public function __construct(ZoneRepositoryInterface $repo)
+    {
+        parent::__construct($repo);
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -19,7 +29,8 @@ class ZoneService
     {
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
 
-        $query = Zone::with(['chauffeur', 'voiture'])
+        $query = $this->repo->activeQuery()
+            ->with(['chauffeur', 'voiture'])
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(isset($filters['etat']) && $filters['etat'] !== '', fn($q) => $q->where('etat', $filters['etat']))
             ->when(!empty($filters['search']), function ($q) use ($filters) {
@@ -64,7 +75,7 @@ class ZoneService
      */
     public function getZone(int $id): Zone
     {
-        return Zone::with(['chauffeur', 'voiture'])->findOrFail($id);
+        return $this->repo->with(['chauffeur', 'voiture'])->findOrFail($id);
     }
 
     /**
@@ -79,7 +90,7 @@ class ZoneService
         $data['annee_id'] = $anneeId;
         $data['etat'] = $data['etat'] ?? 1;
 
-        return Zone::create($data);
+        return $this->repo->create($data);
     }
 
     /**
@@ -87,19 +98,16 @@ class ZoneService
      */
     public function updateZone(int $id, array $data): Zone
     {
-        $zone = $this->getZone($id);
-        $zone->update($data);
-        return $zone;
+        $this->repo->update($id, $data);
+        return $this->repo->find($id);
     }
 
     /**
-     * Supprime une zone (soft delete ? on peut juste passer etat=0)
+     * Supprime une zone (soft delete – on passe etat=0)
      */
     public function deleteZone(int $id): void
     {
-        $zone = $this->getZone($id);
-        $zone->etat = 0;
-        $zone->save();
+        $this->repo->update($id, ['etat' => 0]);
     }
 
     /**
@@ -107,7 +115,7 @@ class ZoneService
      */
     public function getForSelect(): Collection
     {
-        return Zone::actif()
+        return $this->repo->activeQuery()
             ->orderBy('ordre')
             ->orderBy('libelle')
             ->get(['id', 'code', 'libelle', 'tarif_base']);

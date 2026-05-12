@@ -5,29 +5,17 @@ namespace App\Services;
 use App\Repositories\Eloquent\BaseRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
 abstract class BaseService
 {
-    /**
-     * Repository injecté
-     */
     protected BaseRepository $repo;
-
-    /**
-     * Pagination par défaut
-     */
     protected int $perPage = 15;
-
-    /**
-     * Nom de l'entité pour les messages (ex: "Cycle", "Niveau")
-     */
     protected string $entityName = 'élément';
-
-    /**
-     * Champs par défaut pour les listes
-     */
     protected array $defaultSelectFields = ['id', 'libelle', 'etat', 'created_at'];
+    protected array $listRelations = [];
+    protected array $listAppends = [];
 
     public function __construct(BaseRepository $repo)
     {
@@ -35,46 +23,33 @@ abstract class BaseService
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 📋 LISTE & PAGINATION
+    //  Méthodes de liste (retournent déjà des tableaux)
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Liste paginée avec filtres dynamiques (search, etat, annee_id, etc.)
-     */
-    public function index(Request $request): array
+    public function all(): array
+    {
+        $items = $this->repo->activeQuery()
+            ->select($this->defaultSelectFields)
+            ->with($this->listRelations)
+            ->get();
+        return $this->formatCollection($items);
+    }
+
+    public function list(Request $request): array
+    {
+        $query = $this->buildListQuery($request);
+        $items = $query->get();
+        return $this->formatCollection($items);
+    }
+
+    public function paginate(Request $request): array
     {
         $perPage = $request->integer('per_page', $this->perPage);
-        $query = $this->repo->activeQuery()->select($this->defaultSelectFields);
-
-        // 🔍 Recherche globale
-        if ($request->filled('search')) {
-            $query->where('libelle', 'like', "%{$request->search}%");
-        }
-        // 🎛️ Filtres standards
-        if ($request->filled('etat')) {
-            $query->where('etat', $request->integer('etat'));
-        }
-        if ($request->filled('annee_id')) {
-            $query->where('annee_id', $request->integer('annee_id'));
-        }
-        if ($request->filled('cycle_id')) {
-            $query->where('cycle_id', $request->integer('cycle_id'));
-        }
-
-        // 📊 Tri
-        $sortField = in_array($request->get('sort_by'), $this->defaultSelectFields) 
-            ? $request->get('sort_by') 
-            : 'created_at';
-        $sortDir = in_array(strtolower($request->get('sort_dir')), ['asc', 'desc']) 
-            ? $request->get('sort_dir') 
-            : 'desc';
-            
-        $query->orderBy($sortField, $sortDir);
-
+        $query = $this->buildListQuery($request);
         $paginator = $query->paginate($perPage);
 
         return [
-            'data' => $paginator->items(),
+            'data' => $this->formatCollection($paginator->getCollection()),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page'    => $paginator->lastPage(),
@@ -85,92 +60,133 @@ abstract class BaseService
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 🔍 DÉTAIL & LISTES RAPIDES
+    //  Hooks (surchargeables)
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Détail d'un élément
-     */
-    public function show(int $id): object
+    protected function buildListQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->repo->findOrFail($id);
-    }
+        $query = $this->repo->activeQuery()
+            ->select($this->defaultSelectFields)
+            ->with($this->listRelations);
 
-    /**
-     * 📊 Liste simplifiée pour selects/dropdowns (API ou Blade)
-     */
-    public function getForSelect(array $filters = []): Collection
-    {
-        $query = $this->repo->activeQuery()->select('id', 'libelle', 'etat');
-
-        if (!empty($filters['annee_id'])) {
-            $query->where('annee_id', $filters['annee_id']);
+        if ($request->filled('search')) {
+            $query->where('libelle', 'like', "%{$request->search}%");
         }
-        if (!empty($filters['cycle_id'])) {
-            $query->where('cycle_id', $filters['cycle_id']);
+        if ($request->filled('etat')) {
+            $query->where('etat', $request->integer('etat'));
         }
-        if (!empty($filters['niveau_id'])) {
-            $query->where('niveau_id', $filters['niveau_id']);
+        if ($request->filled('annee_id')) {
+            $query->where('annee_id', $request->integer('annee_id'));
+        }
+        if ($request->filled('cycle_id')) {
+            $query->where('cycle_id', $request->integer('cycle_id'));
+        }
+        if ($request->filled('niveau_id')) {
+            $query->where('niveau_id', $request->integer('niveau_id'));
         }
 
-        return $query->orderBy('libelle')->get();
+        $sortField = $request->get('sort_by', 'created_at');
+        if (in_array($sortField, $this->defaultSelectFields)) {
+            $sortDir = in_array(strtolower($request->get('sort_dir', 'desc')), ['asc', 'desc'])
+                ? $request->get('sort_dir')
+                : 'desc';
+            $query->orderBy($sortField, $sortDir);
+        }
+        return $query;
+    }
+
+    protected function formatListItem($item): array
+    {
+        if (!empty($this->listAppends)) {
+            $item->append($this->listAppends);
+        }
+        return $item->toArray();
+    }
+
+    protected function formatCollection(Collection $items): array
+    {
+        return $items->map(fn($item) => $this->formatListItem($item))->toArray();
     }
 
     // ─────────────────────────────────────────────────────────────
-    // ➕ CRÉATION / ✏️ MISE À JOUR / 🗑️ SUPPRESSION
+    //  CRUD avec retours standardisés (array)
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Création d'un élément
-     */
-    public function store(array $validatedData): object
+    public function show(int $id): array
     {
-        $this->checkUniqueness($validatedData, 'libelle');
-        return $this->repo->create($validatedData);
+        try {
+            $item = $this->repo->findOrFail($id);
+            return $this->formatResponse(true, null, $item);
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "{$this->entityName} introuvable");
+        }
     }
 
-    /**
-     * Mise à jour d'un élément
-     */
-    public function update(int $id, array $validatedData): object
+    public function store(array $validatedData): array
     {
-        $this->checkUniqueness($validatedData, 'libelle', $id);
-        $this->repo->update($id, $validatedData);
-        return $this->repo->find($id);
+        try {
+            $this->checkUniqueness($validatedData, 'libelle');
+            $item = $this->repo->create($validatedData);
+            return $this->formatResponse(true, "{$this->entityName} créé avec succès", $item);
+        } catch (ValidationException $e) {
+            return $this->formatResponse(false, $e->getMessage());
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "Erreur : " . $e->getMessage());
+        }
     }
 
-    /**
-     * Suppression logique
-     */
-    public function destroy(int $id): bool
+    public function update(int $id, array $validatedData): array
     {
-        return $this->repo->delete($id);
+        try {
+            $this->checkUniqueness($validatedData, 'libelle', $id);
+            $this->repo->update($id, $validatedData);
+            $item = $this->repo->find($id);
+            return $this->formatResponse(true, "{$this->entityName} mis à jour", $item);
+        } catch (ValidationException $e) {
+            return $this->formatResponse(false, $e->getMessage());
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "{$this->entityName} introuvable ou erreur");
+        }
     }
 
-    /**
-     * ♻️ Restauration
-     */
-    public function restore(int $id): bool
+    public function destroy(int $id): array
     {
-        return $this->repo->restore($id);
+        try {
+            $this->repo->delete($id);
+            return $this->formatResponse(true, "{$this->entityName} supprimé");
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "Impossible de supprimer");
+        }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 🔧 HELPERS INTERNES
-    // ─────────────────────────────────────────────────────────────
+    public function restore(int $id): array
+    {
+        try {
+            $this->repo->restore($id);
+            return $this->formatResponse(true, "{$this->entityName} restauré");
+        } catch (\Exception $e) {
+            return $this->formatResponse(false, "Impossible de restaurer");
+        }
+    }
 
-    /**
-     * Vérifie l'unicité du libelle avant création/mise à jour
-     */
+    public function getForSelect(array $filters = [], string $labelField = 'libelle', string $valueField = 'id'): array
+    {
+        $query = $this->repo->activeQuery()->select($valueField, $labelField);
+        foreach ($filters as $field => $value) {
+            $query->where($field, $value);
+        }
+        $items = $query->orderBy($labelField)->get()
+            ->map(fn($item) => ['value' => $item->$valueField, 'label' => $item->$labelField]);
+        return $this->formatResponse(true, '', $items);
+    }
+
     protected function checkUniqueness(array $data, string $field = 'libelle', ?int $excludeId = null): void
     {
         if (empty($data[$field])) return;
-
         $query = $this->repo->activeQuery()->where($field, $data[$field]);
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
-
         if ($query->exists()) {
             throw ValidationException::withMessages([
                 $field => "Le {$this->entityName} '{$data[$field]}' existe déjà."
@@ -178,16 +194,12 @@ abstract class BaseService
         }
     }
 
-    /**
-     * 📦 Formateur de réponse standardisée (utilisé dans les contrôleurs)
-     */
-    public function formatResponse(bool $success, string $message = '', mixed $data = null, array $meta = []): array
+    protected function formatResponse(bool $success, string $message = '', mixed $data = null, array $meta = []): array
     {
-        return array_filter([
-            'success' => $success,
-            'message' => $message,
-            'data'    => $data,
-            'meta'    => $meta,
-        ], fn($v) => $v !== null);
+        $response = ['success' => $success];
+        if ($message) $response['message'] = $message;
+        if ($data !== null) $response['data'] = $data;
+        if (!empty($meta)) $response['meta'] = $meta;
+        return $response;
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Mouvement;
 use App\Models\User;
 use App\Repositories\Interfaces\MouvementRepositoryInterface;
 use App\Types\StatutMouvement;
@@ -21,7 +20,7 @@ class DecaissementService
     ) {}
 
     // ─────────────────────────────────────────────────────────────
-    // 🔐 Helpers : Session & Rôles (identiques à DepenseService)
+    // 🔐 Helpers : Session & Rôles
     // ─────────────────────────────────────────────────────────────
 
     public function getCurrentUser(): ?User
@@ -42,7 +41,7 @@ class DecaissementService
     {
         $user = $user ?? $this->getCurrentUser();
         if (!$user) return false;
-        
+
         return in_array($user->role, [Role::ADMIN, Role::DIRECTEUR], true);
     }
 
@@ -50,9 +49,6 @@ class DecaissementService
     // 📊 Liste avec agrégats (pour la vue index)
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Retourne la liste des décaissements avec agrégats temporels
-     */
     public function getDecaissementsWithAggregates(array $filters = []): array
     {
         $user = $this->getCurrentUser();
@@ -61,19 +57,18 @@ class DecaissementService
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
         $isViewer = $this->isAuthorizedViewer($user);
 
-        // ─── Requête de base ───
-        $query = Mouvement::query()
+        // ─── Requête de base via le repository ───
+        $query = $this->mouvementRepo->activeQuery()
             ->with(['operateur:id,name', 'caisse:id,libelle', 'depense:id,libelle'])
             ->where('type_mouvement', TypeMouvement::DECAISSEMENT)
-            ->where('statut_mouvement', StatutMouvement::VALIDER) // ✅ Uniquement les décaissements effectifs
-            ->where('etat', TypeStatus::ACTIF);
+            ->where('statut_mouvement', StatutMouvement::VALIDER);
 
-        // 🔐 Contrôle d'accès : non-admin voit seulement ses propres mouvements
+        // 🔐 Contrôle d'accès
         if (!$isViewer) {
             $query->where('utilisateur_id', $user->id);
         }
 
-        // 🎛️ Filtres optionnels
+        // 🎛️ Filtres
         if (!empty($filters['date_debut'])) {
             $query->whereDate('date_mouvement', '>=', $filters['date_debut']);
         }
@@ -87,13 +82,13 @@ class DecaissementService
             $query->where('annee_id', $anneeId);
         }
 
-        // ─── Récupération & Formatage ───
+        // ─── Récupération et formatage ───
         $decaissements = $query
             ->orderByDesc('date_mouvement')
             ->get()
             ->map(fn($mvt) => $this->formatDecaissement($mvt, $isViewer));
 
-        // ─── Calcul des agrégats ───
+        // ─── Agrégats (déjà calculés sur la collection filtrée) ───
         $aggregates = $this->calculateTimeAggregates($decaissements, $anneeId);
 
         return [
@@ -108,7 +103,7 @@ class DecaissementService
     }
 
     /**
-     * Détail d'un décaissement (pour l'endpoint JSON show)
+     * Détail d'un décaissement
      */
     public function getDecaissementById(int $id): ?Mouvement
     {
@@ -117,14 +112,12 @@ class DecaissementService
 
         $isViewer = $this->isAuthorizedViewer();
 
-        $query = Mouvement::query()
+        $query = $this->mouvementRepo->activeQuery()
             ->with(['operateur:id,name', 'caisse:id,libelle', 'depense:id,libelle'])
             ->where('type_mouvement', TypeMouvement::DECAISSEMENT)
             ->where('statut_mouvement', StatutMouvement::VALIDER)
-            ->where('etat', TypeStatus::ACTIF)
             ->where('id', $id);
 
-        // 🔐 Filtrage par utilisateur si non-admin
         if (!$isViewer) {
             $query->where('utilisateur_id', $user->id);
         }
@@ -133,7 +126,7 @@ class DecaissementService
     }
 
     /**
-     * Formate un décaissement pour l'affichage
+     * Formate un décaissement
      */
     private function formatDecaissement(Mouvement $mvt, bool $isViewer): array
     {
@@ -155,17 +148,12 @@ class DecaissementService
     }
 
     /**
-     * Calcule les totaux par jour / semaine / mois / année
+     * Calcul des agrégats temporels
      */
     private function calculateTimeAggregates(Collection $items, ?int $anneeId): array
     {
         $now = Carbon::now();
-
-        // Helper pour filtrer par date
-        $filterByDate = function ($d, $start, $end) use ($now) {
-            $date = Carbon::parse($d['date']);
-            return $date->between($start, $end);
-        };
+        $filterByDate = fn($dateStr, $start, $end) => Carbon::parse($dateStr)->between($start, $end);
 
         return [
             'aujourd_hui' => [
@@ -176,14 +164,14 @@ class DecaissementService
             'semaine_en_cours' => [
                 'debut'  => $now->copy()->startOfWeek()->format('Y-m-d'),
                 'fin'    => $now->copy()->endOfWeek()->format('Y-m-d'),
-                'count'  => $items->filter(fn($d) => $filterByDate($d, $now->copy()->startOfWeek(), $now->copy()->endOfWeek()))->count(),
-                'total'  => (float) $items->filter(fn($d) => $filterByDate($d, $now->copy()->startOfWeek(), $now->copy()->endOfWeek()))->sum('montant'),
+                'count'  => $items->filter(fn($d) => $filterByDate($d['date'], $now->copy()->startOfWeek(), $now->copy()->endOfWeek()))->count(),
+                'total'  => (float) $items->filter(fn($d) => $filterByDate($d['date'], $now->copy()->startOfWeek(), $now->copy()->endOfWeek()))->sum('montant'),
             ],
             'mois_en_cours' => [
                 'debut'  => $now->copy()->startOfMonth()->format('Y-m-d'),
                 'fin'    => $now->copy()->endOfMonth()->format('Y-m-d'),
-                'count'  => $items->filter(fn($d) => $filterByDate($d, $now->copy()->startOfMonth(), $now->copy()->endOfMonth()))->count(),
-                'total'  => (float) $items->filter(fn($d) => $filterByDate($d, $now->copy()->startOfMonth(), $now->copy()->endOfMonth()))->sum('montant'),
+                'count'  => $items->filter(fn($d) => $filterByDate($d['date'], $now->copy()->startOfMonth(), $now->copy()->endOfMonth()))->count(),
+                'total'  => (float) $items->filter(fn($d) => $filterByDate($d['date'], $now->copy()->startOfMonth(), $now->copy()->endOfMonth()))->sum('montant'),
             ],
             'annee_en_cours' => [
                 'debut'  => $now->copy()->startOfYear()->format('Y-m-d'),
@@ -191,7 +179,6 @@ class DecaissementService
                 'count'  => $items->filter(fn($d) => Carbon::parse($d['date'])->year === $now->year)->count(),
                 'total'  => (float) $items->filter(fn($d) => Carbon::parse($d['date'])->year === $now->year)->sum('montant'),
             ],
-            // Agrégats SQL natifs pour performance
             'par_jour'   => $this->getAggregatesByPeriod('day', $anneeId),
             'par_semaine'=> $this->getAggregatesByPeriod('week', $anneeId),
             'par_mois'   => $this->getAggregatesByPeriod('month', $anneeId),
@@ -199,7 +186,7 @@ class DecaissementService
     }
 
     /**
-     * Agrégats SQL natifs par période (performant sur gros volumes)
+     * Agrégats SQL natifs par période
      */
     private function getAggregatesByPeriod(string $period, ?int $anneeId): array
     {
@@ -213,11 +200,10 @@ class DecaissementService
         $user = $this->getCurrentUser();
         $isViewer = $this->isAuthorizedViewer();
 
-        $query = Mouvement::query()
+        $query = $this->mouvementRepo->activeQuery()
             ->selectRaw("DATE_FORMAT(date_mouvement, '{$format}') as period, COUNT(*) as count, SUM(montant) as total")
             ->where('type_mouvement', TypeMouvement::DECAISSEMENT)
             ->where('statut_mouvement', StatutMouvement::VALIDER)
-            ->where('etat', TypeStatus::ACTIF)
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(!$isViewer, fn($q) => $q->where('utilisateur_id', $user?->id))
             ->groupBy('period')
@@ -228,10 +214,9 @@ class DecaissementService
         ])->toArray();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 📋 Liste paginée simple (pour frontend avec pagination)
-    // ─────────────────────────────────────────────────────────────
-
+    /**
+     * Liste paginée simple
+     */
     public function getDecaissementsList(array $filters = [], int $perPage = 15): array
     {
         $user = $this->getCurrentUser();
@@ -240,15 +225,13 @@ class DecaissementService
         $isViewer = $this->isAuthorizedViewer();
         $anneeId = $filters['annee_id'] ?? $this->getCurrentAnneeId();
 
-        $query = Mouvement::query()
+        $query = $this->mouvementRepo->activeQuery()
             ->with(['operateur:id,name', 'caisse:id,libelle'])
             ->where('type_mouvement', TypeMouvement::DECAISSEMENT)
             ->where('statut_mouvement', StatutMouvement::VALIDER)
-            ->where('etat', TypeStatus::ACTIF)
             ->when($anneeId, fn($q) => $q->where('annee_id', $anneeId))
             ->when(!$isViewer, fn($q) => $q->where('utilisateur_id', $user->id));
 
-        // Filtres
         if (!empty($filters['date_debut'])) {
             $query->whereDate('date_mouvement', '>=', $filters['date_debut']);
         }

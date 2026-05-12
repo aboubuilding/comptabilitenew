@@ -80,9 +80,14 @@ class FraisEcoleService extends BaseService
     }
 
     /**
-     * Liste simplifiée pour selects (dropdown)
+     * Liste simplifiée pour selects (dropdown) – retourne une collection brute.
+     * Pour une liste formatée (array value/label), utiliser la méthode parent getForSelect().
+     *
+     * @param int|null $anneeId
+     * @param int|null $niveauId
+     * @return Collection
      */
-    public function getForSelect(?int $anneeId = null, ?int $niveauId = null): Collection
+    public function getSelectList(?int $anneeId = null, ?int $niveauId = null): Collection
     {
         $query = $this->repo->activeQuery()
             ->where('etat', 1)

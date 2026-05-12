@@ -1,28 +1,44 @@
 <?php
 namespace App\Services;
 
-use App\Models\InscriptionCantine;
-use App\Models\Annee;
-use App\Models\Inscription;
-use App\Models\FraisEcole;
+use App\Repositories\Eloquent\InscriptionCantineRepository;
+use App\Repositories\Eloquent\AnneeRepository;
+use App\Repositories\Eloquent\InscriptionRepository;
+use App\Repositories\Eloquent\FraisEcoleRepository;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CantineService
 {
     const TYPE_PAIEMENT_CANTINE = 2;
 
-    protected function getCurrentAnnee(): ?Annee
+    protected InscriptionCantineRepository $cantineRepo;
+    protected AnneeRepository $anneeRepo;
+    protected InscriptionRepository $inscriptionRepo;
+    protected FraisEcoleRepository $fraisRepo;
+
+    public function __construct(
+        InscriptionCantineRepository $cantineRepo,
+        AnneeRepository $anneeRepo,
+        InscriptionRepository $inscriptionRepo,
+        FraisEcoleRepository $fraisRepo
+    ) {
+        $this->cantineRepo = $cantineRepo;
+        $this->anneeRepo = $anneeRepo;
+        $this->inscriptionRepo = $inscriptionRepo;
+        $this->fraisRepo = $fraisRepo;
+    }
+
+    protected function getCurrentAnnee()
     {
         $anneeId = session()->get('LoginUser')['annee_id'] ?? null;
-        return $anneeId ? Annee::find($anneeId) : null;
+        return $anneeId ? $this->anneeRepo->find($anneeId) : null;
     }
 
     /**
      * Calcule le nombre de mois et le montant total dû
      */
-    public function calculerMensualites(string $dateDebut, float $montantMensuel, ?Annee $annee = null): array
+    public function calculerMensualites(string $dateDebut, float $montantMensuel, $annee = null): array
     {
         $annee = $annee ?? $this->getCurrentAnnee();
         if (!$annee || !$annee->date_fin) {
@@ -45,31 +61,32 @@ class CantineService
     /**
      * Inscription à la cantine
      */
-    public function inscrireCantine(int $inscriptionId, string $dateDebut, ?int $fraisEcoleId = null): InscriptionCantine
+    public function inscrireCantine(int $inscriptionId, string $dateDebut, ?int $fraisEcoleId = null)
     {
         $annee = $this->getCurrentAnnee();
         if (!$annee) throw new \Exception("Année scolaire non trouvée.");
 
-        $inscription = Inscription::findOrFail($inscriptionId);
-        if ($inscription->annee_id != $annee->id) {
+        $inscription = $this->inscriptionRepo->find($inscriptionId);
+        if (!$inscription || $inscription->annee_id != $annee->id) {
             throw new \Exception("L'inscription n'appartient pas à l'année en cours.");
         }
 
         // Vérifier si déjà inscrit
-        $existant = InscriptionCantine::where('inscription_id', $inscriptionId)
+        $existant = $this->cantineRepo->activeQuery()
+            ->where('inscription_id', $inscriptionId)
             ->where('statut', 1)
             ->first();
         if ($existant) throw new \Exception("Cet élève a déjà une inscription cantine active.");
 
-        // Récupérer le tarif mensuel depuis frais_ecoles (cantine) ou utiliser un montant passé
+        // Récupérer le tarif mensuel
         $montantMensuel = null;
         if ($fraisEcoleId) {
-            $frais = FraisEcole::find($fraisEcoleId);
+            $frais = $this->fraisRepo->find($fraisEcoleId);
             if (!$frais) throw new \Exception("Offre de cantine non trouvée.");
             $montantMensuel = $frais->montant;
         } else {
-            // Fallback : chercher le frais cantine actif pour l'année/niveau
-            $frais = FraisEcole::where('annee_id', $annee->id)
+            $frais = $this->fraisRepo->activeQuery()
+                ->where('annee_id', $annee->id)
                 ->where('niveau_id', $inscription->niveau_id)
                 ->where('type_paiement', self::TYPE_PAIEMENT_CANTINE)
                 ->first();
@@ -84,7 +101,7 @@ class CantineService
         $dateFin = Carbon::parse($annee->date_fin)->endOfMonth();
 
         return DB::transaction(function () use ($inscription, $fraisEcoleId, $dateDebut, $dateFin, $montantMensuel, $calcul) {
-            return InscriptionCantine::create([
+            return $this->cantineRepo->create([
                 'inscription_id'   => $inscription->id,
                 'frais_ecole_id'   => $fraisEcoleId,
                 'date_debut'       => $dateDebut,
@@ -102,13 +119,14 @@ class CantineService
      */
     public function abandonnerCantine(int $id, string $motif, int $userId): void
     {
-        $insc = InscriptionCantine::findOrFail($id);
-        if ($insc->statut != 1) throw new \Exception("Déjà abandonné.");
-        $insc->statut = 0;
-        $insc->date_abandon = now();
-        $insc->motif_abandon = $motif;
-        $insc->abandonne_par = $userId;
-        $insc->save();
+        $insc = $this->cantineRepo->find($id);
+        if (!$insc || $insc->statut != 1) throw new \Exception("Inscription cantine introuvable ou déjà abandonnée.");
+        $this->cantineRepo->update($id, [
+            'statut'         => 0,
+            'date_abandon'   => now(),
+            'motif_abandon'  => $motif,
+            'abandonne_par'  => $userId,
+        ]);
     }
 
     /**
@@ -117,9 +135,12 @@ class CantineService
     public function listeInscrits(array $filters = []): array
     {
         $annee = $this->getCurrentAnnee();
-        if (!$annee) return ['data' => collect(), 'aggregates' => [], 'pagination' => []];
+        if (!$annee) {
+            return ['data' => collect(), 'aggregates' => [], 'pagination' => []];
+        }
 
-        $query = InscriptionCantine::with(['inscription.eleve', 'inscription.classe', 'inscription.niveau'])
+        $query = $this->cantineRepo->activeQuery()
+            ->with(['inscription.eleve', 'inscription.classe', 'inscription.niveau'])
             ->whereHas('inscription', fn($q) => $q->where('annee_id', $annee->id))
             ->where('statut', 1);
 
@@ -169,8 +190,10 @@ class CantineService
         ];
     }
 
-    public function getInscription(int $id): InscriptionCantine
+    public function getInscription(int $id)
     {
-        return InscriptionCantine::with(['inscription.eleve', 'inscription.classe', 'detailsPaiement'])->findOrFail($id);
+        return $this->cantineRepo->activeQuery()
+            ->with(['inscription.eleve', 'inscription.classe', 'detailsPaiement'])
+            ->findOrFail($id);
     }
 }

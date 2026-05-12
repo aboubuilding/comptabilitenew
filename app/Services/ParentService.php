@@ -2,14 +2,31 @@
 
 namespace App\Services;
 
-use App\Models\ParentEleve;
-use App\Models\Inscription;
-use App\Models\Paiement;
-use Illuminate\Support\Collection;
+use App\Repositories\Interfaces\ParentEleveRepositoryInterface;
+use App\Repositories\Interfaces\InscriptionRepositoryInterface;
+use App\Repositories\Interfaces\PaiementRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
-class ParentService
+class ParentService extends BaseService
 {
+    protected string $entityName = 'Parent';
+    protected array $defaultSelectFields = [
+        'id', 'nom_parent', 'prenom_parent', 'telephone', 'whatsapp', 'email', 'quartier', 'adresse', 'profession', 'is_principal', 'role', 'annee_id', 'etat'
+    ];
+
+    protected InscriptionRepositoryInterface $inscriptionRepo;
+    protected PaiementRepositoryInterface $paiementRepo;
+
+    public function __construct(
+        ParentEleveRepositoryInterface $parentRepo,
+        InscriptionRepositoryInterface $inscriptionRepo,
+        PaiementRepositoryInterface $paiementRepo
+    ) {
+        parent::__construct($parentRepo);
+        $this->inscriptionRepo = $inscriptionRepo;
+        $this->paiementRepo = $paiementRepo;
+    }
+
     protected function getCurrentAnneeId(): ?int
     {
         return session()->get('LoginUser')['annee_id'] ?? null;
@@ -17,9 +34,6 @@ class ParentService
 
     /**
      * Liste des parents avec agrégats pour l'année courante
-     *
-     * @param array $filters
-     * @return array ['data' => Collection, 'aggregates' => array]
      */
     public function listWithAggregates(array $filters = []): array
     {
@@ -28,35 +42,39 @@ class ParentService
             return ['data' => collect(), 'aggregates' => $this->emptyAggregates()];
         }
 
-        // Sous-requête : nombre d'enfants par parent pour l'année courante
-        $enfantsCountSub = Inscription::select('parent_id', DB::raw('COUNT(*) as enfants_count'))
+        // Sous-requête : nombre d'enfants par parent
+        $enfantsCountSub = $this->inscriptionRepo->getModel()->newQuery()
+            ->select('parent_id', DB::raw('COUNT(*) as enfants_count'))
             ->where('annee_id', $anneeId)
             ->where('etat', 1)
             ->groupBy('parent_id');
 
-        // Sous-requête : CA prévu total par parent (somme des frais toutes catégories)
-        $caPrevuSub = Inscription::select('parent_id', DB::raw('
-            COALESCE(SUM(frais_scolarite),0) 
-            + COALESCE(SUM(frais_inscription),0)
-            + COALESCE(SUM(frais_assurance),0)
-            + COALESCE(SUM(frais_cantine),0)
-            + COALESCE(SUM(frais_bus),0)
-            + COALESCE(SUM(frais_livre),0)
-            + COALESCE(SUM(frais_examen),0)
-            - COALESCE(SUM(remise_scolarite),0) as ca_prevu
-        '))->where('annee_id', $anneeId)
+        // Sous-requête : CA prévu total par parent
+        $caPrevuSub = $this->inscriptionRepo->getModel()->newQuery()
+            ->select('parent_id', DB::raw('
+                COALESCE(SUM(frais_scolarite),0)
+                + COALESCE(SUM(frais_inscription),0)
+                + COALESCE(SUM(frais_assurance),0)
+                + COALESCE(SUM(frais_cantine),0)
+                + COALESCE(SUM(frais_bus),0)
+                + COALESCE(SUM(frais_livre),0)
+                + COALESCE(SUM(frais_examen),0)
+                - COALESCE(SUM(remise_scolarite),0) as ca_prevu
+            '))
+            ->where('annee_id', $anneeId)
             ->where('etat', 1)
             ->groupBy('parent_id');
 
-        // Sous-requête : total payé par parent via les paiements des inscriptions
-        $payeSub = Paiement::select('inscriptions.parent_id', DB::raw('SUM(paiements.montant) as total_paye'))
+        // Sous-requête : total payé par parent via les paiements
+        $payeSub = $this->paiementRepo->getModel()->newQuery()
+            ->select('inscriptions.parent_id', DB::raw('SUM(paiements.montant) as total_paye'))
             ->join('inscriptions', 'paiements.inscription_id', '=', 'inscriptions.id')
             ->where('paiements.annee_id', $anneeId)
             ->where('paiements.etat', 1)
             ->where('inscriptions.etat', 1)
             ->groupBy('inscriptions.parent_id');
 
-        $query = ParentEleve::query()
+        $query = $this->repo->getModel()->newQuery()
             ->leftJoinSub($enfantsCountSub, 'enfants', 'parent_eleves.id', '=', 'enfants.parent_id')
             ->leftJoinSub($caPrevuSub, 'ca', 'parent_eleves.id', '=', 'ca.parent_id')
             ->leftJoinSub($payeSub, 'paye', 'parent_eleves.id', '=', 'paye.parent_id')
@@ -75,23 +93,20 @@ class ParentService
             $search = '%' . $filters['search'] . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('nom_parent', 'like', $search)
-                  ->orWhere('prenom_parent', 'like', $search)
-                  ->orWhere('telephone', 'like', $search)
-                  ->orWhere('email', 'like', $search);
+                    ->orWhere('prenom_parent', 'like', $search)
+                    ->orWhere('telephone', 'like', $search)
+                    ->orWhere('email', 'like', $search);
             });
         }
         if (!empty($filters['has_whatsapp'])) {
             $query->whereNotNull('whatsapp')->where('whatsapp', '!=', '');
         }
 
-        // Pagination
         $perPage = $filters['per_page'] ?? 15;
         $parents = $query->paginate($perPage);
 
-        // Agrégats globaux
         $aggregates = $this->computeAggregates($anneeId, $filters);
 
-        // Formatage des données
         $data = $parents->map(fn($parent) => [
             'id'            => $parent->id,
             'nom'           => $parent->nom_parent,
@@ -123,22 +138,19 @@ class ParentService
     public function getFicheParent(int $parentId): array
     {
         $anneeId = $this->getCurrentAnneeId();
-        $parent = ParentEleve::findOrFail($parentId);
+        $parent = $this->repo->findOrFail($parentId);
 
-        // Inscriptions des enfants pour l'année courante
-        $inscriptions = Inscription::with(['eleve', 'cycle', 'niveau', 'classe'])
+        $inscriptions = $this->inscriptionRepo->activeQuery()
+            ->with(['eleve', 'cycle', 'niveau', 'classe'])
             ->where('parent_id', $parentId)
             ->where('annee_id', $anneeId)
-            ->where('etat', 1)
             ->get();
 
-        // Calculs globaux
         $caPrevuTotal = 0;
         $totalPaye = 0;
         $enfantsDetails = [];
 
         foreach ($inscriptions as $ins) {
-            // CA prévu pour cet enfant
             $caEnfant = ($ins->frais_scolarite ?? 0)
                 + ($ins->frais_inscription ?? 0)
                 + ($ins->frais_assurance ?? 0)
@@ -149,12 +161,11 @@ class ParentService
                 - ($ins->remise_scolarite ?? 0);
             $caPrevuTotal += $caEnfant;
 
-            // Paiements effectués pour cette inscription
-            $paiements = Paiement::where('inscription_id', $ins->id)
+            $paye = $this->paiementRepo->activeQuery()
+                ->where('inscription_id', $ins->id)
                 ->where('annee_id', $anneeId)
-                ->where('etat', 1)
                 ->sum('montant');
-            $totalPaye += $paiements;
+            $totalPaye += $paye;
 
             $enfantsDetails[] = [
                 'eleve_id'    => $ins->eleve->id,
@@ -165,8 +176,8 @@ class ParentService
                 'niveau'      => $ins->niveau?->libelle,
                 'classe'      => $ins->classe?->libelle,
                 'ca_prevu'    => $caEnfant,
-                'paye'        => $paiements,
-                'reste'       => $caEnfant - $paiements,
+                'paye'        => $paye,
+                'reste'       => $caEnfant - $paye,
             ];
         }
 
@@ -182,13 +193,11 @@ class ParentService
     }
 
     /**
-     * Mise à jour des informations du parent
+     * Mise à jour des informations du parent (surcharge pour compatibilité)
      */
-    public function updateParent(int $parentId, array $data): ParentEleve
+    public function updateParent(int $parentId, array $data): array
     {
-        $parent = ParentEleve::findOrFail($parentId);
-        $parent->update($data);
-        return $parent;
+        return $this->update($parentId, $data);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -207,39 +216,43 @@ class ParentService
     private function computeAggregates(int $anneeId, array $filters): array
     {
         // 1. Total parents ayant au moins un enfant inscrit cette année
-        $totalParentsQuery = ParentEleve::whereExists(function ($query) use ($anneeId) {
-            $query->select(DB::raw(1))
-                ->from('inscriptions')
-                ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
-                ->where('inscriptions.annee_id', $anneeId)
-                ->where('inscriptions.etat', 1);
-        });
+        $totalParentsQuery = $this->repo->getModel()->newQuery()
+            ->whereExists(function ($query) use ($anneeId) {
+                $query->select(DB::raw(1))
+                    ->from('inscriptions')
+                    ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
+                    ->where('inscriptions.annee_id', $anneeId)
+                    ->where('inscriptions.etat', 1);
+            });
 
-        // 2. Nouveaux parents : parents dont tous les enfants inscrits cette année ont type_inscription = 1 (nouveau)
-        // Un parent est considéré nouveau si aucun de ses enfants n'est ancien (type_inscription != 1)
-        $nouveauxParentsQuery = ParentEleve::whereNotExists(function ($query) use ($anneeId) {
-            $query->select(DB::raw(1))
-                ->from('inscriptions')
-                ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
-                ->where('inscriptions.annee_id', $anneeId)
-                ->where('inscriptions.etat', 1)
-                ->where('inscriptions.type_inscription', '!=', 1); // type_inscription != 1 signifie ancien
-        })->whereExists(function ($query) use ($anneeId) {
-            $query->select(DB::raw(1))
-                ->from('inscriptions')
-                ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
-                ->where('inscriptions.annee_id', $anneeId)
-                ->where('inscriptions.etat', 1);
-        });
+        // 2. Nouveaux parents : tous leurs enfants sont nouveaux (type_inscription = 1)
+        $nouveauxParentsQuery = $this->repo->getModel()->newQuery()
+            ->whereNotExists(function ($query) use ($anneeId) {
+                $query->select(DB::raw(1))
+                    ->from('inscriptions')
+                    ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
+                    ->where('inscriptions.annee_id', $anneeId)
+                    ->where('inscriptions.etat', 1)
+                    ->where('inscriptions.type_inscription', '!=', 1);
+            })
+            ->whereExists(function ($query) use ($anneeId) {
+                $query->select(DB::raw(1))
+                    ->from('inscriptions')
+                    ->whereColumn('inscriptions.parent_id', 'parent_eleves.id')
+                    ->where('inscriptions.annee_id', $anneeId)
+                    ->where('inscriptions.etat', 1);
+            });
 
         // 3. Parents avec plus de 3 enfants
-        $plus3Query = ParentEleve::whereHas('inscriptions', function ($q) use ($anneeId) {
-            $q->where('annee_id', $anneeId)->where('etat', 1);
-        })->withCount(['inscriptions as enfants_count' => function ($q) use ($anneeId) {
-            $q->where('annee_id', $anneeId)->where('etat', 1);
-        }])->having('enfants_count', '>', 3);
+        $plus3Query = $this->repo->getModel()->newQuery()
+            ->whereHas('inscriptions', function ($q) use ($anneeId) {
+                $q->where('annee_id', $anneeId)->where('etat', 1);
+            })
+            ->withCount(['inscriptions as enfants_count' => function ($q) use ($anneeId) {
+                $q->where('annee_id', $anneeId)->where('etat', 1);
+            }])
+            ->having('enfants_count', '>', 3);
 
-        // Appliquer les filtres de recherche (si besoin)
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $totalParentsQuery->where(function ($q) use ($search) {

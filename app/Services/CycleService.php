@@ -36,9 +36,10 @@ class CycleService extends BaseService
     }
 
     /**
-     * Liste simplifiée pour les selects (dropdown)
+     * Liste simplifiée pour les selects (dropdown) – version non formatée.
+     * Utilisez plutôt la méthode parent getForSelect() pour un format standardisé.
      */
-    public function getForSelect(): Collection
+    public function getSimpleSelectList(): Collection
     {
         return $this->repo->activeQuery()
             ->where('etat', 1)
@@ -48,11 +49,10 @@ class CycleService extends BaseService
     }
 
     /**
-     * Vérifie si un cycle a des données liées (niveaux, classes, etc.)
+     * Vérifie si un cycle a des données liées
      */
     public function hasRelatedData(int $id): bool
     {
-        // À adapter selon vos tables (ex: niveaux, classes, matières)
         return \DB::table('niveaux')->where('cycle_id', $id)->exists()
             || \DB::table('classes')->where('cycle_id', $id)->exists();
     }

@@ -1,43 +1,72 @@
 <?php
 namespace App\Services;
 
-use App\Models\Voiture;
-use App\Models\Chauffeur;
-use App\Models\AffectationVehicule;
-use App\Models\EntretienVehicule;
-use App\Models\CarburantVehicule;
-use App\Models\AssuranceVehicule;
+use App\Repositories\Interfaces\VoitureRepositoryInterface;
+use App\Repositories\Interfaces\ChauffeurRepositoryInterface;
+use App\Repositories\Interfaces\AffectationVehiculeRepositoryInterface;
+use App\Repositories\Interfaces\EntretienVehiculeRepositoryInterface;
+use App\Repositories\Interfaces\CarburantVehiculeRepositoryInterface;
+use App\Repositories\Interfaces\AssuranceVehiculeRepositoryInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class ParcAutomobileService
+class ParcAutomobileService extends BaseService
 {
-    protected ?int $anneeId;
+    protected string $entityName = 'Véhicule';
+    protected array $defaultSelectFields = [
+        'id', 'marque', 'modele', 'plaque', 'nombre_place', 'kilometrage_actuel', 'statut', 'couleur', 'date_achat', 'annee_id', 'etat'
+    ];
 
-    public function __construct()
+    protected ChauffeurRepositoryInterface $chauffeurRepo;
+    protected AffectationVehiculeRepositoryInterface $affectationRepo;
+    protected EntretienVehiculeRepositoryInterface $entretienRepo;
+    protected CarburantVehiculeRepositoryInterface $carburantRepo;
+    protected AssuranceVehiculeRepositoryInterface $assuranceRepo;
+
+    public function __construct(
+        VoitureRepositoryInterface $voitureRepo,
+        ChauffeurRepositoryInterface $chauffeurRepo,
+        AffectationVehiculeRepositoryInterface $affectationRepo,
+        EntretienVehiculeRepositoryInterface $entretienRepo,
+        CarburantVehiculeRepositoryInterface $carburantRepo,
+        AssuranceVehiculeRepositoryInterface $assuranceRepo
+    ) {
+        parent::__construct($voitureRepo);
+        $this->chauffeurRepo = $chauffeurRepo;
+        $this->affectationRepo = $affectationRepo;
+        $this->entretienRepo = $entretienRepo;
+        $this->carburantRepo = $carburantRepo;
+        $this->assuranceRepo = $assuranceRepo;
+    }
+
+    protected function getCurrentAnneeId(): ?int
     {
-        $this->anneeId = session()->get('LoginUser')['annee_id'] ?? null;
+        return session()->get('LoginUser')['annee_id'] ?? null;
     }
 
     // ======================= VOITURES =======================
+    // Les méthodes CRUD de base (store, update, destroy, show) sont héritées de BaseService.
+    // Mais nous avons des méthodes spécifiques : listeVoitures, getVoiture, etc.
+    // Nous allons surcharger la méthode list? Non, gardons listeVoitures pour la compatibilité.
+
     public function listeVoitures(array $filters = []): array
     {
-        $query = Voiture::query();
+        $anneeId = $this->getCurrentAnneeId();
+        $query = $this->repo->activeQuery();
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $query->where(function($q) use ($search) {
                 $q->where('marque', 'like', $search)
-                  ->orWhere('modele', 'like', $search)
-                  ->orWhere('plaque', 'like', $search)
-                  ->orWhere('numero_chassis', 'like', $search);
+                    ->orWhere('modele', 'like', $search)
+                    ->orWhere('plaque', 'like', $search)
+                    ->orWhere('numero_chassis', 'like', $search);
             });
         }
         if (isset($filters['statut']) && $filters['statut'] !== '') {
             $query->where('statut', $filters['statut']);
         }
-        if ($this->anneeId && empty($filters['ignore_annee'])) {
-            $query->where('annee_id', $this->anneeId);
+        if ($anneeId && empty($filters['ignore_annee'])) {
+            $query->where('annee_id', $anneeId);
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -58,61 +87,59 @@ class ParcAutomobileService
             ];
         });
 
-        return ['data' => $data, 'pagination' => [
-            'current_page' => $voitures->currentPage(),
-            'last_page' => $voitures->lastPage(),
-            'per_page' => $voitures->perPage(),
-            'total' => $voitures->total(),
-        ]];
+        return ['data' => $data, 'pagination' => $this->paginationData($voitures)];
     }
 
-    public function getVoiture(int $id): Voiture
+    public function getVoiture(int $id)
     {
-        return Voiture::findOrFail($id);
+        return $this->repo->findOrFail($id);
     }
 
-    public function createVoiture(array $data): Voiture
+    public function createVoiture(array $data): array
     {
-        if (empty($data['annee_id']) && $this->anneeId) {
-            $data['annee_id'] = $this->anneeId;
+        $anneeId = $this->getCurrentAnneeId();
+        if (empty($data['annee_id']) && $anneeId) {
+            $data['annee_id'] = $anneeId;
         }
-        return Voiture::create($data);
+        return $this->store($data); // Utilise la méthode store() de BaseService
     }
 
-    public function updateVoiture(int $id, array $data): Voiture
+    public function updateVoiture(int $id, array $data): array
     {
-        $voiture = $this->getVoiture($id);
-        $voiture->update($data);
-        return $voiture;
+        return $this->update($id, $data);
     }
 
-    public function deleteVoiture(int $id): void
+    public function deleteVoiture(int $id): array
     {
-        $voiture = $this->getVoiture($id);
-        if ($voiture->affectations()->exists() || $voiture->entretiens()->exists() || $voiture->carburants()->exists()) {
-            throw new \Exception("Impossible de supprimer un véhicule avec des historiques.");
+        $voiture = $this->repo->find($id);
+        // Vérifier les relations
+        if ($this->affectationRepo->activeQuery()->where('voiture_id', $id)->exists() ||
+            $this->entretienRepo->activeQuery()->where('voiture_id', $id)->exists() ||
+            $this->carburantRepo->activeQuery()->where('voiture_id', $id)->exists()) {
+            return $this->formatResponse(false, 'Impossible de supprimer un véhicule avec des historiques.');
         }
-        $voiture->delete();
+        return $this->destroy($id);
     }
 
     // ======================= CHAUFFEURS =======================
     public function listeChauffeurs(array $filters = []): array
     {
-        $query = Chauffeur::query();
+        $anneeId = $this->getCurrentAnneeId();
+        $query = $this->chauffeurRepo->activeQuery();
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
             $query->where(function($q) use ($search) {
                 $q->where('nom', 'like', $search)
-                  ->orWhere('prenom', 'like', $search)
-                  ->orWhere('permis_conduire', 'like', $search);
+                    ->orWhere('prenom', 'like', $search)
+                    ->orWhere('permis_conduire', 'like', $search);
             });
         }
         if (isset($filters['statut']) && $filters['statut'] !== '') {
             $query->where('statut', $filters['statut']);
         }
-        if ($this->anneeId && empty($filters['ignore_annee'])) {
-            $query->where('annee_id', $this->anneeId);
+        if ($anneeId && empty($filters['ignore_annee'])) {
+            $query->where('annee_id', $anneeId);
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -131,39 +158,43 @@ class ParcAutomobileService
         return ['data' => $data, 'pagination' => $this->paginationData($chauffeurs)];
     }
 
-    public function getChauffeur(int $id): Chauffeur
+    public function getChauffeur(int $id)
     {
-        return Chauffeur::findOrFail($id);
+        return $this->chauffeurRepo->findOrFail($id);
     }
 
-    public function createChauffeur(array $data): Chauffeur
+    public function createChauffeur(array $data): array
     {
-        if (empty($data['annee_id']) && $this->anneeId) {
-            $data['annee_id'] = $this->anneeId;
+        $anneeId = $this->getCurrentAnneeId();
+        if (empty($data['annee_id']) && $anneeId) {
+            $data['annee_id'] = $anneeId;
         }
-        return Chauffeur::create($data);
+        $data['etat'] = 1;
+        $chauffeur = $this->chauffeurRepo->create($data);
+        return $this->formatResponse(true, 'Chauffeur créé', $chauffeur);
     }
 
-    public function updateChauffeur(int $id, array $data): Chauffeur
+    public function updateChauffeur(int $id, array $data): array
     {
-        $chauffeur = $this->getChauffeur($id);
-        $chauffeur->update($data);
-        return $chauffeur;
+        $this->chauffeurRepo->update($id, $data);
+        $chauffeur = $this->chauffeurRepo->find($id);
+        return $this->formatResponse(true, 'Chauffeur mis à jour', $chauffeur);
     }
 
-    public function deleteChauffeur(int $id): void
+    public function deleteChauffeur(int $id): array
     {
-        $chauffeur = $this->getChauffeur($id);
-        if ($chauffeur->affectations()->exists()) {
-            throw new \Exception("Ce chauffeur a des affectations, vous ne pouvez pas le supprimer.");
+        if ($this->affectationRepo->activeQuery()->where('chauffeur_id', $id)->exists()) {
+            return $this->formatResponse(false, 'Ce chauffeur a des affectations, vous ne pouvez pas le supprimer.');
         }
-        $chauffeur->delete();
+        $this->chauffeurRepo->delete($id);
+        return $this->formatResponse(true, 'Chauffeur supprimé');
     }
 
     // ======================= AFFECTATIONS =======================
     public function listeAffectations(array $filters = []): array
     {
-        $query = AffectationVehicule::with(['voiture', 'chauffeur']);
+        $query = $this->affectationRepo->activeQuery()
+            ->with(['voiture', 'chauffeur']);
 
         if (!empty($filters['voiture_id'])) {
             $query->where('voiture_id', $filters['voiture_id']);
@@ -174,8 +205,9 @@ class ParcAutomobileService
         if (!empty($filters['en_cours']) && $filters['en_cours'] == 1) {
             $query->whereNull('date_fin');
         }
-        if ($this->anneeId && empty($filters['ignore_annee'])) {
-            $query->where('annee_id', $this->anneeId);
+        $anneeId = $this->getCurrentAnneeId();
+        if ($anneeId && empty($filters['ignore_annee'])) {
+            $query->where('annee_id', $anneeId);
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -194,40 +226,44 @@ class ParcAutomobileService
         return ['data' => $data, 'pagination' => $this->paginationData($affectations)];
     }
 
-    public function createAffectation(array $data): AffectationVehicule
+    public function createAffectation(array $data): array
     {
         // Vérifier que la voiture n'est pas déjà affectée sans date de fin
-        $existing = AffectationVehicule::where('voiture_id', $data['voiture_id'])
+        $existing = $this->affectationRepo->activeQuery()
+            ->where('voiture_id', $data['voiture_id'])
             ->whereNull('date_fin')
             ->first();
         if ($existing) {
-            throw new \Exception("Ce véhicule est déjà affecté (depuis le {$existing->date_debut}).");
+            return $this->formatResponse(false, "Ce véhicule est déjà affecté (depuis le {$existing->date_debut}).");
         }
 
-        if (empty($data['annee_id']) && $this->anneeId) {
-            $data['annee_id'] = $this->anneeId;
+        $anneeId = $this->getCurrentAnneeId();
+        if (empty($data['annee_id']) && $anneeId) {
+            $data['annee_id'] = $anneeId;
         }
-        return AffectationVehicule::create($data);
+        $data['etat'] = 1;
+        $affectation = $this->affectationRepo->create($data);
+        return $this->formatResponse(true, 'Affectation créée', $affectation);
     }
 
-    public function terminerAffectation(int $id, ?string $motif = null): AffectationVehicule
+    public function terminerAffectation(int $id, ?string $motif = null): array
     {
-        $affectation = AffectationVehicule::findOrFail($id);
-        if ($affectation->date_fin) {
-            throw new \Exception("Cette affectation est déjà terminée.");
+        $affectation = $this->affectationRepo->find($id);
+        if (!$affectation || $affectation->date_fin) {
+            return $this->formatResponse(false, 'Affectation introuvable ou déjà terminée.');
         }
-        $affectation->date_fin = now();
-        if ($motif) {
-            $affectation->motif = $motif;
-        }
-        $affectation->save();
-        return $affectation;
+        $this->affectationRepo->update($id, [
+            'date_fin' => now(),
+            'motif' => $motif,
+        ]);
+        return $this->formatResponse(true, 'Affectation terminée', $affectation);
     }
 
     // ======================= ENTRETIENS =======================
     public function listeEntretiens(array $filters = []): array
     {
-        $query = EntretienVehicule::with(['voiture', 'chauffeur']);
+        $query = $this->entretienRepo->activeQuery()
+            ->with(['voiture', 'chauffeur']);
 
         if (!empty($filters['voiture_id'])) {
             $query->where('voiture_id', $filters['voiture_id']);
@@ -238,8 +274,9 @@ class ParcAutomobileService
         if (!empty($filters['date_fin'])) {
             $query->whereDate('date_entretien', '<=', $filters['date_fin']);
         }
-        if ($this->anneeId && empty($filters['ignore_annee'])) {
-            $query->where('annee_id', $this->anneeId);
+        $anneeId = $this->getCurrentAnneeId();
+        if ($anneeId && empty($filters['ignore_annee'])) {
+            $query->where('annee_id', $anneeId);
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -258,18 +295,22 @@ class ParcAutomobileService
         return ['data' => $data, 'pagination' => $this->paginationData($entretiens)];
     }
 
-    public function createEntretien(array $data): EntretienVehicule
+    public function createEntretien(array $data): array
     {
-        if (empty($data['annee_id']) && $this->anneeId) {
-            $data['annee_id'] = $this->anneeId;
+        $anneeId = $this->getCurrentAnneeId();
+        if (empty($data['annee_id']) && $anneeId) {
+            $data['annee_id'] = $anneeId;
         }
-        return EntretienVehicule::create($data);
+        $data['etat'] = 1;
+        $entretien = $this->entretienRepo->create($data);
+        return $this->formatResponse(true, 'Entretien enregistré', $entretien);
     }
 
     // ======================= CARBURANT =======================
     public function listeCarburants(array $filters = []): array
     {
-        $query = CarburantVehicule::with('voiture');
+        $query = $this->carburantRepo->activeQuery()
+            ->with('voiture');
 
         if (!empty($filters['voiture_id'])) {
             $query->where('voiture_id', $filters['voiture_id']);
@@ -280,8 +321,9 @@ class ParcAutomobileService
         if (!empty($filters['date_fin'])) {
             $query->whereDate('date_plein', '<=', $filters['date_fin']);
         }
-        if ($this->anneeId && empty($filters['ignore_annee'])) {
-            $query->where('annee_id', $this->anneeId);
+        $anneeId = $this->getCurrentAnneeId();
+        if ($anneeId && empty($filters['ignore_annee'])) {
+            $query->where('annee_id', $anneeId);
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -301,32 +343,35 @@ class ParcAutomobileService
         return ['data' => $data, 'pagination' => $this->paginationData($carburants)];
     }
 
-    public function createCarburant(array $data): CarburantVehicule
+    public function createCarburant(array $data): array
     {
         // Mettre à jour le kilométrage de la voiture
-        $voiture = Voiture::find($data['voiture_id']);
+        $voiture = $this->repo->find($data['voiture_id']);
         if ($voiture && $data['kilometrage'] > $voiture->kilometrage_actuel) {
-            $voiture->kilometrage_actuel = $data['kilometrage'];
-            $voiture->save();
+            $this->repo->update($voiture->id, ['kilometrage_actuel' => $data['kilometrage']]);
         }
 
-        if (empty($data['annee_id']) && $this->anneeId) {
-            $data['annee_id'] = $this->anneeId;
+        $anneeId = $this->getCurrentAnneeId();
+        if (empty($data['annee_id']) && $anneeId) {
+            $data['annee_id'] = $anneeId;
         }
-        return CarburantVehicule::create($data);
+        $data['etat'] = 1;
+        $carburant = $this->carburantRepo->create($data);
+        return $this->formatResponse(true, 'Carburant enregistré', $carburant);
     }
 
     // ======================= ASSURANCES =======================
     public function listeAssurances(array $filters = []): array
     {
-        $query = AssuranceVehicule::with('voiture');
+        $query = $this->assuranceRepo->activeQuery()
+            ->with('voiture');
 
         if (!empty($filters['voiture_id'])) {
             $query->where('voiture_id', $filters['voiture_id']);
         }
         if (!empty($filters['a_expirer'])) {
             $query->whereDate('date_fin', '<=', now()->addDays(30))
-                  ->whereDate('date_fin', '>=', now());
+                ->whereDate('date_fin', '>=', now());
         }
 
         $perPage = $filters['per_page'] ?? 15;
@@ -346,9 +391,11 @@ class ParcAutomobileService
         return ['data' => $data, 'pagination' => $this->paginationData($assurances)];
     }
 
-    public function createAssurance(array $data): AssuranceVehicule
+    public function createAssurance(array $data): array
     {
-        return AssuranceVehicule::create($data);
+        $data['etat'] = 1;
+        $assurance = $this->assuranceRepo->create($data);
+        return $this->formatResponse(true, 'Assurance enregistrée', $assurance);
     }
 
     private function paginationData($paginator): array
