@@ -27,8 +27,8 @@ return new class extends Migration
              $table->bigInteger('annee_id')->nullable();
             $table->tinyInteger('statut_paiement')->nullable();
             $table->tinyInteger('statut_livraison')->nullable();
-             $table->decimal('montant_total', 12, 2)->nullable()->after('commentaire');
-             $table->tinyInteger('type_achat')->default(1)->comment('1=cantine,2=boutique')->after('annee_id');
+             $table->decimal('montant_total', 12, 2)->nullable();
+             $table->tinyInteger('type_achat')->default(1);
 
 
             $table->integer('etat')->default(1);

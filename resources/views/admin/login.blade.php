@@ -43,7 +43,7 @@
                 <span>Excellence &amp; Savoir</span>
             </div>
 
-            {{-- logo circulaire --}}
+            {{-- logo circulaire, cerclé d'un tracé or tournant --}}
             <div class="logo-ring animate-in delay-1">
                 <img src="{{ asset('admin') }}/images/logo_mariam.png" alt="Logo École Mariam">
             </div>
@@ -66,23 +66,19 @@
                 administratif autorisé et accrédité.
             </p>
 
-            {{-- grille stats --}}
-            <div class="stats-grid animate-in delay-3">
-                <div class="stat-item">
-                    <div class="stat-value">SSL</div>
-                    <div class="stat-label">Sécurisé</div>
+            {{-- triptyque : la devise du sceau, telle quelle --}}
+            <div class="motto-grid animate-in delay-3">
+                <div class="motto-item">
+                    <i class="fas fa-award motto-icon"></i>
+                    <div class="motto-word">Maîtrise</div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">24/7</div>
-                    <div class="stat-label">Disponible</div>
+                <div class="motto-item">
+                    <i class="fas fa-balance-scale motto-icon"></i>
+                    <div class="motto-word">Rigueur</div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">100%</div>
-                    <div class="stat-label">Numérique</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">AES</div>
-                    <div class="stat-label">Chiffrement</div>
+                <div class="motto-item">
+                    <i class="fas fa-heart motto-icon"></i>
+                    <div class="motto-word">Amour</div>
                 </div>
             </div>
 

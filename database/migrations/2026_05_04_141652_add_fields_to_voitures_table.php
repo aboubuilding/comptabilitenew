@@ -16,7 +16,7 @@ return new class extends Migration
        Schema::table('voitures', function (Blueprint $table) {
     $table->string('modele')->nullable()->after('marque');
     $table->integer('annee_fabrication')->nullable()->after('nombre_place');
-    $table->string('couleur')->nullable();
+ 
     $table->string('numero_chassis')->nullable()->unique();
     $table->date('date_achat')->nullable();
     $table->decimal('prix_achat', 12, 2)->nullable();

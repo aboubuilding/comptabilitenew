@@ -23,8 +23,8 @@ return new class extends Migration
                 $table->tinyInteger('statut_abandon')->default(0)->comment('0=actif,1=abandonné')->after('motif_abandon');
             }
             if (!Schema::hasColumn('inscriptions', 'abandonne_par')) {
-                $table->bigInteger('abandonne_par')->nullable()->after('statut_abandon');
-                $table->foreign('abandonne_par')->references('id')->on('users')->onDelete('set null');
+                $table->bigInteger('abandonne_par')->nullable();
+                
             }
         });
     }

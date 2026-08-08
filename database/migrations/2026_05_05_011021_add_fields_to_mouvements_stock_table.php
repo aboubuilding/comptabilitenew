@@ -13,10 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-       Schema::table('mouvements_stock', function (Blueprint $table) {
-    $table->foreignId('magasin_dest_id')->nullable()->after('magasin_id')->constrained('magasins');
+       Schema::table('stocks', function (Blueprint $table) {
+    $table->bigInteger('magasin_dest_id')->nullable();
     $table->string('reference')->nullable();
-    $table->foreignId('utilisateur_id')->nullable()->after('reference')->constrained('users');
+    $table->bigInteger('utilisateur_id')->nullable();
     // type_mouvement : 1 entrée, 2 sortie, 3 transfert
 });
     }
