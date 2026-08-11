@@ -9,18 +9,8 @@ class FraisEcole extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'frais_ecoles';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'libelle',
         'montant',
@@ -28,97 +18,128 @@ class FraisEcole extends Model
         'type_forfait',
         'niveau_id',
         'annee_id',
+        'plan_echeancier_id',
         'etat',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'montant'        => 'float',
-        'type_paiement'  => 'integer',   // tinyInteger
-        'type_forfait'   => 'integer',   // tinyInteger
-        'niveau_id'      => 'integer',
-        'annee_id'       => 'integer',
-        'etat'           => 'boolean',   // 0/1
+        'montant' => 'float',
+        'type_paiement' => 'integer',
+        'type_forfait' => 'integer',
+        'niveau_id' => 'integer',
+        'annee_id' => 'integer',
+        'plan_echeancier_id' => 'integer',
+        'etat' => 'integer',
     ];
 
-    // ===== CONSTANTES POUR `type_paiement` =====
-    const PAIEMENT_UNIQUE     = 1;
-    const PAIEMENT_MENSUEL    = 2;
-    const PAIEMENT_TRIMESTRIEL= 3;
-    const PAIEMENT_SEMESTRIEL = 4;
-
-    // ===== CONSTANTES POUR `type_forfait` =====
-    const FORFAIT_NORMAL      = 1;
-    const FORFAIT_REDUIT      = 2;
-    const FORFAIT_BOURSE      = 3;
-
-    // ===== CONSTANTES POUR `etat` =====
-    const ETAT_ACTIF   = 1;
+    // Constantes
+    const ETAT_ACTIF = 1;
     const ETAT_INACTIF = 0;
 
-    // ===== RELATIONS =====
+    // Types de paiement
+    const TYPE_FRAIS_INSCRIPTION = 1;
+    const TYPE_FRAIS_SCOLARITE = 2;
+    const TYPE_SERVICES = 3;
+    const TYPE_PRODUIT = 4;
+    const TYPE_LIVRE = 5;
+    const TYPE_CAUTION = 6;
+    const TYPE_BUS = 7;
+    const TYPE_CANTINE = 8;
+    const TYPE_AUTRES = 9;
+    const TYPE_FRAIS_ASSURANCE = 10;
+    const TYPE_FRAIS_EXTRA_SCOLAIRE = 11;
+    const TYPE_FRAIS_EXAMEN = 12;
+
+    // Types de forfait
+    const FORFAIT_FIXE = 1;
+    const FORFAIT_VARIABLE = 2;
+    const FORFAIT_UNITE = 3;
+
     /**
-     * Relation avec le niveau (table `niveaux`)
+     * Relation avec le niveau
      */
     public function niveau()
     {
-        return $this->belongsTo(Niveau::class, 'niveau_id');
+        return $this->belongsTo(Niveau::class);
     }
 
     /**
-     * Relation avec l'année scolaire (table `annees`)
+     * Relation avec l'année
      */
     public function annee()
     {
-        return $this->belongsTo(Annee::class, 'annee_id');
+        return $this->belongsTo(Annee::class);
     }
 
-    // ===== MÉTHODES UTILITAIRES =====
+    /**
+     * Relation avec le plan d'échéancier
+     */
+    public function planEcheancier()
+    {
+        return $this->belongsTo(PlanEcheancier::class);
+    }
+
+    /**
+     * Vérifier si le frais est payable en tranches
+     */
+    public function isPayableEnTranches(): bool
+    {
+        return $this->plan_echeancier_id !== null;
+    }
+
     /**
      * Vérifier si le frais est actif
      */
-    public function isActif(): bool
+    public function isActive(): bool
     {
-        return $this->etat == self::ETAT_ACTIF;
+        return $this->etat === self::ETAT_ACTIF;
     }
 
     /**
-     * Activer/désactiver le frais
-     */
-    public function setActif(bool $actif): void
-    {
-        $this->etat = $actif ? self::ETAT_ACTIF : self::ETAT_INACTIF;
-        $this->save();
-    }
-
-    /**
-     * Libellé du type de paiement
+     * Obtenir le libellé du type de paiement
      */
     public function getTypePaiementLabelAttribute(): string
     {
-        $labels = [
-            self::PAIEMENT_UNIQUE       => 'Unique',
-            self::PAIEMENT_MENSUEL      => 'Mensuel',
-            self::PAIEMENT_TRIMESTRIEL  => 'Trimestriel',
-            self::PAIEMENT_SEMESTRIEL   => 'Semestriel',
-        ];
-        return $labels[$this->type_paiement] ?? 'Non défini';
+        return \App\Types\TypePaiement::getLabel($this->type_paiement);
     }
 
     /**
-     * Libellé du type de forfait
+     * Scope pour les frais actifs
      */
-    public function getTypeForfaitLabelAttribute(): string
+    public function scopeActive($query)
     {
-        $labels = [
-            self::FORFAIT_NORMAL => 'Normal',
-            self::FORFAIT_REDUIT => 'Réduit',
-            self::FORFAIT_BOURSE => 'Bourse',
-        ];
-        return $labels[$this->type_forfait] ?? 'Non défini';
+        return $query->where('etat', self::ETAT_ACTIF);
+    }
+
+    /**
+     * Scope pour les frais avec échéancier
+     */
+    public function scopeAvecEcheancier($query)
+    {
+        return $query->whereNotNull('plan_echeancier_id');
+    }
+
+    /**
+     * Scope pour les frais sans échéancier
+     */
+    public function scopeSansEcheancier($query)
+    {
+        return $query->whereNull('plan_echeancier_id');
+    }
+
+    /**
+     * Scope pour les frais par niveau
+     */
+    public function scopeByNiveau($query, int $niveauId)
+    {
+        return $query->where('niveau_id', $niveauId);
+    }
+
+    /**
+     * Scope pour les frais par année
+     */
+    public function scopeByAnnee($query, int $anneeId)
+    {
+        return $query->where('annee_id', $anneeId);
     }
 }

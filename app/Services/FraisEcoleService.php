@@ -2,137 +2,190 @@
 
 namespace App\Services;
 
+use App\Models\FraisEcole;
+use App\Models\PlanEcheancier;
+use App\Models\PlanEcheancierLigne;
 use App\Repositories\Interfaces\FraisEcoleRepositoryInterface;
-use Illuminate\Support\Collection;
+use App\Repositories\Interfaces\PlanEcheancierRepositoryInterface;
+use App\Repositories\Interfaces\PlanEcheancierLigneRepositoryInterface;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class FraisEcoleService extends BaseService
+class FraisEcoleService
 {
-    protected string $entityName = 'Frais scolaire';
-    protected array $defaultSelectFields = [
-        'id', 'libelle', 'montant', 'type_paiement', 'type_forfait',
-        'niveau_id', 'annee_id', 'etat'
-    ];
+    protected FraisEcoleRepositoryInterface $fraisRepository;
+    protected PlanEcheancierRepositoryInterface $planRepository;
+    protected PlanEcheancierLigneRepositoryInterface $ligneRepository;
 
-    public function __construct(FraisEcoleRepositoryInterface $repo)
-    {
-        parent::__construct($repo);
+    public function __construct(
+        FraisEcoleRepositoryInterface $fraisRepository,
+        PlanEcheancierRepositoryInterface $planRepository,
+        PlanEcheancierLigneRepositoryInterface $ligneRepository
+    ) {
+        $this->fraisRepository = $fraisRepository;
+        $this->planRepository = $planRepository;
+        $this->ligneRepository = $ligneRepository;
     }
 
     /**
-     * Récupère tous les frais, formatés pour l'affichage (avec libellé du niveau)
+     * Créer un frais avec son plan d'échéancier
      */
-    public function getAllFormatted(?int $anneeId = null): Collection
+    public function createFraisWithEcheancier(array $fraisData, ?array $planData = null): FraisEcole
     {
-        $query = $this->repo->activeQuery()
-            ->with('niveau:id,libelle')
-            ->select($this->defaultSelectFields)
-            ->orderBy('niveau_id')
-            ->orderBy('libelle');
+        return DB::transaction(function () use ($fraisData, $planData) {
+            // Créer le plan d'échéancier si fourni
+            if ($planData && isset($planData['lignes']) && count($planData['lignes']) > 0) {
+                $plan = $this->createPlanEcheancier($planData);
+                $fraisData['plan_echeancier_id'] = $plan->id;
+            }
 
-        if ($anneeId) {
-            $query->where('annee_id', $anneeId);
-        }
+            // Créer le frais
+            $frais = $this->fraisRepository->createWithValidation($fraisData);
 
-        $frais = $query->get();
+            Log::info('Frais créé avec succès', [
+                'frais_id' => $frais->id,
+                'has_echeancier' => isset($plan)
+            ]);
 
-        return $frais->map(function ($frais) {
-            return [
-                'id'               => $frais->id,
-                'libelle'          => $frais->libelle,
-                'montant'          => number_format($frais->montant, 0, ',', ' '),
-                'montant_raw'      => $frais->montant,
-                'type_paiement'    => $frais->type_paiement,
-                'type_paiement_label' => $this->getTypePaiementLabel($frais->type_paiement),
-                'type_forfait'     => $frais->type_forfait,
-                'type_forfait_label'  => $this->getTypeForfaitLabel($frais->type_forfait),
-                'niveau_id'        => $frais->niveau_id,
-                'niveau_libelle'   => $frais->niveau?->libelle,
-                'annee_id'         => $frais->annee_id,
-                'etat'             => $frais->etat,
-                'etat_label'       => $frais->etat ? 'Actif' : 'Inactif',
-            ];
+            return $frais;
         });
     }
 
     /**
-     * Récupère les frais d'une année donnée (pour selects)
+     * Mettre à jour un frais avec son plan d'échéancier
      */
-    public function getByAnnee(int $anneeId): Collection
+    public function updateFraisWithEcheancier(FraisEcole $frais, array $fraisData, ?array $planData = null): FraisEcole
     {
-        return $this->repo->activeQuery()
-            ->where('annee_id', $anneeId)
-            ->where('etat', 1)
-            ->orderBy('libelle')
-            ->get($this->defaultSelectFields);
+        return DB::transaction(function () use ($frais, $fraisData, $planData) {
+            // Gérer le plan d'échéancier
+            if ($planData && isset($planData['lignes']) && count($planData['lignes']) > 0) {
+                // Si le frais a déjà un plan, on le met à jour
+                if ($frais->plan_echeancier_id) {
+                    $plan = $this->updatePlanEcheancier($frais->planEcheancier, $planData);
+                } else {
+                    // Sinon on crée un nouveau plan
+                    $plan = $this->createPlanEcheancier($planData);
+                    $fraisData['plan_echeancier_id'] = $plan->id;
+                }
+            } else {
+                // Si pas de plan fourni, on supprime l'association
+                $fraisData['plan_echeancier_id'] = null;
+            }
+
+            // Mettre à jour le frais
+            $frais = $this->fraisRepository->updateWithValidation($frais, $fraisData);
+
+            Log::info('Frais mis à jour avec succès', [
+                'frais_id' => $frais->id
+            ]);
+
+            return $frais;
+        });
     }
 
     /**
-     * Récupère les frais d'un niveau et d'une année
+     * Créer un plan d'échéancier avec ses lignes
      */
-    public function getByNiveauAndAnnee(int $niveauId, int $anneeId): Collection
+    public function createPlanEcheancier(array $data): PlanEcheancier
     {
-        return $this->repo->activeQuery()
-            ->where('niveau_id', $niveauId)
-            ->where('annee_id', $anneeId)
-            ->where('etat', 1)
-            ->orderBy('libelle')
-            ->get($this->defaultSelectFields);
+        return DB::transaction(function () use ($data) {
+            // Extraire les lignes
+            $lignes = $data['lignes'] ?? [];
+            unset($data['lignes']);
+
+            // Créer le plan
+            $plan = $this->planRepository->createWithValidation($data);
+
+            // Créer les lignes
+            foreach ($lignes as $ligne) {
+                $this->ligneRepository->createForPlan($plan->id, $ligne);
+            }
+
+            Log::info('Plan d\'échéancier créé', [
+                'plan_id' => $plan->id,
+                'nombre_lignes' => count($lignes)
+            ]);
+
+            return $plan->load('lignes');
+        });
     }
 
     /**
-     * Liste simplifiée pour selects (dropdown) – retourne une collection brute.
-     * Pour une liste formatée (array value/label), utiliser la méthode parent getForSelect().
-     *
-     * @param int|null $anneeId
-     * @param int|null $niveauId
-     * @return Collection
+     * Mettre à jour un plan d'échéancier avec ses lignes
      */
-    public function getSelectList(?int $anneeId = null, ?int $niveauId = null): Collection
+    public function updatePlanEcheancier(PlanEcheancier $plan, array $data): PlanEcheancier
     {
-        $query = $this->repo->activeQuery()
-            ->where('etat', 1)
-            ->select('id', 'libelle', 'montant', 'niveau_id')
-            ->orderBy('libelle');
+        return DB::transaction(function () use ($plan, $data) {
+            // Extraire les lignes
+            $lignes = $data['lignes'] ?? [];
+            unset($data['lignes']);
 
-        if ($anneeId) {
-            $query->where('annee_id', $anneeId);
+            // Mettre à jour le plan
+            $plan = $this->planRepository->updateWithValidation($plan, $data);
+
+            // Supprimer les anciennes lignes
+            $this->ligneRepository->deleteByPlan($plan->id);
+
+            // Créer les nouvelles lignes
+            foreach ($lignes as $ligne) {
+                $this->ligneRepository->createForPlan($plan->id, $ligne);
+            }
+
+            Log::info('Plan d\'échéancier mis à jour', [
+                'plan_id' => $plan->id,
+                'nombre_lignes' => count($lignes)
+            ]);
+
+            return $plan->load('lignes');
+        });
+    }
+
+    /**
+     * Supprimer un frais et son plan d'échéancier associé
+     */
+    public function deleteFraisWithEcheancier(FraisEcole $frais): bool
+    {
+        return DB::transaction(function () use ($frais) {
+            $planId = $frais->plan_echeancier_id;
+
+            // Supprimer le frais
+            $this->fraisRepository->delete($frais->id);
+
+            // Supprimer le plan associé si présent
+            if ($planId) {
+                $plan = $this->planRepository->find($planId);
+                if ($plan) {
+                    $this->ligneRepository->deleteByPlan($planId);
+                    $this->planRepository->delete($planId);
+                }
+            }
+
+            Log::info('Frais et plan d\'échéancier supprimés', [
+                'frais_id' => $frais->id,
+                'plan_id' => $planId
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Récupérer un frais avec son plan d'échéancier
+     */
+    public function getFraisWithEcheancier(int $id): ?FraisEcole
+    {
+        return $this->fraisRepository->findOrFail($id)->load(['planEcheancier.lignes', 'niveau', 'annee']);
+    }
+
+    /**
+     * Vérifier si un plan d'échéancier peut être supprimé
+     */
+    public function canDeletePlan(PlanEcheancier $plan): bool
+    {
+        // Vérifier si le plan est utilisé par des frais
+        if ($plan->fraisEcoles()->exists()) {
+            return false;
         }
-        if ($niveauId) {
-            $query->where('niveau_id', $niveauId);
-        }
-
-        return $query->get();
-    }
-
-    /**
-     * Vérifie si un frais a des données liées (factures, paiements, etc.)
-     */
-    public function hasRelatedData(int $id): bool
-    {
-        // À adapter selon vos tables
-        return \DB::table('factures')->where('frais_ecole_id', $id)->exists()
-            || \DB::table('paiements')->where('frais_ecole_id', $id)->exists();
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // Helpers pour les labels
-    // ─────────────────────────────────────────────────────────────
-    protected function getTypePaiementLabel(?int $type): string
-    {
-        return match ($type) {
-            1 => 'Unique',
-            2 => 'Trimestriel',
-            3 => 'Mensuel',
-            default => 'Inconnu',
-        };
-    }
-
-    protected function getTypeForfaitLabel(?int $type): string
-    {
-        return match ($type) {
-            1 => 'Obligatoire',
-            2 => 'Optionnel',
-            default => 'Inconnu',
-        };
+        return true;
     }
 }

@@ -3,128 +3,148 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
-    /**
-     * Le nom de la table associée.
-     *
-     * @var string
-     */
     protected $table = 'users';
 
-    /**
-     * Les attributs qui sont mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'nom',
         'prenom',
         'login',
         'email',
         'mot_passe',
-        'password',
         'photo',
         'role',
         'etat',
-        'email_verified_at',
-        'remember_token',
-        'last_login_at',
-        'last_login_ip',
     ];
 
-    /**
-     * Les attributs qui doivent être cachés pour les tableaux.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'mot_passe',
-        'password',
         'remember_token',
     ];
 
-    /**
-     * Les attributs qui doivent être castés.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'last_login_at' => 'datetime',
         'etat' => 'integer',
         'role' => 'integer',
-        'deleted_at' => 'datetime',
     ];
 
-    // ─────────────────────────────────────────────────────────────
-    // Accesseurs & Mutateurs
-    // ─────────────────────────────────────────────────────────────
+    // Constantes de rôle
+    const ROLE_ADMIN = 1;
+    const ROLE_DIRECTEUR = 2;
+    const ROLE_COMPTABLE = 3;
+    const ROLE_ADMIN_ADJOINT = 4;
+    const ROLE_CAISSIER = 5;
+    const ROLE_SECRETAIRE = 6;
+    const ROLE_ENSEIGNANT = 7;
+    const ROLE_PARENT = 8;
+
+    // Constantes d'état
+    const ETAT_ACTIF = 1;
+    const ETAT_INACTIF = 0;
 
     /**
-     * Récupère le mot de passe pour l'authentification (priorité à password).
+     * Obtenir le mot de passe pour l'authentification.
+     * Laravel attend 'password' par défaut, on redirige vers 'mot_passe'
      */
     public function getAuthPassword()
     {
-        return $this->password ?? $this->mot_passe;
+        return $this->mot_passe;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Relations (optionnelles, à ajouter selon vos besoins)
-    // ─────────────────────────────────────────────────────────────
-
-    // Exemple : un utilisateur peut créer des paiements
-    // public function paiements()
-    // {
-    //     return $this->hasMany(Paiement::class, 'utilisateur_id');
-    // }
-
-    // ─────────────────────────────────────────────────────────────
-    // Méthodes utilitaires
-    // ─────────────────────────────────────────────────────────────
-
     /**
-     * Vérifie si l'utilisateur est actif.
+     * Vérifier si l'utilisateur est actif
      */
     public function isActive(): bool
     {
-        return $this->etat == 1;
+        return $this->etat === self::ETAT_ACTIF;
     }
 
     /**
-     * Vérifie si l'utilisateur a un rôle spécifique.
+     * Vérifier si l'utilisateur est administrateur
      */
-    public function hasRole(int $role): bool
+    public function isAdmin(): bool
     {
-        return $this->role == $role;
+        return $this->role === self::ROLE_ADMIN;
     }
 
     /**
-     * Raccourci pour définir le nom complet.
+     * Obtenir le nom complet de l'utilisateur
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->prenom . ' ' . $this->nom);
+        return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
     }
 
     /**
-     * Raccourci pour l'affichage du rôle.
+     * Obtenir le libellé du rôle
      */
     public function getRoleLabelAttribute(): string
     {
-        return match ($this->role) {
-            1 => 'Admin',
-            2 => 'Comptable',
-            3 => 'Directeur',
-            4 => 'Caissier',
-            5 => 'Parent',
+        return match($this->role) {
+            self::ROLE_ADMIN => 'Administrateur',
+            self::ROLE_DIRECTEUR => 'Directeur',
+            self::ROLE_COMPTABLE => 'Comptable',
+            self::ROLE_ADMIN_ADJOINT => 'Admin Adjoint',
+            self::ROLE_CAISSIER => 'Caissier',
+            self::ROLE_SECRETAIRE => 'Secrétaire',
+            self::ROLE_ENSEIGNANT => 'Enseignant',
+            self::ROLE_PARENT => 'Parent',
             default => 'Inconnu',
         };
+    }
+
+    /**
+     * Obtenir la classe CSS du rôle
+     */
+    public function getRoleBadgeClassAttribute(): string
+    {
+        return match($this->role) {
+            self::ROLE_ADMIN => 'badge-danger',
+            self::ROLE_DIRECTEUR => 'badge-primary',
+            self::ROLE_COMPTABLE => 'badge-success',
+            self::ROLE_ADMIN_ADJOINT => 'badge-info',
+            self::ROLE_CAISSIER => 'badge-warning',
+            self::ROLE_SECRETAIRE => 'badge-secondary',
+            self::ROLE_ENSEIGNANT => 'badge-dark',
+            self::ROLE_PARENT => 'badge-info',
+            default => 'badge-secondary',
+        };
+    }
+
+    /**
+     * Obtenir le libellé de l'état
+     */
+    public function getEtatLabelAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'Actif' : 'Inactif';
+    }
+
+    /**
+     * Scope pour les utilisateurs actifs
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('etat', self::ETAT_ACTIF);
+    }
+
+    /**
+     * Scope pour les administrateurs
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', self::ROLE_ADMIN);
+    }
+
+    /**
+     * Scope par rôle
+     */
+    public function scopeByRole($query, int $role)
+    {
+        return $query->where('role', $role);
     }
 }

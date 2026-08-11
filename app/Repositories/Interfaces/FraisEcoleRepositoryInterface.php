@@ -2,33 +2,23 @@
 
 namespace App\Repositories\Interfaces;
 
-use Illuminate\Support\Collection;
-use App\Repositories\Interfaces\BaseRepositoryInterface;
+use App\Models\FraisEcole;
+use Illuminate\Database\Eloquent\Collection;
 
-interface FraisEcoleRepositoryInterface extends BaseRepositoryInterface
+interface FraisEcoleRepositoryInterface
 {
-    /**
-     * Récupère les frais actifs pour un niveau et une année donnée
-     */
-    public function getByNiveauEtAnnee(int $niveauId, int $anneeId): Collection;
+    public function getAllWithFilters(?array $filters = null): Collection;
+    public function getActiveFrais(): Collection;
+    public function getByNiveau(int $niveauId): Collection;
+    public function getByAnnee(int $anneeId): Collection;
+    public function getByType(int $type): Collection;
+    public function getAvecEcheancier(): Collection;
+    public function getSansEcheancier(): Collection;
+    public function findByLibelle(string $libelle): ?FraisEcole;
+    public function canDelete(FraisEcole $frais): bool;
+    public function deleteWithCheck(FraisEcole $frais): bool;
+    public function getStats(): array;
+    public function createWithValidation(array $data): FraisEcole;
+    public function updateWithValidation(FraisEcole $frais, array $data): FraisEcole;
 
-    /**
-     * Vérifie l'unicité d'un frais pour éviter les doublons (niveau + année + type)
-     */
-    public function existsForNiveauAnnee(int $niveauId, int $anneeId, int $typePaiement, ?int $excludeId = null): bool;
-
-    /**
-     * Calcule le montant total des frais pour un niveau/année
-     */
-    public function getMontantTotalByNiveauEtAnnee(int $niveauId, int $anneeId): float;
-
-    /**
-     * Clone les frais d'une année source vers une année destination (report annuel)
-     */
-    public function clonerPourAnnee(int $anneeSource, int $anneeDestination): int;
-
-    /**
-     * Liste des frais groupés par type de paiement (mensuel, trimestriel, annuel, etc.)
-     */
-    public function getListeGroupedByType(int $anneeId, ?int $niveauId = null): Collection;
 }

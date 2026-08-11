@@ -1,110 +1,250 @@
 <?php
 
-namespace App\Http\Controllers\Parametre;
+namespace App\Http\Controllers\Parametre ;
 
+use App\Http\Requests\AnneeRequest;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Parametre\Annee\StoreAnneeRequest;
-use App\Http\Requests\Parametre\Annee\UpdateAnneeRequest;
-use App\Services\AnneeService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
+use App\Models\Annee;
+use App\Repositories\Interfaces\AnneeRepositoryInterface;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AnneeController extends Controller
 {
-    protected AnneeService $service;
+    protected AnneeRepositoryInterface $repository;
 
-    public function __construct(AnneeService $service)
+    public function __construct(AnneeRepositoryInterface $repository)
     {
-        $this->service = $service;
+        $this->repository = $repository;
     }
 
     /**
-     * Affiche la vue avec les années chargées depuis le service
+     * Liste des années scolaires
      */
-    public function index(): View
+    public function index(Request $request)
     {
-        // ✅ On charge les données depuis le service
-        $annees = $this->service->getAllFormatted();
+        $filters = [
+            'search' => $request->get('search'),
+            'statut_annee' => $request->get('statut_annee'),
+            'etat' => $request->get('etat'),
+        ];
 
-        return view('admin.annees.index', [
-            'annees'     => $annees,
-            'page_title' => 'Années scolaires',
+        $annees = $this->repository->getAllWithFilters($filters);
+        $stats = $this->repository->getStats();
+
+        return view('admin.annees.index', compact('annees', 'stats'));
+    }
+
+    /**
+     * Afficher les détails d'une année
+     */
+    public function show(Annee $annee)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $annee,
+            'statut_label' => $annee->statut_label,
+            'statut_badge_class' => $annee->statut_badge_class,
+            'can_delete' => $this->repository->canDelete($annee),
         ]);
     }
 
     /**
-     * API : Détail d'une année (JSON)
+     * Enregistrer une nouvelle année
      */
-    public function show(int $id): JsonResponse
+    public function store(AnneeRequest $request)
     {
         try {
-            $annee = $this->service->show($id);
-            if (!$annee) {
-                return response()->json(['success' => false, 'message' => 'Année non trouvée'], 404);
-            }
-            return response()->json(['success' => true, 'data' => $annee]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
+            $data = $request->validatedWithDefaults();
+            $annee = $this->repository->createWithValidation($data);
 
-    /**
-     * API : Création (JSON)
-     */
-    public function store(StoreAnneeRequest $request): JsonResponse
-    {
-        try {
-            $annee = $this->service->store($request->validated());
             return response()->json([
                 'success' => true,
-                'message' => 'Année créée avec succès',
-                'data'    => $annee->only(['id', 'libelle'])
+                'message' => 'Année créée avec succès.',
+                'data' => $annee
             ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('Erreur lors de la création de l\'année', [
+                'error' => $e->getMessage(),
+                'data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création : ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * API : Mise à jour (JSON)
+     * Mettre à jour une année
      */
-    public function update(UpdateAnneeRequest $request, int $id): JsonResponse
+    public function update(AnneeRequest $request, Annee $annee)
     {
         try {
-            $this->service->update($id, $request->validated());
+            $data = $request->validatedWithDefaults();
+            $annee = $this->repository->updateWithValidation($annee, $data);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Année modifiée'
+                'message' => 'Année mise à jour avec succès.',
+                'data' => $annee
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('Erreur lors de la mise à jour de l\'année', [
+                'error' => $e->getMessage(),
+                'annee_id' => $annee->id,
+                'data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * API : Suppression (JSON)
+     * Supprimer une année
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(Annee $annee)
     {
         try {
-            if ($this->service->hasRelatedData($id)) {
+            if (!$this->repository->canDelete($annee)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cette année a des données associées (inscriptions, frais...). Suppression impossible.'
-                ], 409);
+                    'message' => 'Cette année ne peut pas être supprimée car elle est utilisée.'
+                ], 422);
             }
 
-            $this->service->destroy($id);
+            $this->repository->delete($annee->id);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Année supprimée'
+                'message' => 'Année supprimée avec succès.'
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('Erreur lors de la suppression de l\'année', [
+                'error' => $e->getMessage(),
+                'annee_id' => $annee->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Activer/Désactiver une année
+     */
+    public function toggleActive(Annee $annee)
+    {
+        try {
+            $annee = $this->repository->toggleActive($annee);
+
+            return response()->json([
+                'success' => true,
+                'message' => $annee->etat === 1 ? 'Année activée.' : 'Année désactivée.',
+                'data' => $annee
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du toggle de l\'année', [
+                'error' => $e->getMessage(),
+                'annee_id' => $annee->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Définir une année comme ouverte
+     */
+    public function setActive(Annee $annee)
+    {
+        try {
+            $annee = $this->repository->setAsOpen($annee);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Année définie comme ouverte avec succès.',
+                'data' => $annee
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'ouverture de l\'année', [
+                'error' => $e->getMessage(),
+                'annee_id' => $annee->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Changer le statut d'une année
+     */
+    public function toggleStatus(Request $request, Annee $annee)
+    {
+        $request->validate([
+            'statut_annee' => 'required|integer|in:1,2,3'
+        ]);
+
+        try {
+            $annee = $this->repository->changeStatus($annee, $request->statut_annee);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Statut mis à jour avec succès.',
+                'data' => $annee
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du changement de statut', [
+                'error' => $e->getMessage(),
+                'annee_id' => $annee->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur : ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtenir les statistiques (API)
+     */
+    public function stats()
+    {
+        try {
+            $stats = $this->repository->getStats();
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur : ' . $e->getMessage()
+            ], 500);
         }
     }
 }

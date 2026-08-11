@@ -1,4 +1,5 @@
 <?php
+// app/Repositories/Eloquent/BaseRepository.php
 
 namespace App\Repositories\Eloquent;
 
@@ -20,7 +21,6 @@ abstract class BaseRepository
 
     /**
      * Active/désactive l'injection automatique de annee_id
-     * (Peut être surchargée dans un repository enfant : protected bool $autoInjectAnneId = false;)
      */
     protected bool $autoInjectAnneId = true;
 
@@ -76,7 +76,6 @@ abstract class BaseRepository
     {
         $data['etat'] = $data['etat'] ?? self::ACTIF;
 
-        // 🔹 Injection intelligente de l'année scolaire
         if ($this->autoInjectAnneId) {
             $data = $this->injectSessionAnneId($data);
         }
@@ -130,29 +129,19 @@ abstract class BaseRepository
         return $model->forceDelete() ?? $model->delete();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 🔧 Méthodes d'injection automatique
-    // ─────────────────────────────────────────────────────────────
-
     /**
-     * Injecte annee_id depuis la session si :
-     * 1. Le champ n'est pas déjà fourni dans $data
-     * 2. Le modèle accepte le champ (présent dans $fillable)
-     * 3. L'injection est activée
+     * Injecte annee_id depuis la session
      */
     protected function injectSessionAnneId(array $data): array
     {
-        // Ne pas écraser une valeur explicite
         if (isset($data['annee_id'])) {
             return $data;
         }
 
-        // Vérification légère : le modèle doit autoriser le mass-assignment
         if (!in_array('annee_id', $this->model->getFillable(), true)) {
             return $data;
         }
 
-        // Récupération sécurisée depuis la session (adaptée à votre structure)
         $anneeId = session('LoginUser.annee_id') ?? session('annee_id');
 
         if ($anneeId !== null) {
@@ -163,11 +152,21 @@ abstract class BaseRepository
     }
 
     /**
-     * Permet de récupérer l'année active sans dépendre du modèle
+     * Récupérer l'année active depuis la session
      */
     protected function getCurrentAnneId(): ?int
     {
         $id = session('LoginUser.annee_id') ?? session('annee_id');
         return $id ? (int) $id : null;
+    }
+
+    /**
+     * Toggle active status - CORRIGÉ : Utilise Model au lieu du type concret
+     */
+    public function toggleActive(Model $model): Model
+    {
+        $model->etat = $model->etat === self::ACTIF ? self::SUPPRIME : self::ACTIF;
+        $model->save();
+        return $model;
     }
 }

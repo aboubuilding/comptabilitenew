@@ -9,18 +9,8 @@ class Annee extends Model
 {
     use HasFactory;
 
-    /**
-     * Le nom de la table associée.
-     *
-     * @var string
-     */
     protected $table = 'annees';
 
-    /**
-     * Les attributs qui sont mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'libelle',
         'date_rentree',
@@ -31,11 +21,6 @@ class Annee extends Model
         'etat',
     ];
 
-    /**
-     * Les attributs qui doivent être castés.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'date_rentree' => 'date',
         'date_fin' => 'date',
@@ -45,44 +30,102 @@ class Annee extends Model
         'etat' => 'integer',
     ];
 
-    // ─────────────────────────────────────────────────────────────
-    // Relations (exemples, à adapter selon vos besoins)
-    // ─────────────────────────────────────────────────────────────
+    // Constantes de statut
+    const STATUT_NON_OUVERT = 1;
+    const STATUT_OUVERT = 2;
+    const STATUT_CLOTURE = 3;
+
+    // Constantes d'état
+    const ETAT_ACTIF = 1;
+    const ETAT_INACTIF = 0;
 
     /**
-     * Une année scolaire peut avoir plusieurs inscriptions.
+     * Vérifier si l'année est ouverte
      */
-    public function inscriptions()
+    public function isOpen(): bool
     {
-        return $this->hasMany(Inscription::class);
+        return $this->statut_annee === self::STATUT_OUVERT;
     }
 
     /**
-     * Une année scolaire peut avoir plusieurs périodes.
+     * Vérifier si l'année est clôturée
      */
-    public function periodes()
+    public function isClosed(): bool
     {
-        return $this->hasMany(Periode::class);
+        return $this->statut_annee === self::STATUT_CLOTURE;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Méthodes utilitaires
-    // ─────────────────────────────────────────────────────────────
-
     /**
-     * Vérifie si l'année est active (statut_annee = 1 et état = 1).
+     * Vérifier si l'année est active
      */
     public function isActive(): bool
     {
-        return $this->etat == 1 && $this->statut_annee == 1;
+        return $this->etat === self::ETAT_ACTIF;
     }
 
     /**
-     * Vérifie si la date actuelle se trouve dans l'année scolaire.
+     * Obtenir le libellé du statut
      */
-    public function isCurrent(): bool
+    public function getStatutLabelAttribute(): string
     {
-        $now = now();
-        return $now->between($this->date_rentree, $this->date_fin);
+        return match($this->statut_annee) {
+            self::STATUT_NON_OUVERT => 'Non ouvert',
+            self::STATUT_OUVERT => 'Ouvert',
+            self::STATUT_CLOTURE => 'Clôturé',
+            default => 'Inconnu',
+        };
+    }
+
+    /**
+     * Obtenir la classe CSS du statut
+     */
+    public function getStatutBadgeClassAttribute(): string
+    {
+        return match($this->statut_annee) {
+            self::STATUT_NON_OUVERT => 'badge-warning',
+            self::STATUT_OUVERT => 'badge-success',
+            self::STATUT_CLOTURE => 'badge-danger',
+            default => 'badge-secondary',
+        };
+    }
+
+    /**
+     * Obtenir le libellé de l'état
+     */
+    public function getEtatLabelAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'Actif' : 'Inactif';
+    }
+
+    /**
+     * Scope pour les années actives
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('etat', self::ETAT_ACTIF);
+    }
+
+    /**
+     * Scope pour les années ouvertes
+     */
+    public function scopeOpen($query)
+    {
+        return $query->where('statut_annee', self::STATUT_OUVERT);
+    }
+
+    /**
+     * Scope pour les années clôturées
+     */
+    public function scopeClosed($query)
+    {
+        return $query->where('statut_annee', self::STATUT_CLOTURE);
+    }
+
+    /**
+     * Scope pour les années non ouvertes
+     */
+    public function scopeNotOpen($query)
+    {
+        return $query->where('statut_annee', self::STATUT_NON_OUVERT);
     }
 }

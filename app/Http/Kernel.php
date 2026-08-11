@@ -54,13 +54,10 @@ class Kernel extends HttpKernel
      */
     protected $routeMiddleware = [
 
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,
-        'comptable' => \App\Http\Middleware\ComptableMiddleware::class,
-        'directeur' => \App\Http\Middleware\DirecteurMiddleware::class,
-        'chefcomptable' => \App\Http\Middleware\ChefcomptableMiddleware::class,
-        'econome' => \App\Http\Middleware\EconomeMiddleware::class,
-        'caissier' => \App\Http\Middleware\CaissierMiddleware::class,
-        'auth' => \App\Http\Middleware\Authenticate::class,
+
+        'auth' => \App\Http\Middleware\AuthCustom::class,
+        'role' => \App\Http\Middleware\CheckRole::class,
+
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,

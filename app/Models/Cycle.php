@@ -9,53 +9,58 @@ class Cycle extends Model
 {
     use HasFactory;
 
-    /**
-     * Le nom de la table associée.
-     *
-     * @var string
-     */
     protected $table = 'cycles';
 
-    /**
-     * Les attributs qui sont mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'libelle',
         'etat',
     ];
 
-    /**
-     * Les attributs qui doivent être castés.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'etat' => 'integer',
     ];
 
-    // ─────────────────────────────────────────────────────────────
-    // Relations (exemples, ajustez selon votre schéma)
-    // ─────────────────────────────────────────────────────────────
+    // Constantes d'état
+    const ETAT_ACTIF = 1;
+    const ETAT_INACTIF = 0;
 
     /**
-     * Un cycle peut avoir plusieurs niveaux.
-     */
-    public function niveaux()
-    {
-        return $this->hasMany(Niveau::class);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // Méthodes utilitaires
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Vérifie si le cycle est actif.
+     * Vérifier si le cycle est actif
      */
     public function isActive(): bool
     {
-        return $this->etat == 1;
+        return $this->etat === self::ETAT_ACTIF;
+    }
+
+    /**
+     * Obtenir le libellé de l'état
+     */
+    public function getEtatLabelAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'Actif' : 'Inactif';
+    }
+
+    /**
+     * Obtenir la classe CSS du statut
+     */
+    public function getEtatBadgeClassAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'badge-success' : 'badge-danger';
+    }
+
+    /**
+     * Scope pour les cycles actifs
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('etat', self::ETAT_ACTIF);
+    }
+
+    /**
+     * Scope pour les cycles inactifs
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('etat', self::ETAT_INACTIF);
     }
 }

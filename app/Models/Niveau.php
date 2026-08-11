@@ -9,18 +9,8 @@ class Niveau extends Model
 {
     use HasFactory;
 
-    /**
-     * Le nom de la table associée.
-     *
-     * @var string
-     */
     protected $table = 'niveaux';
 
-    /**
-     * Les attributs qui sont mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'libelle',
         'description',
@@ -29,23 +19,18 @@ class Niveau extends Model
         'etat',
     ];
 
-    /**
-     * Les attributs qui doivent être castés.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'numero_ordre' => 'integer',
         'cycle_id' => 'integer',
         'etat' => 'integer',
     ];
 
-    // ─────────────────────────────────────────────────────────────
-    // Relations
-    // ─────────────────────────────────────────────────────────────
+    // Constantes d'état
+    const ETAT_ACTIF = 1;
+    const ETAT_INACTIF = 0;
 
     /**
-     * Un niveau appartient à un cycle.
+     * Relation avec le cycle
      */
     public function cycle()
     {
@@ -53,22 +38,58 @@ class Niveau extends Model
     }
 
     /**
-     * Un niveau peut avoir plusieurs classes.
-     */
-    public function classes()
-    {
-        return $this->hasMany(Classe::class);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // Méthodes utilitaires
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Vérifie si le niveau est actif.
+     * Vérifier si le niveau est actif
      */
     public function isActive(): bool
     {
-        return $this->etat == 1;
+        return $this->etat === self::ETAT_ACTIF;
+    }
+
+    /**
+     * Obtenir le libellé de l'état
+     */
+    public function getEtatLabelAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'Actif' : 'Inactif';
+    }
+
+    /**
+     * Obtenir la classe CSS du statut
+     */
+    public function getEtatBadgeClassAttribute(): string
+    {
+        return $this->etat === self::ETAT_ACTIF ? 'badge-success' : 'badge-danger';
+    }
+
+    /**
+     * Obtenir le libellé du cycle
+     */
+    public function getCycleLibelleAttribute(): string
+    {
+        return $this->cycle ? $this->cycle->libelle : '-';
+    }
+
+    /**
+     * Scope pour les niveaux actifs
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('etat', self::ETAT_ACTIF);
+    }
+
+    /**
+     * Scope pour les niveaux par cycle
+     */
+    public function scopeByCycle($query, int $cycleId)
+    {
+        return $query->where('cycle_id', $cycleId);
+    }
+
+    /**
+     * Scope pour trier par ordre
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('numero_ordre', 'asc');
     }
 }

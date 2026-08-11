@@ -4,94 +4,153 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\FraisEcole;
 use App\Repositories\Interfaces\FraisEcoleRepositoryInterface;
-use App\Repositories\Eloquent\BaseRepository;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Exception;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Collection;
 
 class FraisEcoleRepository extends BaseRepository implements FraisEcoleRepositoryInterface
 {
+    protected bool $autoInjectAnneId = false;
+
     public function __construct(FraisEcole $model)
     {
         parent::__construct($model);
     }
 
-    public function getByNiveauEtAnnee(int $niveauId, int $anneeId): Collection
+    public function getAllWithFilters(?array $filters = null): Collection
+    {
+        $query = $this->query()->with(['niveau', 'annee', 'planEcheancier']);
+
+        if (!empty($filters)) {
+            if (isset($filters['search']) && !empty($filters['search'])) {
+                $search = $filters['search'];
+                $query->where('libelle', 'LIKE', "%{$search}%");
+            }
+
+            if (isset($filters['type_paiement']) && $filters['type_paiement'] !== '') {
+                $query->where('type_paiement', (int)$filters['type_paiement']);
+            }
+
+            if (isset($filters['niveau_id']) && $filters['niveau_id'] !== '') {
+                $query->where('niveau_id', (int)$filters['niveau_id']);
+            }
+
+            if (isset($filters['annee_id']) && $filters['annee_id'] !== '') {
+                $query->where('annee_id', (int)$filters['annee_id']);
+            }
+
+            if (isset($filters['has_echeancier']) && $filters['has_echeancier'] !== '') {
+                if ($filters['has_echeancier'] === '1') {
+                    $query->whereNotNull('plan_echeancier_id');
+                } else {
+                    $query->whereNull('plan_echeancier_id');
+                }
+            }
+
+            if (isset($filters['etat']) && $filters['etat'] !== '') {
+                $query->where('etat', (int)$filters['etat']);
+            }
+        }
+
+        return $query->orderBy('libelle')->get();
+    }
+
+    public function getActiveFrais(): Collection
     {
         return $this->activeQuery()
-            ->where('niveau_id', $niveauId)
-            ->where('annee_id', $anneeId)
-            ->orderBy('type_paiement')
+            ->with(['niveau', 'annee', 'planEcheancier'])
             ->orderBy('libelle')
             ->get();
     }
 
-    public function existsForNiveauAnnee(int $niveauId, int $anneeId, int $typePaiement, ?int $excludeId = null): bool
+    public function getByNiveau(int $niveauId): Collection
     {
-        $query = $this->activeQuery()
+        return $this->activeQuery()
             ->where('niveau_id', $niveauId)
-            ->where('annee_id', $anneeId)
-            ->where('type_paiement', $typePaiement);
-
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        return $query->exists();
+            ->with(['annee', 'planEcheancier'])
+            ->orderBy('libelle')
+            ->get();
     }
 
-    public function getMontantTotalByNiveauEtAnnee(int $niveauId, int $anneeId): float
+    public function getByAnnee(int $anneeId): Collection
     {
-        return (float) $this->activeQuery()
-            ->where('niveau_id', $niveauId)
+        return $this->activeQuery()
             ->where('annee_id', $anneeId)
-            ->sum('montant');
+            ->with(['niveau', 'planEcheancier'])
+            ->orderBy('libelle')
+            ->get();
     }
 
-    public function clonerPourAnnee(int $anneeSource, int $anneeDestination): int
+    public function getByType(int $type): Collection
     {
-        $frais = $this->activeQuery()->where('annee_id', $anneeSource)->get();
-
-        if ($frais->isEmpty()) {
-            return 0;
-        }
-
-        // Vérification rapide : éviter de cloner si l'année destination a déjà des frais
-        $hasExisting = $this->activeQuery()->where('annee_id', $anneeDestination)->exists();
-        if ($hasExisting) {
-            throw new Exception("Des frais existent déjà pour l'année de destination.");
-        }
-
-        return DB::transaction(function () use ($frais, $anneeDestination) {
-            $count = 0;
-            foreach ($frais as $f) {
-                $this->create([
-                    'libelle'       => $f->libelle,
-                    'montant'       => $f->montant,
-                    'type_paiement' => $f->type_paiement,
-                    'type_forfait'  => $f->type_forfait,
-                    'niveau_id'     => $f->niveau_id,
-                    'annee_id'      => $anneeDestination,
-                    'etat'          => 1,
-                ]);
-                $count++;
-            }
-            return $count;
-        });
+        return $this->activeQuery()
+            ->where('type_paiement', $type)
+            ->with(['niveau', 'annee', 'planEcheancier'])
+            ->orderBy('libelle')
+            ->get();
     }
 
-    public function getListeGroupedByType(int $anneeId, ?int $niveauId = null): Collection
+    public function getAvecEcheancier(): Collection
     {
-        $query = $this->activeQuery()
-            ->where('annee_id', $anneeId)
-            ->select('id', 'libelle', 'montant', 'type_paiement', 'type_forfait', 'niveau_id')
-            ->orderBy('type_paiement')
-            ->orderBy('libelle');
+        return $this->activeQuery()
+            ->whereNotNull('plan_echeancier_id')
+            ->with(['niveau', 'annee', 'planEcheancier.lignes'])
+            ->orderBy('libelle')
+            ->get();
+    }
 
-        if ($niveauId) {
-            $query->where('niveau_id', $niveauId);
+    public function getSansEcheancier(): Collection
+    {
+        return $this->activeQuery()
+            ->whereNull('plan_echeancier_id')
+            ->with(['niveau', 'annee'])
+            ->orderBy('libelle')
+            ->get();
+    }
+
+    public function findByLibelle(string $libelle): ?FraisEcole
+    {
+        return $this->query()->where('libelle', $libelle)->first();
+    }
+
+    public function canDelete(FraisEcole $frais): bool
+    {
+        // Vérifier si le frais est utilisé dans d'autres tables
+        return true;
+    }
+
+    public function deleteWithCheck(FraisEcole $frais): bool
+    {
+        if (!$this->canDelete($frais)) {
+            Log::warning('Impossible de supprimer le frais car il est utilisé', [
+                'frais_id' => $frais->id
+            ]);
+            return false;
         }
 
-        return $query->get()->groupBy('type_paiement');
+        return $this->delete($frais->id);
     }
+
+    public function getStats(): array
+    {
+        return [
+            'total' => $this->query()->count(),
+            'actifs' => $this->activeQuery()->count(),
+            'inactifs' => $this->query()->where('etat', self::SUPPRIME)->count(),
+            'avec_echeancier' => $this->query()->whereNotNull('plan_echeancier_id')->count(),
+            'sans_echeancier' => $this->query()->whereNull('plan_echeancier_id')->count(),
+        ];
+    }
+
+    public function createWithValidation(array $data): FraisEcole
+    {
+        return $this->create($data);
+    }
+
+    public function updateWithValidation(FraisEcole $frais, array $data): FraisEcole
+    {
+        $this->update($frais->id, $data);
+        return $frais->fresh();
+    }
+
+
 }
