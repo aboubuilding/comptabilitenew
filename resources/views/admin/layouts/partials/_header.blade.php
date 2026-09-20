@@ -1,46 +1,48 @@
-{{-- resources/views/layouts/partials/_header-mariam.blade.php --}}
+{{-- resources/views/admin/layouts/partials/_header.blade.php --}}
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
-
     :root {
-        /* Palette inspirée du logo EIM : rouge écusson + or */
-        --mariam-top-bg-a    : #7a0f1c;
-        --mariam-top-bg-b    : #9c1524;
-        --mariam-top-border  : rgba(255,255,255,0.08);
-        --mariam-nav-bg-a    : #b31c2b;
-        --mariam-nav-bg-b    : #931521;
-        --mariam-accent      : #e8b23a;
-        --mariam-accent-lt   : #f2c766;
-        --mariam-accent-dark : #b8860b;
-        --mariam-urgent      : #ff7a1a;
-        --mariam-urgent-dark : #cc5500;
-        --mariam-drop-bg     : #ffffff;
-        --mariam-drop-shadow : 0 16px 40px rgba(122,15,28,0.22);
-        --mariam-drop-border : #ece4d6;
-        --mariam-item-hover  : #fdf3ee;
-        --mariam-item-txt    : #1a1f2e;
-        --mariam-item-icon   : #9c1524;
-        --mariam-divider     : #f0eadf;
-        --mariam-radius      : 8px;
-        --mariam-ff          : 'Kumbh Sans', sans-serif;
-        --mariam-ff-display  : 'Playfair Display', serif;
+        /* Palette unique de l'application (identique à l'écran de connexion).
+           Déjà déclarée dans layouts/app.blade.php avec les mêmes valeurs :
+           redéclarée ici uniquement pour les jetons propres au header
+           (drop-*, item-*, divider, radius) qui n'existent nulle part
+           ailleurs. Ne jamais faire diverger les valeurs communes entre
+           les deux fichiers. */
+        --school-red         : #C81E3A;
+        --school-red-dark    : #7A0F22;
+        --school-red-deep    : #4A0C19;
+        --school-gold        : #D4A94D;
+        --school-gold-soft   : #E9CE9B;
+        --school-gold-dark   : #B8860B;
+        --school-ink         : #1f2d3a;
+        --school-ink-deep    : #141d27;
+        --school-urgent      : #ff7a1a;
+        --school-urgent-dark : #cc5500;
+        --school-drop-bg     : #fffdf9;
+        --school-drop-shadow : 0 16px 40px rgba(20,29,39,0.22);
+        --school-drop-border : #ece4d6;
+        --school-item-hover  : #fdf3ee;
+        --school-item-txt    : #1a1f2e;
+        --school-item-icon   : #9c1524;
+        --school-divider     : #f0eadf;
+        --school-radius      : 8px;
+        --school-ff          : 'Kumbh Sans', sans-serif;
+        --school-ff-display  : 'Playfair Display', serif;
     }
 
     .hbtp-root *, .hbtp-root *::before, .hbtp-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    .hbtp-root { font-family: var(--mariam-ff); position: sticky; top: 0; z-index: 1000; width: 100%; }
+    .hbtp-root { font-family: var(--school-ff); position: sticky; top: 0; z-index: 1000; width: 100%; }
 
-    /* ===== TOP BAR ===== */
+    /* ===== TOP BAR — identité de l'établissement ===== */
     .hbtp-top {
-        background     : linear-gradient(120deg, var(--mariam-top-bg-a), var(--mariam-top-bg-b));
+        background     : linear-gradient(120deg, var(--school-red-dark), var(--school-red));
         height         : 56px;
         display        : flex;
         align-items    : center;
         justify-content: space-between;
         gap            : 16px;
         padding        : 0 22px;
-        border-bottom  : 1px solid var(--mariam-top-border);
-        box-shadow     : 0 2px 14px rgba(8,25,46,0.18);
+        box-shadow     : 0 2px 14px rgba(20,29,39,0.18);
         position       : relative;
         z-index        : 2;
     }
@@ -48,25 +50,25 @@
     .hbtp-brand { display:flex; align-items:center; gap:11px; text-decoration:none; flex-shrink:0; }
     .hbtp-brand-icon {
         width:38px; height:38px; border-radius:10px; flex-shrink:0;
-        background: linear-gradient(145deg, var(--mariam-accent-lt), var(--mariam-accent));
+        background: linear-gradient(145deg, var(--school-gold-soft), var(--school-gold));
         display:flex; align-items:center; justify-content:center;
-        font-size:18px; color:#1a2b40; box-shadow: 0 4px 12px rgba(232,168,56,0.35);
+        font-size:18px; color:var(--school-red-deep); box-shadow: 0 4px 12px rgba(212,169,77,0.35);
         transition: transform .2s, box-shadow .2s;
     }
-    .hbtp-brand:hover .hbtp-brand-icon { transform: translateY(-1px) scale(1.04); box-shadow: 0 6px 16px rgba(232,168,56,0.45); }
+    .hbtp-brand:hover .hbtp-brand-icon { transform: translateY(-1px) scale(1.04); box-shadow: 0 6px 16px rgba(212,169,77,0.45); }
     .hbtp-brand-title {
         font-size:19px; font-weight:700; color:#fff; letter-spacing:.2px; line-height:1.15; display:block;
-        font-family: var(--mariam-ff-display);
+        font-family: var(--school-ff-display);
     }
     .hbtp-brand-sub {
-        font-size:9.5px; color:rgba(255,255,255,.52); letter-spacing:1.1px; text-transform:uppercase;
+        font-size:9.5px; color:rgba(255,255,255,.55); letter-spacing:1.1px; text-transform:uppercase;
         line-height:1; margin-top:4px; display:block; font-weight:400;
     }
 
     .hbtp-top-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
 
     .hbtp-icon-btn {
-        width:35px; height:35px; border-radius:var(--mariam-radius);
+        width:35px; height:35px; border-radius:var(--school-radius);
         background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.10);
         color:rgba(255,255,255,.75); display:flex; align-items:center; justify-content:center;
         font-size:14.5px; cursor:pointer; transition:background .15s,color .15s,transform .15s;
@@ -76,17 +78,17 @@
 
     .hbtp-notif-dot {
         position:absolute; top:6px; right:6px; width:7px; height:7px;
-        background:var(--mariam-urgent); border-radius:50%; border:1.5px solid var(--mariam-top-bg-a);
+        background:var(--school-urgent); border-radius:50%; border:1.5px solid var(--school-red-dark);
         animation: mariam-pulse 2s infinite;
     }
 
     @keyframes mariam-pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(214,69,69,.55); }
-        70%  { box-shadow: 0 0 0 6px rgba(214,69,69,0); }
-        100% { box-shadow: 0 0 0 0 rgba(214,69,69,0); }
+        0%   { box-shadow: 0 0 0 0 rgba(255,122,26,.55); }
+        70%  { box-shadow: 0 0 0 6px rgba(255,122,26,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,122,26,0); }
     }
 
-    .hbtp-sep { width:1px; height:24px; background:rgba(255,255,255,.12); margin:0 6px; flex-shrink:0; }
+    .hbtp-sep { width:1px; height:24px; background:rgba(255,255,255,.14); margin:0 6px; flex-shrink:0; }
 
     /* ===== SÉLECTEUR D'ANNÉE SCOLAIRE ===== */
     .hbtp-year-wrap {
@@ -99,7 +101,7 @@
         position: absolute;
         left: 12px;
         font-size: 13px;
-        color: var(--mariam-accent-lt);
+        color: var(--school-gold-soft);
         pointer-events: none;
     }
     .hbtp-year-select {
@@ -110,9 +112,9 @@
         padding: 0 30px 0 32px;
         background: rgba(255,255,255,.07);
         border: 1px solid rgba(255,255,255,.14);
-        border-radius: var(--mariam-radius);
+        border-radius: var(--school-radius);
         color: #fff;
-        font-family: var(--mariam-ff);
+        font-family: var(--school-ff);
         font-size: 12.5px;
         font-weight: 600;
         cursor: pointer;
@@ -121,15 +123,15 @@
     }
     .hbtp-year-select:hover {
         background: rgba(255,255,255,.14);
-        border-color: rgba(232,168,56,.4);
+        border-color: rgba(212,169,77,.4);
     }
     .hbtp-year-select:focus {
         outline: none;
-        border-color: var(--mariam-accent);
-        box-shadow: 0 0 0 3px rgba(232,168,56,.20);
+        border-color: var(--school-gold);
+        box-shadow: 0 0 0 3px rgba(212,169,77,.20);
     }
     .hbtp-year-select option {
-        background: var(--mariam-top-bg-a);
+        background: var(--school-red-dark);
         color: #fff;
     }
     .hbtp-year-wrap::after {
@@ -151,7 +153,7 @@
         width: 8px;
         height: 8px;
         background: #35b06a;
-        border: 1.5px solid var(--mariam-top-bg-a);
+        border: 1.5px solid var(--school-red-dark);
         border-radius: 50%;
     }
 
@@ -167,13 +169,13 @@
     .hbtp-avatar-btn {
         display:flex; align-items:center; gap:9px; padding:0 10px 0 6px; height:37px;
         background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.10);
-        border-radius:var(--mariam-radius); cursor:pointer; transition:background .15s;
+        border-radius:var(--school-radius); cursor:pointer; transition:background .15s;
     }
     .hbtp-avatar-btn:hover { background:rgba(255,255,255,.16); }
     .hbtp-avatar-circle {
         width:27px; height:27px; border-radius:50%;
-        background: linear-gradient(145deg, var(--mariam-accent-lt), var(--mariam-accent));
-        color:#1a2b40; font-size:11px; font-weight:800; display:flex;
+        background: linear-gradient(145deg, var(--school-gold-soft), var(--school-gold));
+        color:var(--school-red-deep); font-size:11px; font-weight:800; display:flex;
         align-items:center; justify-content:center; flex-shrink:0;
         box-shadow: 0 0 0 2px rgba(255,255,255,.15);
     }
@@ -184,8 +186,8 @@
 
     .hbtp-user-drop {
         position:absolute; top:calc(100% + 8px); right:0; width:236px;
-        background:var(--mariam-drop-bg); border-radius:12px;
-        box-shadow:var(--mariam-drop-shadow); border:1px solid var(--mariam-drop-border);
+        background:var(--school-drop-bg); border-radius:12px;
+        box-shadow:var(--school-drop-shadow); border:1px solid var(--school-drop-border);
         display:none; z-index:9999; overflow:hidden;
     }
     .hbtp-avatar-wrap.open .hbtp-user-drop { display:block; animation: mariam-drop-in .16s ease-out; }
@@ -195,25 +197,25 @@
         to   { opacity:1; transform: translateY(0); }
     }
 
-    .hbtp-udrop-header { padding:15px 16px; background:linear-gradient(135deg,#faf6ee,#f4ecdb); border-bottom:1px solid var(--mariam-divider); }
-    .hbtp-udrop-name   { font-size:13px; font-weight:700; color:var(--mariam-item-txt); }
+    .hbtp-udrop-header { padding:15px 16px; background:linear-gradient(135deg,#faf6ee,#f4ecdb); border-bottom:1px solid var(--school-divider); }
+    .hbtp-udrop-name   { font-size:13px; font-weight:700; color:var(--school-item-txt); }
     .hbtp-udrop-email  { font-size:11px; color:#96979c; margin-top:2px; }
     .hbtp-udrop-role   {
-        display:inline-block; margin-top:7px; background:#f0e0bb; color:var(--mariam-accent-dark);
+        display:inline-block; margin-top:7px; background:#f0e0bb; color:var(--school-gold-dark);
         font-size:9.5px; font-weight:800; padding:3px 9px; border-radius:20px;
         letter-spacing:.6px; text-transform:uppercase;
     }
-    .hbtp-udrop-item { display:flex; align-items:center; gap:10px; padding:10px 16px; font-size:13px; color:var(--mariam-item-txt); text-decoration:none; transition:background .12s, padding-left .12s; }
-    .hbtp-udrop-item:hover    { background:var(--mariam-item-hover); padding-left:20px; }
-    .hbtp-udrop-item i        { font-size:14px; color:var(--mariam-item-icon); width:16px; }
-    .hbtp-udrop-item.danger   { color:var(--mariam-urgent-dark); }
-    .hbtp-udrop-item.danger i { color:var(--mariam-urgent-dark); }
+    .hbtp-udrop-item { display:flex; align-items:center; gap:10px; padding:10px 16px; font-size:13px; color:var(--school-item-txt); text-decoration:none; transition:background .12s, padding-left .12s; }
+    .hbtp-udrop-item:hover    { background:var(--school-item-hover); padding-left:20px; }
+    .hbtp-udrop-item i        { font-size:14px; color:var(--school-item-icon); width:16px; }
+    .hbtp-udrop-item.danger   { color:var(--school-urgent-dark); }
+    .hbtp-udrop-item.danger i { color:var(--school-urgent-dark); }
     .hbtp-udrop-item.danger:hover { background:#fdf2f2; }
-    .hbtp-udrop-div { height:1px; background:var(--mariam-divider); margin:4px 0; }
+    .hbtp-udrop-div { height:1px; background:var(--school-divider); margin:4px 0; }
 
-    /* ===== NAV BAR ===== */
+    /* ===== NAV BAR — encre neutre, le rouge reste à l'identité ===== */
     .hbtp-nav {
-        background  : linear-gradient(90deg, var(--mariam-nav-bg-a), var(--mariam-nav-bg-b));
+        background  : linear-gradient(90deg, var(--school-ink-deep), var(--school-ink));
         height      : 46px;
         display     : flex;
         align-items : stretch;
@@ -221,7 +223,7 @@
         position    : relative;
         z-index     : 900;
         overflow    : visible;
-        box-shadow  : inset 0 1px 0 rgba(255,255,255,.06);
+        box-shadow  : inset 0 1px 0 rgba(255,255,255,.05);
     }
     .hbtp-nav-items { display:flex; align-items:stretch; flex:1; min-width:0; }
 
@@ -237,14 +239,14 @@
         align-items    : center;
         gap            : 7px;
         padding        : 0 14px;
-        color          : rgba(255,255,255,.90);
+        color          : rgba(255,255,255,.82);
         font-size      : 13px;
         font-weight    : 600;
         cursor         : pointer;
         white-space    : nowrap;
         text-decoration: none;
         transition     : background .15s, color .15s;
-        font-family    : var(--mariam-ff);
+        font-family    : var(--school-ff);
         border         : none;
         background     : transparent;
         height         : 100%;
@@ -256,27 +258,26 @@
 
     .hnav-trigger::after {
         content:''; position:absolute; left:14px; right:14px; bottom:0; height:3px;
-        background: var(--mariam-accent); border-radius: 2px 2px 0 0;
+        background: var(--school-gold); border-radius: 2px 2px 0 0;
         transform: scaleX(0); transform-origin:center; transition: transform .18s ease;
     }
     .hnav-item:hover > .hnav-trigger,
-    .hnav-item.open  > .hnav-trigger { background:rgba(0,0,0,.16); color:#fff; }
+    .hnav-item.open  > .hnav-trigger { background:rgba(255,255,255,.07); color:#fff; }
 
     .hnav-item:hover > .hnav-trigger::after,
     .hnav-item.open  > .hnav-trigger::after,
     .hnav-item.active > .hnav-trigger::after { transform: scaleX(1); }
 
+    /* Un seul signal pour l'état actif : le soulignement doré ci-dessus + le texte doré. */
     .hnav-item.active > .hnav-trigger {
-        background: rgba(232, 178, 58, 0.15);
-        color: var(--mariam-accent-lt);
-        box-shadow: inset 0 -3px 0 var(--mariam-accent);
+        color: var(--school-gold-soft);
     }
 
     .hnav-badge {
         display:inline-flex; align-items:center; justify-content:center;
         min-width:17px; height:17px; padding:0 5px; border-radius:20px;
-        background: var(--mariam-urgent); color:#fff; font-size:10px; font-weight:800;
-        line-height:1; margin-left:2px; box-shadow: 0 0 0 2px rgba(0,0,0,.08);
+        background: var(--school-urgent); color:#fff; font-size:10px; font-weight:800;
+        line-height:1; margin-left:2px; box-shadow: 0 0 0 2px rgba(0,0,0,.15);
     }
 
     .hnav-drop {
@@ -284,11 +285,13 @@
         top           : 46px;
         left          : 0;
         min-width     : 264px;
-        background    : var(--mariam-drop-bg);
+        max-height    : 78vh;
+        overflow-y    : auto;
+        background    : var(--school-drop-bg);
         border-radius : 0 0 12px 12px;
-        box-shadow    : var(--mariam-drop-shadow);
-        border        : 1px solid var(--mariam-drop-border);
-        border-top    : 3px solid var(--mariam-accent);
+        box-shadow    : var(--school-drop-shadow);
+        border        : 1px solid var(--school-drop-border);
+        border-top    : 3px solid var(--school-gold);
         z-index       : 99999;
         padding       : 6px 0;
         opacity       : 0;
@@ -304,54 +307,67 @@
         transition    : opacity .16s ease, transform .16s ease, visibility 0s linear 0s;
         pointer-events: auto;
     }
-    .hnav-item.hnav-urgent > .hnav-drop { border-top-color: var(--mariam-urgent); }
+    .hnav-item.hnav-urgent > .hnav-drop { border-top-color: var(--school-urgent); }
 
     .hnav-drop-title {
         padding:9px 16px 4px; font-size:10px; text-transform:uppercase;
-        color:#a9a49a; letter-spacing:.9px; font-weight:800; font-family:var(--mariam-ff);
+        color:#a9a49a; letter-spacing:.9px; font-weight:800; font-family:var(--school-ff);
         display:flex; align-items:center; gap:6px;
     }
     .hnav-drop-title:first-child { padding-top: 8px; }
-    .hnav-drop-title i { font-size: 10px; color: var(--mariam-accent-dark); }
+    .hnav-drop-title i { font-size: 10px; color: var(--school-gold-dark); }
 
     .hnav-drop-item {
-        display:flex; align-items:center; gap:10px; padding:10px 16px; font-size:13px; font-weight:400; color:var(--mariam-item-txt); text-decoration:none; transition: background .12s, padding-left .12s, border-color .12s; line-height:1.3; font-family:var(--mariam-ff); white-space:nowrap; border-left:2.5px solid transparent;
+        display:flex; align-items:center; gap:10px; padding:10px 16px; font-size:13px; font-weight:400; color:var(--school-item-txt); text-decoration:none; transition: background .12s, padding-left .12s, border-color .12s; line-height:1.3; font-family:var(--school-ff); white-space:nowrap; border-left:2.5px solid transparent;
     }
-    .hnav-drop-item:hover  { background:var(--mariam-item-hover); padding-left:20px; border-left-color: var(--mariam-accent); }
-    .hnav-drop-item i      { font-size:14px; color:var(--mariam-item-icon); width:16px; flex-shrink:0; text-align:center; }
-    .hnav-drop-item.urgent-item i { color: var(--mariam-urgent); }
-    .hnav-drop-item.urgent-item:hover { border-left-color: var(--mariam-urgent); }
+    .hnav-drop-item:hover  { background:var(--school-item-hover); padding-left:20px; border-left-color: var(--school-gold); }
+    .hnav-drop-item i      { font-size:14px; color:var(--school-item-icon); width:16px; flex-shrink:0; text-align:center; }
+    .hnav-drop-item.urgent-item i { color: var(--school-urgent); }
+    .hnav-drop-item.urgent-item:hover { border-left-color: var(--school-urgent); }
     .hnav-drop-item .hnav-mini-badge {
         margin-left:auto; font-size:10px; font-weight:800; color:#fff;
-        background: var(--mariam-urgent); border-radius:20px; padding:1px 7px;
+        background: var(--school-urgent); border-radius:20px; padding:1px 7px;
     }
+    .hnav-new-tag {
+        margin-left: auto;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: var(--school-red-dark);
+        background: linear-gradient(135deg, var(--school-gold-soft), var(--school-gold));
+        padding: 2px 7px;
+        border-radius: 20px;
+        flex-shrink: 0;
+    }
+    .hnav-drop-item.urgent-item .hnav-new-tag { margin-left: 8px; }
 
     .hnav-drop-item.active {
-        background: rgba(210, 16, 52, 0.04);
-        border-left-color: var(--mariam-accent);
-        color: var(--mariam-top-bg-a);
+        background: rgba(210, 16, 52, 0.05);
+        border-left-color: var(--school-gold);
+        color: var(--school-red-dark);
         font-weight: 600;
     }
     .hnav-drop-item.active i {
-        color: var(--mariam-top-bg-a);
+        color: var(--school-red-dark);
     }
 
-    .hnav-drop-div { height:1px; background:var(--mariam-divider); margin:5px 0; }
+    .hnav-drop-div { height:1px; background:var(--school-divider); margin:5px 0; }
 
     .hnav-more { position:relative; display:flex; align-items:stretch; flex-shrink:0; margin-left:auto; }
     .hnav-more > .hnav-drop { left:auto; right:0; min-width:264px; }
     .hnav-more-title {
         padding:8px 16px 3px; font-size:10px; text-transform:uppercase;
-        color:#a9a49a; letter-spacing:.8px; font-weight:800; font-family:var(--mariam-ff);
+        color:#a9a49a; letter-spacing:.8px; font-weight:800; font-family:var(--school-ff);
         display:flex; align-items:center; gap:6px;
     }
-    .hnav-more-title i { font-size:12px; color:var(--mariam-accent); }
+    .hnav-more-title i { font-size:12px; color:var(--school-gold); }
 
     /* ===== HAMBURGER ===== */
     .hbtp-hamburger {
         display:none; flex-direction:column; gap:4px; justify-content:center;
         width:35px; height:35px; cursor:pointer; padding:6px;
-        border-radius:var(--mariam-radius); background:rgba(255,255,255,.07);
+        border-radius:var(--school-radius); background:rgba(255,255,255,.07);
         border:1px solid rgba(255,255,255,.10); flex-shrink:0;
     }
     .hbtp-hamburger span { display:block; width:100%; height:2px; background:rgba(255,255,255,.85); border-radius:2px; transition:transform .25s,opacity .25s; }
@@ -374,15 +390,15 @@
         .hnav-trigger::after { display:none; }
         .hnav-drop {
             position:static; box-shadow:none; border:none;
-            border-top:2px solid rgba(255,255,255,.3); border-radius:0;
-            background:rgba(0,0,0,.12); transform:none !important;
+            border-top:2px solid rgba(255,255,255,.15); border-radius:0;
+            background:rgba(0,0,0,.18); transform:none !important;
         }
         .hnav-drop-item       { color:rgba(255,255,255,.92); white-space:normal; border-left-color: transparent !important; }
-        .hnav-drop-item:hover { background:rgba(0,0,0,.12); padding-left:20px; }
+        .hnav-drop-item:hover { background:rgba(0,0,0,.18); padding-left:20px; }
         .hnav-drop-item i     { color:rgba(255,255,255,.72); }
         .hnav-drop-title      { color:rgba(255,255,255,.5); }
-        .hnav-drop-title i    { color: var(--mariam-accent-lt); }
-        .hnav-drop-div        { background:rgba(255,255,255,.15); }
+        .hnav-drop-title i    { color: var(--school-gold-soft); }
+        .hnav-drop-div        { background:rgba(255,255,255,.12); }
         .hbtp-user-drop       { right:-10px; }
         .hnav-more            { display:none !important; }
     }
@@ -402,7 +418,7 @@
         <a href="{{ route('tableau') }}" class="hbtp-brand" title="Accueil École Internationale Mariam">
             <div class="hbtp-brand-icon"><i class="fas fa-graduation-cap"></i></div>
             <div>
-                <span class="hbtp-brand-title">EIM · Gestion</span>
+                <span class="hbtp-brand-title">EIM</span>
                 <span class="hbtp-brand-sub">École Internationale Mariam</span>
             </div>
         </a>
@@ -439,7 +455,7 @@
             </button>
 
             {{-- Recherche --}}
-            <button class="hbtp-icon-btn" id="btnSearch" title="Recherche (Ctrl+K)">
+            <button class="hbtp-icon-btn" id="btnSearch" data-search-toggle title="Recherche (Ctrl+K)">
                 <i class="fas fa-search"></i>
             </button>
 
@@ -471,10 +487,13 @@
                         <div class="hbtp-udrop-email">{{ $headerUserEmail ?? 'user@ecoleinternationalemariam.net' }}</div>
                         <div class="hbtp-udrop-role">{{ $headerRoleLabel ?? 'Rôle' }}</div>
                     </div>
-                    <a href="{{ route('profile') }}" class="hbtp-udrop-item" role="menuitem">
+                    {{-- url() et non route('profile') : ce module n'existe pas
+                         encore, et route() sur un nom inexistant lève une
+                         exception fatale (contrairement à url()). --}}
+                    <a href="{{ url('/profile') }}" class="hbtp-udrop-item" role="menuitem">
                         <i class="fas fa-user-circle"></i> Mon profil
                     </a>
-                    <a href="{{ route('profile') }}#password" class="hbtp-udrop-item" role="menuitem">
+                    <a href="{{ url('/profile') }}#password" class="hbtp-udrop-item" role="menuitem">
                         <i class="fas fa-key"></i> Changer mot de passe
                     </a>
                     <div class="hbtp-udrop-div"></div>
@@ -500,177 +519,145 @@
                 </a>
             </div>
 
-            {{-- Scolarité --}}
+            {{-- ================================================================
+                 MENU 1 — SCOLARITÉ
+                 (cf. cahier des charges §4, sous-menus 1.1 à 1.4)
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-school"></i> Scolarité <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop" role="menu">
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-graduate"></i> Élèves</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-search"></i> Rechercher un élève</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-chalkboard"></i> Classes</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-friends"></i> Parents</a>
+                    <div class="hnav-drop-title"><i class="fas fa-id-card"></i> Dossiers élèves</div>
+                    <a href="{{ url('/eleves') }}" class="hnav-drop-item"><i class="fas fa-user-graduate"></i> Élèves</a>
+                    <a href="{{ url('/parents') }}" class="hnav-drop-item"><i class="fas fa-user-friends"></i> Parents &amp; Familles</a>
+
                     <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-signature"></i> Préinscriptions</a>
+                    <div class="hnav-drop-title"><i class="fas fa-file-signature"></i> Inscriptions</div>
+                    <a href="{{ url('/inscriptions') }}" class="hnav-drop-item"><i class="fas fa-file-signature"></i> Inscriptions</a>
+                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-alt"></i> Préinscriptions</a>
+
+                    <div class="hnav-drop-div"></div>
+                    <div class="hnav-drop-title"><i class="fas fa-layer-group"></i> Structure pédagogique &amp; Années scolaires</div>
+                    <a href="{{ route('scolarite.annees.index') }}" class="hnav-drop-item"><i class="fas fa-calendar-alt"></i> Années scolaires</a>
+                  
+                    <a href="{{ route('scolarite.cycles.index') }}" class="hnav-drop-item"><i class="fas fa-layer-group"></i> Cycles</a>
+                    <a href="{{ route('scolarite.niveaux.index') }}" class="hnav-drop-item"><i class="fas fa-flag"></i> Niveaux</a>
+                    <a href="{{ url('/classes') }}" class="hnav-drop-item"><i class="fas fa-chalkboard"></i> Classes</a>
                 </div>
             </div>
 
-            {{-- Trésorerie --}}
+            {{-- ================================================================
+                 MENU 2 — FINANCES & COMPTABILITÉ
+                 (sous-menus 2.1 à 2.9 — Comptabilité analytique et Recouvrement
+                 sont les deux modules "NOUVEAU" du cahier des charges v2)
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger">
-                    <i class="fas fa-wallet"></i> Trésorerie <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-arrow-right-arrow-left"></i> Opérations</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-receipt"></i> Paiements élèves</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-exchange-alt"></i> Mouvements de trésorerie</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-cash-register"></i> Poste de caisse</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-clipboard-list"></i> Sessions de caisse</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-invoice"></i> Bons de caisse</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-money-check-alt"></i> Avances</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-sliders-h"></i> Paramétrage</div>
-                    <a href="{{ url('/frais-ecoles') }}" class="hnav-drop-item"><i class="fas fa-tags"></i> Tarifs</a>
-                    <a href="{{ url('/evenements') }}" class="hnav-drop-item"><i class="fas fa-calendar-check"></i> Événements</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-concierge-bell"></i> Services</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-futbol"></i> Activités extrascolaires</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-percent"></i> Remises</a>
-                </div>
-            </div>
-
-            {{-- Recouvrement --}}
-            <div class="hnav-item hnav-urgent">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-hand-holding-usd"></i> Recouvrement
-                    <span class="hnav-badge">12</span>
+                    <i class="fas fa-wallet"></i> Finances &amp; Comptabilité
                     <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop" role="menu">
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-chart-line"></i> Tableau de bord recouvrement</a>
-                    <a href="#" class="hnav-drop-item urgent-item">
-                        <i class="fas fa-exclamation-triangle"></i> Échéances en retard
-                        <span class="hnav-mini-badge">12</span>
+                    <div class="hnav-drop-title"><i class="fas fa-tags"></i> Frais &amp; Échéanciers</div>
+                    <a href="{{ url('/frais-ecoles') }}" class="hnav-drop-item"><i class="fas fa-tags"></i> Frais scolaires &amp; Échéanciers</a>
+
+                    <div class="hnav-drop-div"></div>
+                    <div class="hnav-drop-title"><i class="fas fa-cash-register"></i> Paiements &amp; Caisses</div>
+                    <a href="{{ url('/finances/paiements') }}" class="hnav-drop-item"><i class="fas fa-receipt"></i> Paiements</a>
+                    <a href="{{ url('/finances/encaissements') }}" class="hnav-drop-item"><i class="fas fa-cash-register"></i> Encaissements</a>
+                    <a href="{{ url('/finances/caisses') }}" class="hnav-drop-item"><i class="fas fa-clipboard-list"></i> Caisses</a>
+                    <a href="{{ url('/finances/banques') }}" class="hnav-drop-item"><i class="fas fa-university"></i> Banques &amp; Chèques</a>
+
+                    <div class="hnav-drop-div"></div>
+                    <div class="hnav-drop-title"><i class="fas fa-chart-line"></i> Pilotage financier</div>
+                    <a href="{{ url('/finances/depenses') }}" class="hnav-drop-item"><i class="fas fa-file-invoice-dollar"></i> Dépenses</a>
+                    <a href="{{ url('/finances/comptabilite-analytique') }}" class="hnav-drop-item">
+                        <i class="fas fa-chart-pie"></i> Comptabilité analytique
+                        <span class="hnav-new-tag">Nouveau</span>
                     </a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-hourglass-half"></i> Échéances à venir</a>
-                    <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-history"></i> Historique des relances</a>
-                    <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-export"></i> Rapport de recouvrement</a>
+                    <a href="{{ url('/finances/recouvrement') }}" class="hnav-drop-item urgent-item">
+                        <i class="fas fa-hand-holding-usd"></i> Recouvrement
+                        <span class="hnav-new-tag">Nouveau</span>
+                    </a>
+                    <a href="{{ url('/finances/previsions') }}" class="hnav-drop-item"><i class="fas fa-chart-line"></i> Prévisions budgétaires</a>
                 </div>
             </div>
 
-            {{-- CDI --}}
+            {{-- ================================================================
+                 MENU 3 — LOGISTIQUE & ACHATS
+                 (sous-menus 3.1 à 3.4)
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger">
-                    <i class="fas fa-book-open"></i> CDI <i class="fas fa-chevron-down caret"></i>
+                    <i class="fas fa-boxes"></i> Logistique &amp; Achats <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-layer-group"></i> Fonds documentaire</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-book"></i> Catalogue</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-book-medical"></i> Nouveau livre</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-barcode"></i> Exemplaires</a>
+                    <div class="hnav-drop-title"><i class="fas fa-truck"></i> Approvisionnement</div>
+                    <a href="{{ url('/fournisseurs') }}" class="hnav-drop-item"><i class="fas fa-truck"></i> Fournisseurs</a>
+                    <a href="{{ url('/achats') }}" class="hnav-drop-item"><i class="fas fa-shopping-cart"></i> Achats</a>
 
                     <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-arrows-rotate"></i> Circulation</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-hand-holding"></i> Prêts</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-bookmark"></i> Réservations</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-coins"></i> Pénalités</a>
+                    <div class="hnav-drop-title"><i class="fas fa-boxes"></i> Stock &amp; Vente</div>
+                    <a href="{{ url('/stock') }}" class="hnav-drop-item"><i class="fas fa-boxes"></i> Produits &amp; Stock</a>
+                    <a href="{{ url('/boutique') }}" class="hnav-drop-item"><i class="fas fa-store"></i> Boutique / Point de vente</a>
                 </div>
             </div>
 
-            {{-- Transport --}}
+            {{-- ================================================================
+                 MENU 4 — SERVICES AUX ÉLÈVES
+                 (sous-menus 4.1 à 4.4)
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger">
-                    <i class="fas fa-bus-alt"></i> Transport <i class="fas fa-chevron-down caret"></i>
+                    <i class="fas fa-concierge-bell"></i> Services aux Élèves <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-route"></i> Organisation</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-route"></i> Circuits</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-map-marker-alt"></i> Arrêts</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-check"></i> Affectations</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-clipboard-check"></i> Présences transport</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-gas-pump"></i> Pleins &amp; entretien</a>
+                    <div class="hnav-drop-title"><i class="fas fa-bus-alt"></i> Transport &amp; Restauration</div>
+                    <a href="{{ url('/transport') }}" class="hnav-drop-item"><i class="fas fa-bus-alt"></i> Transport scolaire</a>
+                    <a href="{{ url('/cantine') }}" class="hnav-drop-item"><i class="fas fa-utensils"></i> Cantine scolaire</a>
 
                     <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-file-invoice-dollar"></i> Facturation</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-plus"></i> Souscriptions bus</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-invoice-dollar"></i> Paiements bus</a>
+                    <div class="hnav-drop-title"><i class="fas fa-star"></i> Vie scolaire</div>
+                    <a href="{{ url('/bibliotheque') }}" class="hnav-drop-item"><i class="fas fa-book-open"></i> Bibliothèque</a>
+                    <a href="{{ url('/activites-evenements') }}" class="hnav-drop-item"><i class="fas fa-calendar-check"></i> Activités &amp; Événements</a>
                 </div>
             </div>
 
-            {{-- Cantine --}}
+            {{-- ================================================================
+                 MENU 5 — RESSOURCES HUMAINES
+                 (sous-menus 5.1 à 5.3)
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger">
-                    <i class="fas fa-utensils"></i> Cantine <i class="fas fa-chevron-down caret"></i>
+                    <i class="fas fa-users"></i> Ressources Humaines <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-sliders-h"></i> Paramétrage</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-calendar-day"></i> Jours de service</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-list-ul"></i> Types de repas</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-clipboard-list"></i> Menus</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-utensil-spoon"></i> Préparations</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-chart-line"></i> Suivi &amp; facturation</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-chart-line"></i> Consommations</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-plus"></i> Souscriptions cantine</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-invoice-dollar"></i> Facturation cantine</a>
+                    <a href="{{ url('/employes') }}" class="hnav-drop-item"><i class="fas fa-id-badge"></i> Employés</a>
+                    <a href="{{ url('/paie') }}" class="hnav-drop-item"><i class="fas fa-money-check-alt"></i> Paie &amp; Rémunérations</a>
+                    <a href="{{ url('/assurances-personnel') }}" class="hnav-drop-item"><i class="fas fa-shield-alt"></i> Assurances du personnel</a>
                 </div>
             </div>
 
-            {{-- RH --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-users"></i> RH <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-id-badge"></i> Personnel</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-id-badge"></i> Employés</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-user-tie"></i> Postes</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-building"></i> Départements</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-signature"></i> Contrats</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-clock"></i> Suivi</div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-umbrella-beach"></i> Congés</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-clock"></i> Présences</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-invoice-dollar"></i> Bulletins de paie</a>
-                </div>
-            </div>
-
-            {{-- Stock --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-boxes"></i> Stock <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-tags"></i> Catégories</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-cube"></i> Articles</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-warehouse"></i> Magasins</a>
-                    <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-exchange-alt"></i> Mouvements</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-clipboard-list"></i> Inventaires</a>
-                </div>
-            </div>
-
-            {{-- Administration --}}
+            {{-- ================================================================
+                 MENU 6 — ADMINISTRATION & COMMUNICATIONS
+                 (sous-menus 6.1 à 6.4 — Communications est le 3ᵉ module "NOUVEAU")
+                 ================================================================ --}}
             <div class="hnav-item">
                 <a href="#" class="hnav-trigger">
                     <i class="fas fa-cog"></i> Administration <i class="fas fa-chevron-down caret"></i>
                 </a>
                 <div class="hnav-drop">
-                    <a href="{{ url('/users') }}" class="hnav-drop-item"><i class="fas fa-users-cog"></i> Utilisateurs</a>
-                    <a href="{{ url('/annees') }}" class="hnav-drop-item"><i class="fas fa-calendar-alt"></i> Années scolaires</a>
+                    <a href="{{ url('/users') }}" class="hnav-drop-item"><i class="fas fa-users-cog"></i> Utilisateurs &amp; Profils</a>
+                    <a href="{{ url('/referentiels') }}" class="hnav-drop-item"><i class="fas fa-sliders-h"></i> Référentiels &amp; Paramètres généraux</a>
 
                     <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-graduation-cap"></i> Structure pédagogique</div>
-
-                    <a href="{{ url('/cycles') }}" class="hnav-drop-item"><i class="fas fa-layer-group"></i> Cycles</a>
-                    <a href="{{ url('/niveaux') }}" class="hnav-drop-item"><i class="fas fa-flag"></i> Niveaux</a>
+                    <a href="{{ url('/communications') }}" class="hnav-drop-item">
+                        <i class="fas fa-envelope"></i> Communications
+                        <span class="hnav-new-tag">Nouveau</span>
+                    </a>
 
                     <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-history"></i> Journal d'activités</a>
+                    <a href="#" class="hnav-drop-item"><i class="fas fa-history"></i> Journal &amp; Traçabilité</a>
                 </div>
             </div>
 
@@ -863,11 +850,18 @@
             });
         }
 
-        /* ===== THÈME ===== */
+        /* =====  THÈME =====
+           Applique la fois la classe .dark-theme (utilisée par ce fichier /
+           d'éventuels styles locaux) ET l'attribut data-theme sur <html>
+           (posé par le layout principal) : les deux mécanismes doivent
+           rester synchronisés pour qu'un CSS sombre ciblant l'un ou l'autre
+           fonctionne réellement.
+        */
         var tBtn  = document.getElementById('themeToggle');
         var tIcon = document.getElementById('themeIcon');
         function applyTheme(dark) {
             document.documentElement.classList.toggle('dark-theme', dark);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
             if (tIcon) tIcon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
             try { localStorage.setItem('mariam-theme', dark ? 'dark' : 'light'); } catch(e){}
         }
@@ -878,14 +872,9 @@
             });
         }
 
-        /* ===== CTRL+K RECHERCHE ===== */
-        document.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                var b = document.getElementById('btnSearch');
-                if (b) b.click();
-            }
-        });
+        /* Ctrl+K est géré uniquement dans _search.blade.php (seul
+           propriétaire du raccourci, pour éviter une double ouverture de
+           la modale) — rien à faire ici. */
 
         /* ===== SURBRILLANCE DES MENUS ===== */
         function highlightActive() {
@@ -925,10 +914,6 @@
         /* ===== INIT ===== */
         rebuildMoreMenu();
         highlightActive();
-
-        console.log('✅ Header Mariam chargé avec succès');
-        console.log('👤 Utilisateur:', '{{ $headerNomComplet ?? "Non connecté" }}');
-        console.log('📅 Année:', '{{ $headerAnneeCourante->libelle ?? "Aucune" }}');
 
     })();
 </script>

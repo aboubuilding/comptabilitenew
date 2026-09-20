@@ -2,82 +2,48 @@
 
 namespace App\Providers;
 
+use App\Support\AnneeScolaireContext;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
-use App\View\Composers\HeaderComposer;
+use App\Domain\Finances\Models\Banque;
+use App\Domain\Finances\Models\Cheque;
+use App\Policies\Domain\Finances\BanquePolicy;
+use App\Policies\Domain\Finances\ChequePolicy;
 
-// ─────────────────────────────────────────────────────────────
-// 🔗 Imports des interfaces (dossier Interfaces)
-// ─────────────────────────────────────────────────────────────
-use App\Repositories\Interfaces\DepenseRepositoryInterface;
-use App\Repositories\Interfaces\CaisseRepositoryInterface;
-use App\Repositories\Interfaces\MouvementRepositoryInterface;
-use App\Repositories\Interfaces\CycleRepositoryInterface;
-use App\Repositories\Interfaces\NiveauRepositoryInterface;
-use App\Repositories\Interfaces\ClasseRepositoryInterface;
-use App\Repositories\Interfaces\AnneeRepositoryInterface;
-use App\Repositories\Interfaces\FraisEcoleRepositoryInterface;
-use App\Repositories\Interfaces\UserRepositoryInterface;
-use App\Repositories\Interfaces\PlanEcheancierRepositoryInterface;
-use App\Repositories\Interfaces\PlanEcheancierLigneRepositoryInterface;
-use App\Repositories\Interfaces\EvenementRepositoryInterface;
-
-// ─────────────────────────────────────────────────────────────
-// 🔗 Imports des implémentations concrètes (dossier Eloquent)
-// ─────────────────────────────────────────────────────────────
-use App\Repositories\Eloquent\DepenseRepository;
-use App\Repositories\Eloquent\CaisseRepository;
-use App\Repositories\Eloquent\MouvementRepository;
-use App\Repositories\Eloquent\CycleRepository;
-use App\Repositories\Eloquent\NiveauRepository;
-use App\Repositories\Eloquent\ClasseRepository;
-use App\Repositories\Eloquent\AnneeRepository;
-use App\Repositories\Eloquent\FraisEcoleRepository;
-use App\Repositories\Eloquent\UserRepository;
-use App\Repositories\Eloquent\PlanEcheancierRepository;
-use App\Repositories\Eloquent\PlanEcheancierLigneRepository;
-use App\Repositories\Eloquent\EvenementRepository;
-
+/**
+ * Pas de binding Repository ici : aucun de nos Repository de domaine
+ * (NiveauRepository, CycleRepository, UserRepository, AnneeRepository...)
+ * n'a d'interface séparée — décision actée (voir doc d'architecture) —
+ * et Laravel résout tout seul un type-hint sur une classe concrète dont
+ * le constructeur n'attend qu'un Model Eloquent (auto-wiring par
+ * réflexion, rien à déclarer explicitement ici).
+ *
+ * Le seul binding nécessaire est le singleton du contexte année
+ * scolaire, partagé entre le middleware ResolveAnneeScolaire (qui le
+ * renseigne) et tout ce qui le consomme ensuite pendant la même requête
+ * (BaseRepository, HeaderComposer, TableauController...).
+ *
+ * L'enregistrement du HeaderComposer NE VIT PAS ICI : voir
+ * ViewComposerServiceProvider, dédié à ça — le dupliquer dans les deux
+ * fichiers l'aurait fait s'enregistrer deux fois pour rien.
+ */
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
+
+protected $policies = [
+    Banque::class => BanquePolicy::class,
+    Cheque::class => ChequePolicy::class,
+];
     public function register(): void
     {
-        // ─────────────────────────────────────────────────────────
-        // 💰 MODULE CAISSE
-        // ─────────────────────────────────────────────────────────
-
-        $this->app->bind(DepenseRepositoryInterface::class, DepenseRepository::class);
-        $this->app->bind(CaisseRepositoryInterface::class, CaisseRepository::class);
-        $this->app->bind(MouvementRepositoryInterface::class, MouvementRepository::class);
-
-        // ─────────────────────────────────────────────────────────
-        // 📚 MODULE  PARAMETRAGE
-        // ─────────────────────────────────────────────────────────
-
-        $this->app->bind(CycleRepositoryInterface::class, CycleRepository::class);
-        $this->app->bind(NiveauRepositoryInterface::class, NiveauRepository::class);
-        $this->app->bind(ClasseRepositoryInterface::class, ClasseRepository::class);
-        $this->app->bind(AnneeRepositoryInterface::class, AnneeRepository::class);
-        $this->app->bind(FraisEcoleRepositoryInterface::class, FraisEcoleRepository::class);
-        $this->app->bind(PeriodeRepositoryInterface::class, PeriodeRepository::class);
-        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
-        $this->app->bind(PlanEcheancierRepositoryInterface::class, PlanEcheancierRepository::class);
-        $this->app->bind(PlanEcheancierLigneRepositoryInterface::class, PlanEcheancierLigneRepository::class);
-        $this->app->bind(EvenementRepositoryInterface::class, EvenementRepository::class);
-
+        $this->app->singleton(AnneeScolaireContext::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // Exemple : Partager une variable globale avec toutes les vues
-        // view()->share('app_name', config('app.name'));
-        // Enregistrer le composer pour le header
-        View::composer('admin.layouts.partials._header', HeaderComposer::class);
+        // S'applique automatiquement à chaque `->links()` des 13
+        // modules — rien à changer dans les vues qui l'utilisent déjà.
+        Paginator::defaultView('vendor.pagination.custom');
+        Paginator::defaultSimpleView('vendor.pagination.custom');
     }
 }

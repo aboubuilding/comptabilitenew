@@ -54,10 +54,13 @@ class Kernel extends HttpKernel
      */
     protected $routeMiddleware = [
 
-
-        'auth' => \App\Http\Middleware\AuthCustom::class,
         'role' => \App\Http\Middleware\CheckRole::class,
 
+        // Manquait entièrement : sans cet alias, tout Route::middleware('auth')
+        // (routes/web.php, routes/admin/*) échoue avec "Target class [auth]
+        // does not exist" — c'est cette ligne qui manquait, pas un problème
+        // dans Authenticate.php lui-même (déjà corrigé par ailleurs).
+        'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,

@@ -1,62 +1,50 @@
 <?php
-// app/View/Composers/HeaderComposer.php
 
 namespace App\View\Composers;
 
-use App\Services\AuthService;
-use App\Models\Annee;
+use App\Domain\Scolarite\Repositories\AnneeRepository;
+use App\Support\AnneeScolaireContext;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * Alimente le header (identité/rôle de l'utilisateur, sélecteur d'année).
+ *
+ * Ne décide JAMAIS de l'année active : se contente de lire l'état déjà
+ * résolu par le middleware ResolveAnneeScolaire (via AnneeScolaireContext)
+ * pour cette requête. Le changement d'année lui-même se produit dans le
+ * middleware, pas ici.
+ *
+ * Pas de dépendance à AuthService : Auth::user() (guard natif Laravel)
+ * suffit pour un simple accès en lecture à l'utilisateur déjà authentifié
+ * — passer par un Service ici aurait été une indirection inutile.
+ */
 class HeaderComposer
 {
-    protected AuthService $authService;
-
-    public function __construct(AuthService $authService)
-    {
-        $this->authService = $authService;
+    public function __construct(
+        private AnneeRepository $annees,
+        private AnneeScolaireContext $anneeContext,
+    ) {
     }
 
-    /**
-     * Bind data to the view.
-     */
     public function compose(View $view): void
     {
-        // Récupérer l'utilisateur connecté
-        $user = $this->authService->getUser();
+        $user = Auth::user();
 
-        // Données de l'utilisateur
-        $nomComplet = $user ? trim(($user->prenom ?? '') . ' ' . ($user->nom ?? '')) : 'Utilisateur';
-        $userEmail = $user->email ?? 'user@ecoleinternationalemariam.net';
+        $anneeCourante = $this->anneeContext->id()
+            ? $this->annees->find($this->anneeContext->id())
+            : null;
 
-        // Rôle label
-        $roleLabel = match($user->role ?? 0) {
-            1 => 'Administrateur',
-            2 => 'Directeur',
-            3 => 'Comptable',
-            4 => 'Admin Adjoint',
-            5 => 'Caissier',
-            6 => 'Secrétaire',
-            7 => 'Enseignant',
-            8 => 'Parent',
-            default => 'Utilisateur',
-        };
-
-        // Récupérer l'année en cours
-        $anneeCourante = $this->authService->getCurrentYear();
-
-        // Récupérer toutes les années actives pour le sélecteur
-        $annees = Annee::where('etat', 1)
-            ->orderBy('date_rentree', 'desc')
-            ->get();
-
-        // Passer les données à la vue
         $view->with([
-            'headerUser' => $user,
-            'headerNomComplet' => $nomComplet,
-            'headerUserEmail' => $userEmail,
-            'headerRoleLabel' => $roleLabel,
+            'headerUser'          => $user,
+            'headerNomComplet'    => $user?->full_name ?? 'Utilisateur',
+            'headerUserEmail'     => $user?->email ?? 'user@ecoleinternationalemariam.net',
+            // Délègue à l'accesseur du modèle (role_label -> RoleUtilisateur::label()),
+            // plutôt qu'un match() codé en dur ici : c'était le bug de la
+            // version précédente, désynchronisée dès qu'un rôle change.
+            'headerRoleLabel'     => $user?->role_label ?? 'Utilisateur',
             'headerAnneeCourante' => $anneeCourante,
-            'headerAnnees' => $annees,
+            'headerAnnees'        => $this->annees->allForSelector(),
         ]);
     }
 }

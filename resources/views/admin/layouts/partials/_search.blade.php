@@ -1,20 +1,14 @@
-{{-- resources/views/layouts/partials/_search-modal-mariam.blade.php --}}
+{{-- resources/views/admin/layouts/partials/_search.blade.php --}}
+{{-- Jetons de couleur déjà déclarés dans layouts/app.blade.php : pas de
+     :root redéclaré ici, pour la même raison que header/footer. --}}
 
 <style>
-    /* ===== SEARCH MODAL — École Mariam ===== */
-    :root {
-        --mariam-primary: #d21034;
-        --mariam-primary-dark: #8b0d24;
-        --mariam-accent: #e8a838;
-        --mariam-accent-light: #f2c766;
-        --mariam-ff: 'Kumbh Sans', sans-serif;
-    }
-
+    /* ===== SEARCH MODAL ===== */
     .search-modal {
         position: fixed;
         inset: 0;
         z-index: 10000;
-        background: rgba(139, 13, 36, 0.85);
+        background: rgba(74, 12, 25, 0.85);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         display: flex;
@@ -52,8 +46,8 @@
         align-items: center;
         gap: 12px;
         padding: 16px 20px;
-        background: linear-gradient(120deg, var(--mariam-primary-dark), var(--mariam-primary));
-        border-bottom: 2px solid var(--mariam-accent);
+        background: linear-gradient(120deg, var(--school-red-dark), var(--school-red));
+        border-bottom: 2px solid var(--school-gold);
     }
 
     .search-modal-header i {
@@ -69,7 +63,7 @@
         font-size: 1.1rem;
         font-weight: 400;
         color: #fff;
-        font-family: var(--mariam-ff);
+        font-family: var(--school-ff);
         outline: none;
         padding: 10px 16px;
         transition: background 0.3s ease;
@@ -120,7 +114,7 @@
         cursor: pointer;
         transition: all 0.15s ease;
         border-bottom: 1px solid #f0f2f5;
-        font-family: var(--mariam-ff);
+        font-family: var(--school-ff);
         text-decoration: none;
         color: inherit;
     }
@@ -130,15 +124,15 @@
     }
 
     .search-result-item:hover {
-        background: #f5f7fa;
+        background: #faf7f0;
         padding-left: 26px;
-        border-left: 4px solid var(--mariam-primary);
+        border-left: 4px solid var(--school-red);
     }
 
     .search-result-icon {
         width: 40px;
         height: 40px;
-        background: linear-gradient(120deg, var(--mariam-primary-dark), var(--mariam-primary));
+        background: linear-gradient(120deg, var(--school-red-dark), var(--school-red));
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -172,8 +166,8 @@
     }
 
     .search-result-item .badge-category {
-        background: var(--mariam-accent);
-        color: #fff;
+        background: var(--school-gold);
+        color: #4A0C19;
         font-size: 0.6rem;
         font-weight: 700;
         padding: 2px 10px;
@@ -188,7 +182,7 @@
         padding: 40px 20px;
         text-align: center;
         color: #6f7e8c;
-        font-family: var(--mariam-ff);
+        font-family: var(--school-ff);
     }
 
     .search-empty i {
@@ -208,7 +202,7 @@
     }
 
     .search-modal-body::-webkit-scrollbar-thumb {
-        background: var(--mariam-primary);
+        background: var(--school-red);
         border-radius: 4px;
     }
 
@@ -256,124 +250,70 @@
         const input = document.getElementById('searchInput');
         const resultsContainer = document.getElementById('searchResults');
 
-        // ============================================
-        // DONNÉES DE RECHERCHE (Exemple)
-        // ============================================
-        const searchData = [
-            {
-                id: 1,
-                title: 'KOUADIO Jean',
-                subtitle: 'Matricule EL-001 · Classe : CM1 · Responsable : KOUADIO Paul',
-                icon: 'fa-user-graduate',
-                category: 'Élève',
-                url: '/eleves/1',
-                type: 'eleve'
-            },
-            {
-                id: 2,
-                title: 'KONAN François',
-                subtitle: 'Matière : Mathématiques · Classe : CM2 · Ancienneté : 5 ans',
-                icon: 'fa-chalkboard-teacher',
-                category: 'Enseignant',
-                url: '/enseignants/1',
-                type: 'enseignant'
-            },
-            {
-                id: 3,
-                title: 'Classe CM1',
-                subtitle: 'Effectif : 28 élèves · Enseignant titulaire : M. BAMBA',
-                icon: 'fa-door-open',
-                category: 'Classe',
-                url: '/classes/1',
-                type: 'classe'
-            },
-            {
-                id: 4,
-                title: 'Les Misérables – Victor Hugo',
-                subtitle: 'Exemplaire n° EX-001 · Disponible · Rayon : A-1',
-                icon: 'fa-book',
-                category: 'Livre',
-                url: '/bibliotheque/1',
-                type: 'livre'
-            },
-            {
-                id: 5,
-                title: 'Facture n° FAC-2026-001',
-                subtitle: 'Élève : KOUADIO Jean · Montant : 150 000 FCFA · Statut : En attente',
-                icon: 'fa-file-invoice-dollar',
-                category: 'Facture',
-                url: '/factures/1',
-                type: 'facture'
-            },
-            {
-                id: 6,
-                title: 'Paiement REC-001',
-                subtitle: 'Reçu le 19/07/2026 · Montant : 50 000 FCFA · Mode : Espèces',
-                icon: 'fa-credit-card',
-                category: 'Paiement',
-                url: '/paiements/1',
-                type: 'paiement'
-            },
-            {
-                id: 7,
-                title: 'BAMBA Mamadou',
-                subtitle: 'Directeur · Ancienneté : 10 ans',
-                icon: 'fa-user-tie',
-                category: 'Direction',
-                url: '/direction/1',
-                type: 'direction'
-            },
-            {
-                id: 8,
-                title: 'Cantine Scolaire',
-                subtitle: 'Menu du jour : Riz gras · 250 élèves inscrits',
-                icon: 'fa-utensils',
-                category: 'Cantine',
-                url: '/cantine/1',
-                type: 'cantine'
-            }
-        ];
+        // url() et non route('recherche') : cette modale est incluse sur
+        // TOUTES les pages admin (via layouts/app.blade.php) — un nom de
+        // route inexistant planterait donc l'application entière au
+        // premier rendu, pas seulement la recherche. Tant que le
+        // Controller/route de recherche n'existe pas, l'appel échoue
+        // proprement (voir handleError ci-dessous) plutôt que de
+        // provoquer un crash au chargement.
+        const searchUrl = '{{ url('/recherche') }}';
 
-        // ============================================
-        // FONCTIONS DE RECHERCHE
-        // ============================================
+        // Format JSON attendu du futur endpoint : un tableau d'objets
+        // { title, subtitle, icon, category, url } — voir renderResults().
 
-        function search(query) {
-            if (!query || query.trim() === '') {
-                return [];
-            }
+        let searchTimeout;
+        let currentRequest = null;
 
-            const q = query.toLowerCase().trim();
-            return searchData.filter(item => {
-                return item.title.toLowerCase().includes(q) ||
-                    item.subtitle.toLowerCase().includes(q) ||
-                    item.category.toLowerCase().includes(q);
-            });
+        function escapeHtml(str) {
+            return $('<div>').text(str == null ? '' : String(str)).html();
+        }
+
+        function showEmptyState() {
+            resultsContainer.innerHTML = `
+                <div class="search-empty">
+                    <i class="fas fa-search-plus"></i>
+                    <p>Commencez à taper pour rechercher...</p>
+                </div>
+            `;
+        }
+
+        function showNoResults() {
+            resultsContainer.innerHTML = `
+                <div class="search-empty">
+                    <i class="fas fa-search-minus"></i>
+                    <p>Aucun résultat trouvé.</p>
+                    <small style="color: #a8b6c2;">Essayez avec d'autres mots-clés</small>
+                </div>
+            `;
+        }
+
+        function showUnavailable() {
+            resultsContainer.innerHTML = `
+                <div class="search-empty">
+                    <i class="fas fa-tools"></i>
+                    <p>La recherche n'est pas encore disponible.</p>
+                </div>
+            `;
         }
 
         function renderResults(results) {
-            if (results.length === 0) {
-                resultsContainer.innerHTML = `
-                    <div class="search-empty">
-                        <i class="fas fa-search-minus"></i>
-                        <p>Aucun résultat trouvé.</p>
-                        <small style="color: #a8b6c2;">Essayez avec d'autres mots-clés</small>
-                    </div>
-                `;
+            if (!Array.isArray(results) || results.length === 0) {
+                showNoResults();
                 return;
             }
 
             let html = '';
             results.forEach(item => {
                 html += `
-                    <a href="${item.url}" class="search-result-item" tabindex="0">
-                        <div class="search-result-icon"><i class="fas ${item.icon}"></i></div>
+                    <a href="${escapeHtml(item.url)}" class="search-result-item" tabindex="0">
+                        <div class="search-result-icon"><i class="fas ${escapeHtml(item.icon || 'fa-circle')}"></i></div>
                         <div class="search-result-info">
                             <div class="search-result-title">
-                                ${item.title}
-                                <span class="badge-category">${item.category}</span>
+                                ${escapeHtml(item.title)}
+                                <span class="badge-category">${escapeHtml(item.category)}</span>
                             </div>
-                            <div class="search-result-sub">${item.subtitle}</div>
+                            <div class="search-result-sub">${escapeHtml(item.subtitle)}</div>
                         </div>
                     </a>
                 `;
@@ -383,20 +323,46 @@
         }
 
         // ============================================
-        // GESTION DES ÉVÉNEMENTS
+        // RECHERCHE — appel AJAX avec annulation de la requête
+        // précédente si l'utilisateur retape avant qu'elle ne réponde
+        // (sinon une réponse lente pourrait écraser un résultat plus
+        // récent).
         // ============================================
+        function performSearch(query) {
+            if (currentRequest) {
+                currentRequest.abort();
+                currentRequest = null;
+            }
 
-        // Recherche en temps réel
-        let searchTimeout;
-        input.addEventListener('input', function() {
+            if (!query || query.trim() === '') {
+                showEmptyState();
+                return;
+            }
+
+            currentRequest = $.ajax({
+                url: searchUrl,
+                method: 'GET',
+                data: { q: query },
+                dataType: 'json',
+                success: function (results) {
+                    renderResults(results);
+                },
+                error: function (xhr) {
+                    if (xhr.statusText === 'abort') return; // requête volontairement annulée
+                    showUnavailable();
+                }
+            });
+        }
+
+        input.addEventListener('input', function () {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const results = search(this.value);
-                renderResults(results);
-            }, 300);
+            const query = this.value;
+            searchTimeout = setTimeout(() => performSearch(query), 300);
         });
 
-        // Ouvrir avec Ctrl+K
+        // Échap pour fermer (Ctrl+K pour ouvrir est géré plus bas, seul
+        // point d'entrée pour ce raccourci dans toute l'application —
+        // ne pas le redéclarer ailleurs, notamment pas dans le header).
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
@@ -407,19 +373,13 @@
             }
         });
 
-        // Fermer avec le bouton
         closeBtn.addEventListener('click', closeModal);
 
-        // Cliquer à l'extérieur pour fermer
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 closeModal();
             }
         });
-
-        // ============================================
-        // FONCTIONS D'OUVERTURE/FERMETURE
-        // ============================================
 
         function openModal() {
             modal.classList.add('open');
@@ -429,17 +389,15 @@
             }, 100);
             document.body.style.overflow = 'hidden';
 
-            // Réinitialiser les résultats
-            resultsContainer.innerHTML = `
-                <div class="search-empty">
-                    <i class="fas fa-search-plus"></i>
-                    <p>Commencez à taper pour rechercher...</p>
-                </div>
-            `;
+            showEmptyState();
             input.value = '';
         }
 
         function closeModal() {
+            if (currentRequest) {
+                currentRequest.abort();
+                currentRequest = null;
+            }
             modal.classList.remove('open');
             document.body.style.overflow = '';
             input.blur();
@@ -462,7 +420,5 @@
                 searchBtn.addEventListener('click', openModal);
             }
         });
-
-        console.log('🔍 Modale de recherche Mariam prête.');
     })();
 </script>

@@ -1,20 +1,17 @@
-{{-- resources/views/layouts/partials/_footer-mariam.blade.php --}}
+{{-- resources/views/admin/layouts/partials/_footer.blade.php --}}
 
 <style>
-    /* ===== FOOTER MARIAM (Adapté aux couleurs du logo) ===== */
-    :root {
-        --mariam-red: #d21034;
-        --mariam-red-dark: #8b0d24;
-        --mariam-gold: #e8a838;
-        --mariam-gold-light: #f2c766;
-        --mariam-ff: 'Kumbh Sans', sans-serif;
-    }
+    /* ===== FOOTER MARIAM =====
+       Les jetons de couleur (--school-red, --school-gold, --school-ff...)
+       sont déjà déclarés dans layouts/app.blade.php : aucun ajout local
+       ici, donc pas de :root redéclaré dans ce fichier — évite un point
+       de divergence si les valeurs changent un jour. */
 
     .mariam-footer {
-        font-family: var(--mariam-ff);
-        background: linear-gradient(120deg, var(--mariam-red-dark), var(--mariam-red));
+        font-family: var(--school-ff);
+        background: linear-gradient(120deg, var(--school-red-dark), var(--school-red));
         color: rgba(255, 255, 255, 0.85);
-        border-top: 3px solid var(--mariam-gold);
+        border-top: 3px solid var(--school-gold);
         padding: 20px 24px;
         display: flex;
         flex-wrap: wrap;
@@ -25,6 +22,15 @@
         margin-top: auto;
         width: 100%;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        animation: mariam-footer-in 0.5s ease-out both;
+    }
+
+    @keyframes mariam-footer-in {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .mariam-footer { animation: none; }
     }
 
     .mariam-footer .footer-left {
@@ -55,7 +61,7 @@
     .mariam-footer .footer-right a {
         color: rgba(255, 255, 255, 0.8);
         text-decoration: none;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, transform 0.2s ease;
         border-bottom: 1px solid transparent;
         padding-bottom: 2px;
         position: relative;
@@ -69,17 +75,25 @@
         left: 0;
         width: 0;
         height: 2px;
-        background: var(--mariam-gold);
+        background: var(--school-gold);
         transition: width 0.3s ease;
     }
 
     .mariam-footer .footer-right a:hover {
-        color: var(--mariam-gold-light);
+        color: var(--school-gold-soft);
         transform: translateY(-1px);
     }
 
     .mariam-footer .footer-right a:hover::after {
         width: 100%;
+    }
+
+    .mariam-footer .footer-right a:hover i {
+        transform: scale(1.1);
+    }
+    .mariam-footer .footer-right a i {
+        transition: transform 0.2s ease;
+        display: inline-block;
     }
 
     .mariam-footer .footer-right span {
@@ -96,22 +110,6 @@
     .mariam-footer .footer-right .separator {
         color: rgba(255, 255, 255, 0.2);
         font-size: 0.7rem;
-    }
-
-    /* Animation d'entrée */
-    .mariam-footer {
-        animation: fadeInUp 0.6s ease-out;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
     }
 
     @media (max-width: 600px) {
@@ -165,40 +163,10 @@
             <i class="fas fa-gavel"></i> Mentions
         </a>
         <span class="separator">|</span>
+        {{-- Depuis config('app.version') plutôt qu'en dur : changer de
+             version se fait dans .env/config, pas en rouvrant cette vue. --}}
         <span title="Version">
-            <i class="fas fa-code-branch"></i> v1.0.0
+            <i class="fas fa-code-branch"></i> v{{ config('app.version', '1.0.0') }}
         </span>
     </div>
 </footer>
-
-{{-- Script pour les interactions du footer --}}
-@push('js')
-    <script>
-        $(document).ready(function() {
-            // Animation du footer au scroll
-            const footer = $('.mariam-footer');
-            let isVisible = false;
-
-            function checkVisibility() {
-                const rect = footer[0].getBoundingClientRect();
-                const isVisibleNow = rect.top < window.innerHeight && rect.bottom >= 0;
-
-                if (isVisibleNow && !isVisible) {
-                    isVisible = true;
-                    footer.css('animation', 'fadeInUp 0.6s ease-out');
-                }
-            }
-
-            // Vérifier au chargement et au scroll
-            checkVisibility();
-            $(window).on('scroll', checkVisibility);
-
-            // Effet de survol sur les icônes
-            $('.footer-right a').on('mouseenter', function() {
-                $(this).find('i').css('transform', 'scale(1.1)');
-            }).on('mouseleave', function() {
-                $(this).find('i').css('transform', 'scale(1)');
-            });
-        });
-    </script>
-@endpush
