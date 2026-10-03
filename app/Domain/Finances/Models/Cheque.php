@@ -3,7 +3,7 @@
 namespace App\Domain\Finances\Models;
 
 use App\Domain\Finances\Types\ChequeStatut;
-use App\Models\User;
+use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

@@ -2,27 +2,44 @@
 
 namespace App\Domain\ServicesEleves\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\ServicesEleves\Types\TypeActivite;
+use App\Domain\Scolarite\Models\Niveau;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Activite extends Model
 {
-    use HasFactory;
-
     protected $table = 'activites';
 
     protected $fillable = [
-        'libelle', 'description', 'montant', 'annee_id', 'niveau_id',
-        'type', 'encadreur', 'contact_encadreur', 'etat',
+        'libelle', 'description', 'montant',
+        'type', 'encadreur', 'contact_encadreur',
+        'niveau_id', 'annee_id', 'etat',
     ];
 
     protected $casts = [
+        'type'    => TypeActivite::class,
         'montant' => 'float',
-        'etat'    => 'integer',
     ];
 
-    public function scopeActive($query)
+    public function niveau(): BelongsTo
     {
-        return $query->where('etat', 1);
+        return $this->belongsTo(Niveau::class, 'niveau_id');
+    }
+
+    public function inscriptions(): HasMany
+    {
+        return $this->hasMany(InscriptionActivite::class, 'activite_id');
+    }
+
+    public function getNombreInscritsAttribute(): int
+    {
+        return $this->inscriptions()
+            ->whereIn('statut', [
+                \App\Domain\ServicesEleves\Types\StatutInscriptionActivite::EN_ATTENTE->value,
+                \App\Domain\ServicesEleves\Types\StatutInscriptionActivite::CONFIRMEE->value,
+            ])
+            ->count();
     }
 }

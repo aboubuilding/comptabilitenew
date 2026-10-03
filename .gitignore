@@ -16,3 +16,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Tests E2E (Playwright)
+/e2e/.cache
+/e2e/rapport
+/e2e/resultats

@@ -281,8 +281,10 @@
             </div>
         </div>
 
-        {{-- Cartes statistiques — recentrées sur le périmètre Administration --}}
+        {{-- Cartes statistiques. Les chiffres du périmètre Administration
+             (comptes, rôles, journal) ne sont montrés qu'à qui y a accès. --}}
         <div class="row g-4 mb-5">
+            @can('utilisateurs.voir')
             <div class="col-xl-3 col-md-6">
                 <div class="card stat-card h-100 shadow-sm">
                     <div class="card-body p-4">
@@ -303,6 +305,7 @@
                     </div>
                 </div>
             </div>
+            @endcan
             <div class="col-xl-3 col-md-6">
                 <div class="card stat-card h-100 shadow-sm">
                     <div class="card-body p-4">
@@ -319,6 +322,7 @@
                     </div>
                 </div>
             </div>
+            @can('journal.voir')
             <div class="col-xl-3 col-md-6">
                 <div class="card stat-card h-100 shadow-sm">
                     <div class="card-body p-4">
@@ -329,48 +333,60 @@
                     </div>
                 </div>
             </div>
+            @endcan
         </div>
 
-        {{-- Actions rapides — les gestes courants du module Administration --}}
+        {{-- Accès rapides : les écrans du menu auxquels le profil a droit
+             (config/menu.php filtré par les permissions). Aucun lien vers un
+             écran interdit ou inexistant. --}}
         <div class="section-heading">
             <h4 class="card-title fw-bold">
-                <i class="fas fa-bolt me-2 text-mariam-accent" aria-hidden="true"></i>Actions rapides
+                <i class="fas fa-bolt me-2 text-mariam-accent" aria-hidden="true"></i>Accès rapides
             </h4>
         </div>
-        <div class="row g-3 mb-4">
-            <div class="col-md-3 col-6">
-                <a href="{{ url('/users') }}" class="quick-action">
-                    <i class="fas fa-user-plus" aria-hidden="true"></i>
-                    <span>Nouvel utilisateur</span>
-                </a>
-            </div>
-            <div class="col-md-3 col-6">
-                <a href="{{ url('/annees') }}" class="quick-action">
-                    <i class="fas fa-calendar-plus" aria-hidden="true"></i>
-                    <span>Nouvelle année scolaire</span>
-                </a>
-            </div>
-            <div class="col-md-3 col-6">
-                <a href="{{ url('/communications') }}" class="quick-action">
-                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
-                    <span>Nouvelle communication</span>
-                </a>
-            </div>
-            <div class="col-md-3 col-6">
-                <a href="#" class="quick-action">
-                    <i class="fas fa-history" aria-hidden="true"></i>
-                    <span>Journal d'activités</span>
-                </a>
-            </div>
-        </div>
 
-        {{-- Dernières activités --}}
-        <div class="card summary-card mb-5 shadow-sm animate-on-load">
+        @if ($acces->isEmpty())
+            <div class="card summary-card mb-5 shadow-sm" id="aucun-acces">
+                <div class="empty-state">
+                    <i class="fas fa-lock" aria-hidden="true"></i>
+                    <p class="mb-0">Aucun module ne vous est attribué pour l'instant.</p>
+                    <small class="text-muted">Rapprochez-vous de l'administrateur pour obtenir vos droits d'accès.</small>
+                </div>
+            </div>
+        @else
+            <div class="row g-3 mb-5" id="acces-rapides">
+                @foreach ($acces as $menu)
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card summary-card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold">
+                                    <i class="fas {{ $menu['icone'] }} me-2 text-mariam-primary" aria-hidden="true"></i>{{ $menu['libelle'] }}
+                                </h5>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="list-group list-group-flush">
+                                    @foreach ($menu['entrees'] as [$libelle, $icone, $route])
+                                        <a href="{{ route($route) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center acces-rapide">
+                                            <span><i class="fas {{ $icone }} text-mariam-primary me-2" aria-hidden="true"></i>{{ $libelle }}</span>
+                                            <i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- Dernières activités : extrait du journal (§ 6.4), Administrateur seulement --}}
+        @can('journal.voir')
+        <div class="card summary-card mb-5 shadow-sm animate-on-load" id="dernieres-activites">
             <div class="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h4 class="card-title mb-0 fw-bold">
-                    <i class="fas fa-list-alt me-2 text-mariam-primary" aria-hidden="true"></i>Dernières activités système
+                    <i class="fas fa-list-alt me-2 text-mariam-primary" aria-hidden="true"></i>Dernières activités
                 </h4>
-                <a href="#" class="btn btn-sm btn-outline-danger">
+                <a href="{{ route('administration.journal.index') }}" class="btn btn-sm btn-outline-danger">
                     <i class="fas fa-eye me-1" aria-hidden="true"></i>Voir tout
                 </a>
             </div>
@@ -390,10 +406,10 @@
                                 <tr>
                                     <td>
                                         <i class="fas fa-circle text-mariam-accent me-2" style="font-size: 8px;" aria-hidden="true"></i>
-                                        {{ $activity['action'] ?? 'Action système' }}
+                                        {{ $activity['action'] }}
                                     </td>
-                                    <td>{{ $activity['user'] ?? $nomComplet }}</td>
-                                    <td>{{ $activity['date'] ?? now()->format('d/m/Y H:i') }}</td>
+                                    <td>{{ $activity['user'] }}</td>
+                                    <td>{{ $activity['date'] }}</td>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -408,68 +424,7 @@
                 @endif
             </div>
         </div>
-
-        {{-- Informations système &amp; liens rapides du module Administration --}}
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card summary-card shadow-sm">
-                    <div class="card-header bg-white border-0 py-3 px-4">
-                        <h5 class="card-title mb-0 fw-bold">
-                            <i class="fas fa-info-circle me-2 text-mariam-primary" aria-hidden="true"></i>Informations système
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm mb-0">
-                            <tr>
-                                <td class="text-muted" style="width: 50%;">Version application</td>
-                                <td><strong>v{{ config('app.version', '1.0.0') }}</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">PHP Version</td>
-                                <td><strong>{{ phpversion() }}</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Environnement</td>
-                                <td><strong>{{ app()->environment() }}</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Base de données</td>
-                                <td><strong>{{ config('database.default') }}</strong></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card summary-card shadow-sm">
-                    <div class="card-header bg-white border-0 py-3 px-4">
-                        <h5 class="card-title mb-0 fw-bold">
-                            <i class="fas fa-link me-2 text-mariam-primary" aria-hidden="true"></i>Module Administration
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="list-group list-group-flush">
-                            <a href="{{ url('/users') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-users-cog text-mariam-primary me-2" aria-hidden="true"></i>Utilisateurs &amp; Profils</span>
-                                <i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
-                            </a>
-                            <a href="{{ url('/referentiels') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-sliders-h text-mariam-primary me-2" aria-hidden="true"></i>Référentiels &amp; Paramètres généraux</span>
-                                <i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
-                            </a>
-                            <a href="{{ url('/communications') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-envelope text-mariam-primary me-2" aria-hidden="true"></i>Communications</span>
-                                <i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-history text-mariam-primary me-2" aria-hidden="true"></i>Journal &amp; Traçabilité</span>
-                                <i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @endcan
     </div>
 @endsection
 

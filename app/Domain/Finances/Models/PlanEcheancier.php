@@ -2,26 +2,37 @@
 
 namespace App\Domain\Finances\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlanEcheancier extends Model
 {
-    use HasFactory;
-
     protected $table = 'plan_echeanciers';
 
     protected $fillable = ['nom', 'description', 'annee_id', 'etat'];
 
-    protected $casts = ['etat' => 'integer'];
-
-    public function lignes()
+    public function lignes(): HasMany
     {
-        return $this->hasMany(PlanEcheancierLigne::class)->orderBy('ordre');
+        // Une modification du plan remplace ses lignes : les anciennes sont
+        // désactivées, seules les lignes actives font partie du plan.
+        return $this->hasMany(PlanEcheancierLigne::class, 'plan_echeancier_id')
+            ->where('etat', 1)
+            ->orderBy('ordre');
     }
 
-    public function scopeActive($query)
+    public function fraisEcoles(): HasMany
     {
-        return $query->where('etat', 1);
+        return $this->hasMany(FraisEcole::class, 'plan_echeancier_id');
+    }
+
+    /** Somme des pourcentages (doit faire 100) ou des montants. */
+    public function getTotalPourcentageAttribute(): float
+    {
+        return round((float) $this->lignes->sum('pourcentage'), 2);
+    }
+
+    public function getTotalMontantAttribute(): float
+    {
+        return round((float) $this->lignes->sum('montant'), 2);
     }
 }

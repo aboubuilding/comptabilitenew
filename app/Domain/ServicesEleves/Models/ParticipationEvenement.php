@@ -2,46 +2,50 @@
 
 namespace App\Domain\ServicesEleves\Models;
 
+use App\Domain\ServicesEleves\Types\StatutParticipation;
 use App\Domain\Scolarite\Models\Inscription;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ParticipationEvenement extends Model
 {
-    use HasFactory;
-
     protected $table = 'participation_evenements';
 
     protected $fillable = [
-        'evenement_scolaire_id', 'inscripion_id', 'date_inscription',
-        'montant_facture', 'statut', 'etat',
+        'evenement_scolaire_id', 'inscription_id', 'inscripion_id',
+        'date_inscription', 'montant_facture', 'facture_id',
+        'statut', 'utilisateur_id', 'annee_id', 'etat',
     ];
 
     protected $casts = [
-        'date_inscription' => 'date',
-        'montant_facture'  => 'float',
-        'statut'           => 'integer',
-        'etat'             => 'integer',
+        'statut'          => StatutParticipation::class,
+        'date_inscription'=> 'date',
+        'montant_facture' => 'float',
     ];
 
-    public function evenement()
+    public function evenement(): BelongsTo
     {
         return $this->belongsTo(Evenement::class, 'evenement_scolaire_id');
     }
 
-    /**
-     * ATTENTION : la colonne s'appelle bien 'inscripion_id' (faute de
-     * frappe dans la migration d'origine, sans le 't'), pas
-     * 'inscription_id'. Reproduite ici à l'identique pour matcher le
-     * schéma réel plutôt que de la corriger silencieusement.
-     */
-    public function inscription()
+    public function inscription(): BelongsTo
     {
-        return $this->belongsTo(Inscription::class, 'inscripion_id');
+        return $this->belongsTo(Inscription::class, 'inscription_id');
     }
 
-    public function scopeActive($query)
+    public function utilisateur(): BelongsTo
     {
-        return $query->where('etat', 1);
+        return $this->belongsTo(User::class, 'utilisateur_id');
+    }
+
+    public function isConfirme(): bool
+    {
+        return $this->statut === StatutParticipation::CONFIRME;
+    }
+
+    public function isPreInscrit(): bool
+    {
+        return $this->statut === StatutParticipation::PRE_INSCRIT;
     }
 }

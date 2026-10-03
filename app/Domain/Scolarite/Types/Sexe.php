@@ -3,25 +3,38 @@
 namespace App\Domain\Scolarite\Types;
 
 /**
- * HYPOTHÈSE à confirmer : le schéma ('sexe' tinyInteger sur eleves) ne
- * documente pas les valeurs. Alignée sur la convention 1-indexée déjà
- * observée partout ailleurs dans ce schéma (etat, role...).
+ * Sexe de l'élève (tinyInteger en base).
+ * 1 = Masculin, 2 = Féminin
  */
 enum Sexe: int
 {
-    case Masculin = 1;
-    case Feminin  = 2;
+    case MASCULIN = 1;
+    case FEMININ  = 2;
 
-    public function label(): string
+    public function libelle(): string
     {
-        return match ($this) {
-            self::Masculin => 'Masculin',
-            self::Feminin  => 'Féminin',
+        return match($this) {
+            self::MASCULIN => 'Masculin',
+            self::FEMININ  => 'Féminin',
         };
     }
 
+    public function initiale(): string
+    {
+        return match($this) {
+            self::MASCULIN => 'M',
+            self::FEMININ  => 'F',
+        };
+    }
+
+    /**
+     * Retourne les options pour les selects.
+     */
     public static function options(): array
     {
-        return collect(self::cases())->mapWithKeys(fn ($c) => [$c->value => $c->label()])->all();
+        return array_map(
+            fn (self $s) => ['value' => $s->value, 'label' => $s->libelle()],
+            self::cases()
+        );
     }
 }

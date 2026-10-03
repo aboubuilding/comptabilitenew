@@ -12,9 +12,11 @@
 @endsection
 
 @section('page_actions')
+    @can('structure.gerer')
     <button type="button" class="btn btn-nouveau" id="btnNouvelleAnnee" data-bs-toggle="modal" data-bs-target="#anneeModal">
         <i class="fas fa-plus-circle me-1"></i> Nouvelle année scolaire
     </button>
+    @endcan
 @endsection
 
 @section('css')
@@ -125,6 +127,8 @@
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
     .badge-etat-active .badge-dot { background: #1c7a4d; }
     .badge-etat-cloturee .badge-dot { background: var(--school-muted); }
+    .badge-etat-attente { background: #fdf4e0; color: var(--school-gold-dark); }
+    .badge-etat-attente .badge-dot { background: var(--school-gold-dark); }
 
     .badge-non-configure {
         display: inline-block; background: var(--annees-bg-soft); color: var(--school-muted);
@@ -258,8 +262,10 @@
                                     <td>
                                         @if ($annee->isOuverte())
                                             <span class="badge-etat badge-etat-active"><span class="badge-dot"></span>Active</span>
-                                        @else
+                                        @elseif ($annee->isCloturee())
                                             <span class="badge-etat badge-etat-cloturee"><span class="badge-dot"></span>Clôturée</span>
+                                        @else
+                                            <span class="badge-etat badge-etat-attente"><span class="badge-dot"></span>Non ouverte</span>
                                         @endif
                                     </td>
                                     <td class="text-center pe-4">
@@ -268,6 +274,7 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                                @can('structure.gerer')
                                                 <li>
                                                     <button type="button" class="dropdown-item btn-edit-annee"
                                                             data-id="{{ $annee->id }}"
@@ -275,8 +282,25 @@
                                                         <i class="fas fa-pen"></i> Modifier
                                                     </button>
                                                 </li>
+                                                @endcan
+                                                @if ($annee->isNonOuverte())
+                                                    @can('structure.gerer')
+                                                    <li>
+                                                        <form action="{{ route('scolarite.annees.ouvrir', $annee) }}"
+                                                              method="POST" class="form-confirm-delete"
+                                                              data-confirm-title="Ouvrir cette année scolaire ?"
+                                                              data-confirm-text="Elle deviendra disponible comme année de travail.">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-success">
+                                                                <i class="fas fa-lock-open"></i> Ouvrir
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @endcan
+                                                @endif
                                                 @if ($annee->isOuverte())
                                                     <li><hr class="dropdown-divider"></li>
+                                                    @can('structure.gerer')
                                                     <li>
                                                         <form action="{{ route('scolarite.annees.cloturer', $annee) }}"
                                                               method="POST" class="form-confirm-delete"
@@ -288,6 +312,7 @@
                                                             </button>
                                                         </form>
                                                     </li>
+                                                    @endcan
                                                 @endif
                                             </ul>
                                         </div>
@@ -314,6 +339,7 @@
         </div>
 
         {{-- Modale d'ajout/édition --}}
+        @can('structure.gerer')
         <div class="modal fade" id="anneeModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content modal-annees">
@@ -373,12 +399,15 @@
                 </div>
             </div>
         </div>
+        @endcan
     </div>
 @endsection
 
 @push('js')
 <script>
 $(function () {
+    // La fenêtre de saisie n'est rendue que pour qui peut gérer.
+    if (!document.getElementById('anneeModal')) return;
     const modalEl  = document.getElementById('anneeModal');
     const modal    = new bootstrap.Modal(modalEl);
     const $form    = $('#annee-form');

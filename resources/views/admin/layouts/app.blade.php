@@ -117,6 +117,19 @@
             color: var(--school-paper-line);
             margin-right: 6px;
         }
+        /* Le bootstrap du thème porte un séparateur de fil d'Ariane corrompu
+           (une URL à la place de « / ») : on le rétablit, et on neutralise
+           la règle .breadcrumb-item + .breadcrumb-item de Bootstrap, plus
+           spécifique que la nôtre, pour les vues qui utilisent cette classe. */
+        :root { --bs-breadcrumb-divider: '/'; }
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item { padding-left: 0; }
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+            content: '/';
+            float: none;
+            padding-right: 0;
+            color: var(--school-paper-line);
+            margin-right: 6px;
+        }
         .breadcrumb-custom a { color: var(--school-muted); text-decoration: none; }
         .breadcrumb-custom a:hover { color: var(--school-red); }
         .breadcrumb-custom li:last-child { color: var(--school-ink); font-weight: 600; }
@@ -172,6 +185,81 @@
             .toast-item { animation: none; }
         }
 
+        /* ===== Socle des composants partagés =====
+           Boutons, cartes, filtres et badges utilisés par tous les modules.
+           Une vue peut les ajuster dans sa section css (chargée après), mais
+           n'a plus à les redéclarer : sans ce socle, les écrans qui ne le
+           faisaient pas affichaient des boutons bruts du navigateur. */
+        .btn-nouveau, .btn-filtrer, .btn-annuler, .btn-enregistrer, .btn-outline-scolarite {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            font-family: var(--school-ff);
+            font-size: .88rem;
+            line-height: 1.4;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+        .btn-nouveau {
+            background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
+            color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
+            box-shadow: 0 4px 14px rgba(200,30,58,.25);
+        }
+        .btn-nouveau:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); color: #fff; }
+        .btn-nouveau.btn-sm { padding: .4rem .85rem; font-size: .8rem; }
+        .btn-filtrer {
+            background: var(--school-red); color: #fff; border: none; border-radius: 10px;
+            padding: .55rem 1rem; font-weight: 600;
+        }
+        .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; }
+        .btn-annuler {
+            background: #fff; border: 1px solid var(--school-paper-line); color: #5b6b7a;
+            border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem;
+        }
+        .btn-annuler:hover { background: var(--school-paper); color: var(--school-ink); }
+        .btn-enregistrer {
+            background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff;
+            border: none; border-radius: 8px; font-weight: 600; padding: .5rem 1.3rem;
+        }
+        .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
+        .btn-enregistrer:disabled, .btn-nouveau:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-outline-scolarite {
+            background: #fff; border: 1px solid var(--school-paper-line); color: var(--school-ink);
+            border-radius: 10px; font-weight: 600; padding: .55rem 1rem;
+        }
+        .btn-outline-scolarite:hover { background: var(--school-paper); border-color: var(--school-red); color: var(--school-red); }
+
+        .main-card {
+            border: none; border-radius: 16px; background: #fff;
+            box-shadow: 0 10px 30px rgba(122,15,28,.06);
+        }
+        .filtre-input { border-radius: 10px; border: 1px solid var(--school-paper-line); padding: .55rem .9rem; }
+        .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
+        .badge-statut {
+            display: inline-flex; align-items: center; gap: 6px; padding: .35em .85em;
+            border-radius: 999px; font-size: .72rem; font-weight: 600;
+        }
+        .badge-statut[class*="bg-"]:not(.text-dark) { color: #fff; }
+        .empty-state { padding: 3rem 1rem; text-align: center; color: #9aa7b2; }
+        .empty-state i { font-size: 2.2rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
+
+        /* ===== En-têtes de modale colorés =====
+           Titre lisible et croix de fermeture visible sur fond rouge. */
+        .modal-header[class*="modal-header-"] .modal-title { color: #fff; }
+        .modal-header .btn-close.btn-close-white {
+            filter: none;
+            opacity: .9;
+            background-color: rgba(255, 255, 255, .18);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+            background-size: 11px;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 50%;
+        }
+        .modal-header .btn-close.btn-close-white:hover { opacity: 1; background-color: rgba(255, 255, 255, .3); }
+
         /* ===== Dropdown d'actions (menu "..." sur les lignes de tableau) =====
            Partagé par tous les modules avec une liste d'actions par ligne
            (Modifier/Désactiver/etc.) — ne pas redéclarer localement dans
@@ -191,6 +279,8 @@
             color: var(--school-red);
         }
         .btn-action.dropdown-toggle::after { display: none; } /* icône "..." seule, pas de caret */
+        /* Aucune action autorisée pour ce profil : pas de bouton ouvrant un menu vide */
+        .dropdown:has(> .dropdown-menu-actions):not(:has(.dropdown-item)) { display: none; }
 
         .dropdown-menu-actions {
             border-radius: 10px;
@@ -302,6 +392,9 @@
     @if (session('error'))
         <div class="toast-item toast-error" role="alert">{{ session('error') }}</div>
     @endif
+    @if (isset($errors) && $errors->any())
+        <div class="toast-item toast-error" role="alert">{{ $errors->first() }}</div>
+    @endif
 </div>
 
 {{-- Modale de recherche --}}
@@ -406,6 +499,56 @@
         sessionStorage.setItem('pendingToast', JSON.stringify({ type, message }));
         window.location.reload();
     };
+
+    /**
+     * Sélecteur d'élèves commun (admin/partials/select-eleve) : recherche
+     * par nom ou matricule. Dans une fenêtre modale, la liste doit être
+     * rattachée à la modale, sinon le champ de recherche ne reçoit pas le focus.
+     */
+    $(function () {
+        $('select.select-eleve').each(function () {
+            const $modale = $(this).closest('.modal');
+            $(this).select2({
+                dropdownParent: $modale.length ? $modale : $(document.body),
+                placeholder: 'Rechercher un élève...',
+                allowClear: !this.required,
+                width: '100%',
+            });
+        });
+    });
+
+    /**
+     * Filet de sécurité des appels AJAX : une erreur ne doit jamais rester
+     * muette. Chaque écran affiche ses erreurs à sa façon (champ en rouge,
+     * message sous le champ, notification) ; si, une fois son propre
+     * traitement passé, rien de visible ne signale l'échec — champ fautif
+     * absent du formulaire, emplacement d'erreur dans un bloc masqué... —
+     * le message du serveur est affiché en notification.
+     */
+    $(document).ajaxError(function (event, xhr, settings) {
+        if (xhr.statusText === 'abort' || (settings.type || 'GET').toUpperCase() === 'GET') return;
+
+        setTimeout(function () {
+            const signale =
+                $('#toast-container .toast-error').length > 0 ||
+                $('.is-invalid:visible').length > 0 ||
+                $('.invalid-feedback:visible, [id$="-error"]:visible').filter(function () {
+                    return $.trim($(this).text()) !== '';
+                }).length > 0;
+
+            if (signale) return;
+
+            const reponse = xhr.responseJSON || {};
+            const erreurs = reponse.errors ? Object.values(reponse.errors) : [];
+            let message = erreurs.length ? erreurs[0][0] : reponse.message;
+
+            if (xhr.status === 403) message = "Vous n'avez pas le droit d'effectuer cette action.";
+            if (xhr.status === 419) message = 'Votre session a expiré. Rechargez la page puis recommencez.';
+            if (!message || xhr.status >= 500) message = "Une erreur est survenue. L'opération n'a pas été enregistrée.";
+
+            window.showToast(message, 'error');
+        }, 0);
+    });
 
     /**
      * Confirmation avant suppression/désactivation, partagée par les 13

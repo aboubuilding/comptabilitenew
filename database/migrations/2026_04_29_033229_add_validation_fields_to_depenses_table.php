@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::table('depenses', function (Blueprint $table) {
             $table->bigInteger('validateur_id')->nullable()->after('utilisateur_id');
-            $table->date('date_validation')->nullable()->after('validateur_id');
+            // date_validation / motif_rejet sont déjà posés par 2026_01_12_000001
+            if (!Schema::hasColumn('depenses', 'date_validation')) {
+                $table->date('date_validation')->nullable()->after('validateur_id');
+            }
             $table->string('justificatif_demande')->nullable()->after('motif_depense');
-            
+
             // ✅ Nouveau champ pour le motif de rejet
-            $table->text('motif_rejet')->nullable()->after('date_validation')->comment('Motif en cas de rejet');
+            if (!Schema::hasColumn('depenses', 'motif_rejet')) {
+                $table->text('motif_rejet')->nullable()->after('date_validation')->comment('Motif en cas de rejet');
+            }
         });
     }
 
@@ -27,7 +32,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('depenses', function (Blueprint $table) {
-            $table->dropColumn(['validateur_id', 'date_validation', 'justificatif_demande', 'motif_rejet']);
+            $table->dropColumn(['validateur_id', 'justificatif_demande']);
         });
     }
 };

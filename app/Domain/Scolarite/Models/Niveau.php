@@ -2,13 +2,11 @@
 
 namespace App\Domain\Scolarite\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Niveau extends Model
 {
-    use HasFactory;
-
     protected $table = 'niveaux';
 
     protected $fillable = ['libelle', 'description', 'numero_ordre', 'cycle_id', 'etat'];
@@ -19,21 +17,13 @@ class Niveau extends Model
         'etat'         => 'integer',
     ];
 
-    public const ETAT_ACTIF   = 1;
-    public const ETAT_INACTIF = 0;
-
-    public function cycle()
+    public function cycle(): BelongsTo
     {
-        return $this->belongsTo(Cycle::class);
+        return $this->belongsTo(Cycle::class, 'cycle_id');
     }
 
-    public function scopeActive($query)
+    public function scopeActif($query)
     {
-        return $query->where('etat', self::ETAT_ACTIF);
-    }
-
-    public function scopeOrdonnes($query)
-    {
-        return $query->orderBy('numero_ordre');
+        return $query->where('etat', 1);
     }
 }

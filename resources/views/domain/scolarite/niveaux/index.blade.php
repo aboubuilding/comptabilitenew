@@ -12,9 +12,11 @@
 @endsection
 
 @section('page_actions')
+    @can('structure.gerer')
     <button type="button" class="btn-nouveau" id="btnNouveauNiveau" data-bs-toggle="modal" data-bs-target="#niveauModal">
         <i class="fas fa-plus-circle"></i> Nouveau niveau
     </button>
+    @endcan
 @endsection
 
 @section('css')
@@ -155,6 +157,7 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                                @can('structure.gerer')
                                                 <li>
                                                     <button type="button" class="dropdown-item btn-edit-niveau"
                                                             data-id="{{ $niveau->id }}"
@@ -162,7 +165,9 @@
                                                         <i class="fas fa-pen"></i> Modifier
                                                     </button>
                                                 </li>
+                                                @endcan
                                                 <li><hr class="dropdown-divider"></li>
+                                                @can('structure.gerer')
                                                 <li>
                                                     <form action="{{ route('scolarite.niveaux.destroy', $niveau) }}"
                                                           method="POST" class="form-confirm-delete"
@@ -175,6 +180,7 @@
                                                         </button>
                                                     </form>
                                                 </li>
+                                                @endcan
                                             </ul>
                                         </div>
                                     </td>
@@ -199,6 +205,7 @@
         </div>
 
         {{-- Modale unique, réutilisée pour l'ajout ET la modification --}}
+        @can('structure.gerer')
         <div class="modal fade" id="niveauModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content modal-niveaux">
@@ -249,12 +256,15 @@
                 </div>
             </div>
         </div>
+        @endcan
     </div>
 @endsection
 
 @push('js')
 <script>
 $(function () {
+    // La fenêtre de saisie n'est rendue que pour qui peut gérer.
+    if (!document.getElementById('niveauModal')) return;
     const modalEl        = document.getElementById('niveauModal');
     const modal          = new bootstrap.Modal(modalEl);
     const $form          = $('#niveau-form');

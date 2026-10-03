@@ -487,13 +487,10 @@
                         <div class="hbtp-udrop-email">{{ $headerUserEmail ?? 'user@ecoleinternationalemariam.net' }}</div>
                         <div class="hbtp-udrop-role">{{ $headerRoleLabel ?? 'Rôle' }}</div>
                     </div>
-                    {{-- url() et non route('profile') : ce module n'existe pas
-                         encore, et route() sur un nom inexistant lève une
-                         exception fatale (contrairement à url()). --}}
-                    <a href="{{ url('/profile') }}" class="hbtp-udrop-item" role="menuitem">
+                    <a href="{{ route('profil.show') }}" class="hbtp-udrop-item" role="menuitem">
                         <i class="fas fa-user-circle"></i> Mon profil
                     </a>
-                    <a href="{{ url('/profile') }}#password" class="hbtp-udrop-item" role="menuitem">
+                    <a href="{{ route('profil.show') }}#password" class="hbtp-udrop-item" role="menuitem">
                         <i class="fas fa-key"></i> Changer mot de passe
                     </a>
                     <div class="hbtp-udrop-div"></div>
@@ -520,146 +517,46 @@
             </div>
 
             {{-- ================================================================
-                 MENU 1 — SCOLARITÉ
-                 (cf. cahier des charges §4, sous-menus 1.1 à 1.4)
+                 MENUS 1 à 6 du cahier des charges (config/menu.php).
+                 Chaque entrée n'apparaît que si le profil de l'utilisateur y a
+                 droit (config/permissions.php) ; un groupe ou un menu sans
+                 entrée visible n'est pas affiché.
                  ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-school"></i> Scolarité <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop" role="menu">
-                    <div class="hnav-drop-title"><i class="fas fa-id-card"></i> Dossiers élèves</div>
-                    <a href="{{ url('/eleves') }}" class="hnav-drop-item"><i class="fas fa-user-graduate"></i> Élèves</a>
-                    <a href="{{ url('/parents') }}" class="hnav-drop-item"><i class="fas fa-user-friends"></i> Parents &amp; Familles</a>
+            @foreach (config('menu', []) as $menu)
+                @php
+                    $groupesVisibles = collect($menu['groupes'])
+                        ->map(fn ($entrees) => array_values(array_filter(
+                            $entrees,
+                            fn ($entree) => auth()->check() && auth()->user()->can($entree[3]) && \Illuminate\Support\Facades\Route::has($entree[2])
+                        )))
+                        ->filter(fn ($entrees) => $entrees !== []);
 
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-file-signature"></i> Inscriptions</div>
-                    <a href="{{ url('/inscriptions') }}" class="hnav-drop-item"><i class="fas fa-file-signature"></i> Inscriptions</a>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-file-alt"></i> Préinscriptions</a>
+                    $menuActif = $groupesVisibles->flatten(1)->contains(
+                        fn ($entree) => request()->routeIs(\Illuminate\Support\Str::beforeLast($entree[2], '.') . '.*')
+                    );
+                @endphp
 
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-layer-group"></i> Structure pédagogique &amp; Années scolaires</div>
-                    <a href="{{ route('scolarite.annees.index') }}" class="hnav-drop-item"><i class="fas fa-calendar-alt"></i> Années scolaires</a>
-                  
-                    <a href="{{ route('scolarite.cycles.index') }}" class="hnav-drop-item"><i class="fas fa-layer-group"></i> Cycles</a>
-                    <a href="{{ route('scolarite.niveaux.index') }}" class="hnav-drop-item"><i class="fas fa-flag"></i> Niveaux</a>
-                    <a href="{{ url('/classes') }}" class="hnav-drop-item"><i class="fas fa-chalkboard"></i> Classes</a>
-                </div>
-            </div>
+                @continue($groupesVisibles->isEmpty())
 
-            {{-- ================================================================
-                 MENU 2 — FINANCES & COMPTABILITÉ
-                 (sous-menus 2.1 à 2.9 — Comptabilité analytique et Recouvrement
-                 sont les deux modules "NOUVEAU" du cahier des charges v2)
-                 ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-wallet"></i> Finances &amp; Comptabilité
-                    <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop" role="menu">
-                    <div class="hnav-drop-title"><i class="fas fa-tags"></i> Frais &amp; Échéanciers</div>
-                    <a href="{{ url('/frais-ecoles') }}" class="hnav-drop-item"><i class="fas fa-tags"></i> Frais scolaires &amp; Échéanciers</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-cash-register"></i> Paiements &amp; Caisses</div>
-                    <a href="{{ url('/finances/paiements') }}" class="hnav-drop-item"><i class="fas fa-receipt"></i> Paiements</a>
-                    <a href="{{ url('/finances/encaissements') }}" class="hnav-drop-item"><i class="fas fa-cash-register"></i> Encaissements</a>
-                    <a href="{{ url('/finances/caisses') }}" class="hnav-drop-item"><i class="fas fa-clipboard-list"></i> Caisses</a>
-                    <a href="{{ url('/finances/banques') }}" class="hnav-drop-item"><i class="fas fa-university"></i> Banques &amp; Chèques</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-chart-line"></i> Pilotage financier</div>
-                    <a href="{{ url('/finances/depenses') }}" class="hnav-drop-item"><i class="fas fa-file-invoice-dollar"></i> Dépenses</a>
-                    <a href="{{ url('/finances/comptabilite-analytique') }}" class="hnav-drop-item">
-                        <i class="fas fa-chart-pie"></i> Comptabilité analytique
-                        <span class="hnav-new-tag">Nouveau</span>
+                <div class="hnav-item {{ $menuActif ? 'active' : '' }}">
+                    <a href="#" class="hnav-trigger" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas {{ $menu['icone'] }}"></i> {{ $menu['libelle'] }} <i class="fas fa-chevron-down caret"></i>
                     </a>
-                    <a href="{{ url('/finances/recouvrement') }}" class="hnav-drop-item urgent-item">
-                        <i class="fas fa-hand-holding-usd"></i> Recouvrement
-                        <span class="hnav-new-tag">Nouveau</span>
-                    </a>
-                    <a href="{{ url('/finances/previsions') }}" class="hnav-drop-item"><i class="fas fa-chart-line"></i> Prévisions budgétaires</a>
+                    <div class="hnav-drop" role="menu">
+                        @foreach ($groupesVisibles as $titre => $entrees)
+                            @if (! $loop->first)
+                                <div class="hnav-drop-div"></div>
+                            @endif
+                            <div class="hnav-drop-title">{{ $titre }}</div>
+                            @foreach ($entrees as [$libelle, $icone, $route])
+                                <a href="{{ route($route) }}" class="hnav-drop-item">
+                                    <i class="fas {{ $icone }}"></i> {{ $libelle }}
+                                </a>
+                            @endforeach
+                        @endforeach
+                    </div>
                 </div>
-            </div>
-
-            {{-- ================================================================
-                 MENU 3 — LOGISTIQUE & ACHATS
-                 (sous-menus 3.1 à 3.4)
-                 ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-boxes"></i> Logistique &amp; Achats <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-truck"></i> Approvisionnement</div>
-                    <a href="{{ url('/fournisseurs') }}" class="hnav-drop-item"><i class="fas fa-truck"></i> Fournisseurs</a>
-                    <a href="{{ url('/achats') }}" class="hnav-drop-item"><i class="fas fa-shopping-cart"></i> Achats</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-boxes"></i> Stock &amp; Vente</div>
-                    <a href="{{ url('/stock') }}" class="hnav-drop-item"><i class="fas fa-boxes"></i> Produits &amp; Stock</a>
-                    <a href="{{ url('/boutique') }}" class="hnav-drop-item"><i class="fas fa-store"></i> Boutique / Point de vente</a>
-                </div>
-            </div>
-
-            {{-- ================================================================
-                 MENU 4 — SERVICES AUX ÉLÈVES
-                 (sous-menus 4.1 à 4.4)
-                 ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-concierge-bell"></i> Services aux Élèves <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <div class="hnav-drop-title"><i class="fas fa-bus-alt"></i> Transport &amp; Restauration</div>
-                    <a href="{{ url('/transport') }}" class="hnav-drop-item"><i class="fas fa-bus-alt"></i> Transport scolaire</a>
-                    <a href="{{ url('/cantine') }}" class="hnav-drop-item"><i class="fas fa-utensils"></i> Cantine scolaire</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <div class="hnav-drop-title"><i class="fas fa-star"></i> Vie scolaire</div>
-                    <a href="{{ url('/bibliotheque') }}" class="hnav-drop-item"><i class="fas fa-book-open"></i> Bibliothèque</a>
-                    <a href="{{ url('/activites-evenements') }}" class="hnav-drop-item"><i class="fas fa-calendar-check"></i> Activités &amp; Événements</a>
-                </div>
-            </div>
-
-            {{-- ================================================================
-                 MENU 5 — RESSOURCES HUMAINES
-                 (sous-menus 5.1 à 5.3)
-                 ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-users"></i> Ressources Humaines <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <a href="{{ url('/employes') }}" class="hnav-drop-item"><i class="fas fa-id-badge"></i> Employés</a>
-                    <a href="{{ url('/paie') }}" class="hnav-drop-item"><i class="fas fa-money-check-alt"></i> Paie &amp; Rémunérations</a>
-                    <a href="{{ url('/assurances-personnel') }}" class="hnav-drop-item"><i class="fas fa-shield-alt"></i> Assurances du personnel</a>
-                </div>
-            </div>
-
-            {{-- ================================================================
-                 MENU 6 — ADMINISTRATION & COMMUNICATIONS
-                 (sous-menus 6.1 à 6.4 — Communications est le 3ᵉ module "NOUVEAU")
-                 ================================================================ --}}
-            <div class="hnav-item">
-                <a href="#" class="hnav-trigger">
-                    <i class="fas fa-cog"></i> Administration <i class="fas fa-chevron-down caret"></i>
-                </a>
-                <div class="hnav-drop">
-                    <a href="{{ url('/users') }}" class="hnav-drop-item"><i class="fas fa-users-cog"></i> Utilisateurs &amp; Profils</a>
-                    <a href="{{ url('/referentiels') }}" class="hnav-drop-item"><i class="fas fa-sliders-h"></i> Référentiels &amp; Paramètres généraux</a>
-
-                    <div class="hnav-drop-div"></div>
-                    <a href="{{ url('/communications') }}" class="hnav-drop-item">
-                        <i class="fas fa-envelope"></i> Communications
-                        <span class="hnav-new-tag">Nouveau</span>
-                    </a>
-
-                    <div class="hnav-drop-div"></div>
-                    <a href="#" class="hnav-drop-item"><i class="fas fa-history"></i> Journal &amp; Traçabilité</a>
-                </div>
-            </div>
+            @endforeach
 
         </div>
     </nav>
@@ -818,16 +715,25 @@
         var aWrap = document.getElementById('hbtp-avatar-wrap');
         var aBtn  = document.getElementById('hbtp-avatar-btn');
         if (aWrap && aBtn) {
+            // Le survol ouvre déjà le menu : un clic qui suit ce survol ne doit
+            // pas le refermer (sinon « survoler puis cliquer » le fait disparaître).
+            var ouvertParSurvol = false;
             aWrap.addEventListener('mouseenter', function () {
+                ouvertParSurvol = !aWrap.classList.contains('open');
                 aWrap.classList.add('open');
                 aBtn.setAttribute('aria-expanded', 'true');
             });
             aWrap.addEventListener('mouseleave', function () {
+                ouvertParSurvol = false;
                 aWrap.classList.remove('open');
                 aBtn.setAttribute('aria-expanded', 'false');
             });
             aBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
+                if (ouvertParSurvol) {
+                    ouvertParSurvol = false;
+                    return;
+                }
                 var o = aWrap.classList.toggle('open');
                 aBtn.setAttribute('aria-expanded', String(o));
             });

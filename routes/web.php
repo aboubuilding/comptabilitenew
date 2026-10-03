@@ -32,14 +32,21 @@ Route::middleware(['auth', ResolveAnneeScolaire::class])->group(function () {
     // Référencé partout (header, footer, redirection post-login) mais
     // jamais encore défini — stub minimal, à remplacer par un vrai
     // DashboardController le moment venu.
-   Route::get('/tableau', [\App\Http\Controllers\Admin\TableauController::class, 'tableau'])
+   Route::get('/tableau', [\App\Http\Controllers\Domain\TableauController::class, 'tableau'])
         ->name('tableau');
+
+    // Recherche globale (fenêtre Ctrl+K de l'en-tête)
+    Route::get('/recherche', \App\Http\Controllers\Domain\RechercheController::class)->name('recherche');
+
+    // Mon profil : chaque utilisateur consulte son compte et change son mot de passe
+    Route::get('/profil', [\App\Http\Controllers\Domain\Administration\ProfilController::class, 'show'])->name('profil.show');
+    Route::post('/profil/mot-de-passe', [\App\Http\Controllers\Domain\Administration\ProfilController::class, 'changerMotDePasse'])->name('profil.mot-de-passe');
 
     require __DIR__.'/domain/scolarite.php';
     require __DIR__.'/domain/finances.php';
-    // require __DIR__.'/admin/logistique.php';
-    // require __DIR__.'/admin/services-eleves.php';
-    // require __DIR__.'/admin/rh.php';
-    // require __DIR__.'/admin/administration.php';
+    require __DIR__.'/domain/logistique.php';
+    require __DIR__.'/domain/services-eleves.php';
+     require __DIR__.'/domain/rh.php';
+   require __DIR__.'/domain/administration.php';
     // -> à décommenter au fur et à mesure que ces fichiers de routes existent
 });

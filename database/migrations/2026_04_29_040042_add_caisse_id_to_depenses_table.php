@@ -10,7 +10,10 @@ return new class extends Migration
     {
         Schema::table('depenses', function (Blueprint $table) {
             // Clé étrangère nullable (une dépense peut être créée sans caisse si besoin futur)
-            $table->foreignId('caisse_id')->nullable()->constrained('caisses')->nullOnDelete();
+            // La colonne est déjà posée par 2026_01_12_000001 : on n'ajoute alors que l'index
+            if (!Schema::hasColumn('depenses', 'caisse_id')) {
+                $table->bigInteger('caisse_id')->nullable();
+            }
             $table->index('caisse_id'); // Performance pour les jointures/filtres
         });
     }
@@ -18,9 +21,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('depenses', function (Blueprint $table) {
-            $table->dropForeign(['caisse_id']);
             $table->dropIndex(['caisse_id']);
-            $table->dropColumn('caisse_id');
         });
     }
 };

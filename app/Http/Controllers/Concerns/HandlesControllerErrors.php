@@ -2,106 +2,165 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use Illuminate\Database\QueryException;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Centralise la gestion d'erreurs des actions d'écriture (create/update/
- * delete) pour éviter de dupliquer le même try/catch dans chacun des 13
- * modules. Deux variantes :
- * - runAjax()  : pour les Controllers qui répondent en JSON (ex. la
- *                modale de Cycle)
- * - runWeb()   : pour les Controllers en pages séparées + redirection
- *                classique (ex. Niveau)
+ * Trait de gestion d'erreurs pour les contrôleurs.
  *
- * Ce que Laravel gère déjà tout seul et qu'on ne duplique PAS ici :
- * modèle introuvable (ModelNotFoundException), validation échouée
- * (ValidationException), non authentifié/non autorisé — le handler
- * d'exceptions par défaut les convertit déjà proprement en JSON dès que
- * la requête attend du JSON (Accept: application/json, envoyé par défaut
- * par $.ajax/$.getJSON).
+ * runAjax() et runWeb() acceptent désormais :
+ *  - un message statique (string)            → « Opération réussie. »
+ *  - un message dynamique (Closure)          → fn ($resultat) => "…"
  *
- * Ce qui reste à la charge du Controller : les erreurs SQL (contrainte
- * de clé étrangère, doublon en cas de double-soumission malgré la
- * validation) et tout imprévu — sans jamais exposer le message SQL brut
- * à l'utilisateur.
+ * La Closure reçoit en paramètre la valeur retournée par l'action.
+ * Elle peut donc produire un message contextuel (ex. nb d'éléments affectés).
  */
 trait HandlesControllerErrors
 {
     /**
-     * @param  \Closure $action  Doit retourner void, ou un tableau à
-     *                           fusionner dans la réponse JSON de succès
-     *                           (ex. ['cycle' => $cycle]).
+     * Exécute une action et renvoie une réponse JSON (AJAX).
+     *
+     * @param  Closure              $action   Logique métier (peut retourner une valeur).
+     * @param  string|Closure       $message  Message statique OU Closure recevant le résultat.
+     * @param  int                  $status   Code HTTP en cas de succès (défaut 200).
      */
-    protected function runAjax(\Closure $action, string $successMessage): JsonResponse
+    protected function runAjax(Closure $action, string|Closure $message, int $status = 200): JsonResponse
     {
         try {
-            $result = $action();
+            $resultat = $action();
 
-            return response()->json(array_merge(
-                ['success' => true, 'message' => $successMessage],
-                is_array($result) ? $result : []
-            ));
-        } catch (QueryException $e) {
+            $texte = $message instanceof Closure
+                ? $message($resultat)
+                : $message;
+
             return response()->json([
-                'success' => false,
-                'message' => $this->logAndDescribeQueryException($e),
-            ], 500);
+                'success' => true,
+                'message' => $texte,
+                'data'    => $resultat,
+            ], $status);
+
         } catch (Throwable $e) {
+            $this->journaliserEchec('AJAX', $e);
+
             return response()->json([
                 'success' => false,
-                'message' => $this->logAndDescribeUnexpectedException($e),
-            ], 500);
+                'message' => $this->messageErreur($e),
+                'errors'  => $this->erreursValidation($e),
+            ], $this->codeErreur($e));
         }
     }
 
+    /**
+     * Exécute une action et renvoie une redirection (web classique).
+     *
+     * @param  Closure              $action
+     * @param  string               $route    Nom de route cible.
+     * @param  string|Closure       $message  Message statique OU Closure recevant le résultat.
+     * @param  array|Closure        $params   Paramètres de route (array ou Closure).
+     */
     protected function runWeb(
-    \Closure $action,
-    string $redirectRoute,
-    string $successMessage,
-    array|\Closure $routeParams = [],
-): RedirectResponse {
-    try {
-        $action();
-        $params = $routeParams instanceof \Closure ? $routeParams() : $routeParams;
+        Closure $action,
+        string $route,
+        string|Closure $message,
+        array|Closure $params = []
+    ): RedirectResponse {
+        try {
+            $resultat = $action();
 
-        return redirect()->route($redirectRoute, $params)->with('success', $successMessage);
-    } catch (QueryException $e) {
-        return back()->withInput()->with('error', $this->logAndDescribeQueryException($e));
-    } catch (Throwable $e) {
-        return back()->withInput()->with('error', $this->logAndDescribeUnexpectedException($e));
+            $texte  = $message instanceof Closure ? $message($resultat) : $message;
+            $params = $params instanceof Closure ? $params($resultat) : $params;
+
+            return redirect()
+                ->route($route, $params)
+                ->with('success', $texte);
+
+        } catch (Throwable $e) {
+            $this->journaliserEchec('WEB', $e);
+
+            return back()
+                ->withInput()
+                ->with('error', $this->messageErreur($e));
+        }
     }
-}
 
-    private function logAndDescribeQueryException(QueryException $e): string
+    /**
+     * Une règle de gestion refusée (ou une saisie invalide) est un événement
+     * normal : simple avertissement. Seules les pannes sont des erreurs,
+     * journalisées avec leur trace.
+     */
+    protected function journaliserEchec(string $mode, Throwable $e): void
     {
-        Log::error('Erreur base de données', [
-            'controller' => static::class,
-            'exception'  => $e->getMessage(),
-            'sql'        => $e->getSql(),
-        ]);
+        $contexte = [
+            'route'   => request()->route()?->getName(),
+            'user_id' => auth()->id(),
+        ];
 
-        // Heuristique simple : distingue une contrainte de clé étrangère
-        // (élément encore référencé ailleurs) d'un doublon ou d'une autre
-        // erreur SQL, sans jamais renvoyer le message brut au client.
-        if (str_contains(strtolower($e->getMessage()), 'foreign key')) {
-            return 'Impossible : cet élément est encore utilisé ailleurs dans l\'application.';
+        if ($this->estErreurMetier($e) || $e instanceof \Illuminate\Validation\ValidationException) {
+            Log::warning("Action refusée ({$mode}) : " . $e->getMessage(), $contexte);
+
+            return;
         }
 
-        return "Une erreur est survenue lors de l'enregistrement. Vérifiez les données saisies.";
+        Log::error("Erreur contrôleur ({$mode}) : " . $e->getMessage(), $contexte + ['exception' => $e]);
     }
 
-    private function logAndDescribeUnexpectedException(Throwable $e): string
+    /**
+     * Message d'erreur lisible.
+     */
+    protected function messageErreur(Throwable $e): string
     {
-        Log::error('Erreur inattendue', [
-            'controller' => static::class,
-            'exception'  => $e->getMessage(),
-            'trace'      => $e->getTraceAsString(),
-        ]);
+        // En production, on masque les détails techniques, pas les règles de gestion
+        if (app()->environment('production') && ! $this->estErreurMetier($e)) {
+            return "Une erreur est survenue. Merci de réessayer ou de contacter l'administrateur.";
+        }
 
-        return 'Une erreur technique est survenue. Veuillez réessayer ou contacter le support.';
+        return $e->getMessage();
+    }
+
+    /**
+     * Code HTTP adapté au type d'exception.
+     */
+    protected function codeErreur(Throwable $e): int
+    {
+        if ($e instanceof \Illuminate\Validation\ValidationException) {
+            return 422;
+        }
+        if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+            return 403;
+        }
+        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return 404;
+        }
+        if ($this->estErreurMetier($e)) {
+            return 422;
+        }
+
+        return 500;
+    }
+
+    /**
+     * Règle de gestion refusée par un service (« Stock insuffisant », « Caisse
+     * déjà clôturée »...), par opposition à une panne technique.
+     */
+    protected function estErreurMetier(Throwable $e): bool
+    {
+        return ($e instanceof \RuntimeException || $e instanceof \DomainException || $e instanceof \InvalidArgumentException)
+            && ! $e instanceof \PDOException
+            && ! $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+            && ! $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException;
+    }
+
+    /**
+     * Erreurs de validation structurées (pour le front).
+     */
+    protected function erreursValidation(Throwable $e): ?array
+    {
+        if ($e instanceof \Illuminate\Validation\ValidationException) {
+            return $e->errors();
+        }
+        return null;
     }
 }

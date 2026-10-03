@@ -3,7 +3,7 @@
 namespace App\Policies\Domain\Finances;
 
 use App\Domain\Finances\Models\Banque;
-use App\Models\User;
+use App\Domain\Administration\Models\User;
 
 class BanquePolicy
 {

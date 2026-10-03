@@ -12,9 +12,11 @@
 @endsection
 
 @section('page_actions')
+    @can('structure.gerer')
     <button type="button" class="btn-nouveau" id="btnNouveau" data-bs-toggle="modal" data-bs-target="#cycleModal">
         <i class="fas fa-plus-circle"></i> Nouveau cycle
     </button>
+    @endcan
 @endsection
 
 @section('css')
@@ -145,6 +147,7 @@
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                                        @can('structure.gerer')
                                                         <li>
                                                             <button type="button" class="dropdown-item btn-edit-cycle"
                                                                     data-id="{{ $cycle->id }}"
@@ -152,7 +155,9 @@
                                                                 <i class="fas fa-pen"></i> Modifier
                                                             </button>
                                                         </li>
+                                                        @endcan
                                                         <li><hr class="dropdown-divider"></li>
+                                                        @can('structure.gerer')
                                                         <li>
                                                             <form action="{{ route('scolarite.cycles.destroy', $cycle) }}"
                                                                   method="POST" class="form-confirm-delete"
@@ -165,6 +170,7 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcan
                                                     </ul>
                                                 </div>
                                             </td>
@@ -192,6 +198,7 @@
 
         {{-- Modale unique, réutilisée pour l'ajout ET la modification —
              plus de champ etat, on crée/modifie toujours un cycle actif. --}}
+        @can('structure.gerer')
         <div class="modal fade" id="cycleModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content modal-cycles">
@@ -220,12 +227,15 @@
                 </div>
             </div>
         </div>
+        @endcan
     </div>
 @endsection
 
 @push('js')
 <script>
 $(function () {
+    // La fenêtre de saisie n'est rendue que pour qui peut gérer.
+    if (!document.getElementById('cycleModal')) return;
     const modalEl      = document.getElementById('cycleModal');
     const modal        = new bootstrap.Modal(modalEl);
     const $form        = $('#cycle-form');

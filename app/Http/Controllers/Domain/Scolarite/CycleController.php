@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Scolarite;
+namespace App\Http\Controllers\Domain\Scolarite;
 
 use App\Domain\Scolarite\Models\Cycle;
 use App\Domain\Scolarite\Repositories\CycleRepository;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Scolarite\CycleRequest;
+use App\Http\Requests\Domain\Scolarite\CycleRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,13 +21,14 @@ class CycleController extends Controller
 {
     use HandlesControllerErrors;
 
-    public function __construct(private CycleRepository $cycles)
-    {
+    public function __construct(private CycleRepository $cycles) {
+        $this->middleware('permission:structure.voir')->only(['index', 'edit']);
+        $this->middleware('permission:structure.gerer')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request): View
     {
-        return view('admin.scolarite.cycles.index', [
+        return view('domain.scolarite.cycles.index', [
             'cycles' => $this->cycles->paginateWithFilters($request->only(['search', 'etat'])),
         ]);
     }

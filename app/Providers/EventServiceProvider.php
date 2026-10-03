@@ -18,7 +18,20 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+
+         \Illuminate\Auth\Events\Login::class  => [
+        \App\Listeners\LogAuthenticationActivity::class . '@handleLogin',
+    ],
+    \Illuminate\Auth\Events\Logout::class => [
+        \App\Listeners\LogAuthenticationActivity::class . '@handleLogout',
+    ],
+
     ];
+
+    protected $observers = [
+    \App\Domain\Finances\Models\Depense::class => \App\Domain\Finances\Observers\MouvementObserver::class,
+    \App\Domain\Finances\Models\Detail::class  => \App\Domain\Finances\Observers\DetailEvenementObserver::class,
+];
 
     /**
      * Register any events for your application.

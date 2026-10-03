@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Scolarite;
+namespace App\Http\Controllers\Domain\Scolarite;
 
 use App\Domain\Scolarite\Models\Niveau;
 use App\Domain\Scolarite\Repositories\CycleRepository;
 use App\Domain\Scolarite\Repositories\NiveauRepository;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Scolarite\NiveauRequest;
+use App\Http\Requests\Domain\Scolarite\NiveauRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,11 +27,13 @@ class NiveauController extends Controller
         private NiveauRepository $niveaux,
         private CycleRepository $cycles,
     ) {
+        $this->middleware('permission:structure.voir')->only(['index', 'edit']);
+        $this->middleware('permission:structure.gerer')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request): View
     {
-        return view('admin.scolarite.niveaux.index', [
+        return view('domain.scolarite.niveaux.index', [
             'niveaux'       => $this->niveaux->paginateWithFilters($request->only(['cycle_id', 'search'])),
             'cyclesOptions' => $this->cycles->all(),
         ]);
@@ -64,7 +66,7 @@ class NiveauController extends Controller
     public function destroy(Niveau $niveau): RedirectResponse
     {
         if (! $this->niveaux->canDelete($niveau->id)) {
-            return back()->with('error', 'Impossible de supprimer ce niveau.');
+            return back()->with('error', 'Impossible de supprimer un niveau qui a des classes actives.');
         }
 
         return $this->runWeb(function () use ($niveau) {

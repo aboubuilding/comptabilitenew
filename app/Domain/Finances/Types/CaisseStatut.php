@@ -8,8 +8,9 @@ namespace App\Domain\Finances\Types;
  */
 enum CaisseStatut: int
 {
+    // Codes de l'ancienne classe App\Types\StatutCaisse
     case OUVERTE  = 1;
-    case CLOTUREE = 0;
+    case CLOTUREE = 2;
 
     public function label(): string
     {

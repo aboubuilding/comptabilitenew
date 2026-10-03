@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up()
     {
+        // La table est désormais créée (version analytique) par 2026_01_15_000010
+        if (Schema::hasTable('previsions')) {
+            return;
+        }
+
         Schema::create('previsions', function (Blueprint $table) {
             $table->id();
             $table->string('libelle');
@@ -29,6 +34,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('previsions');
+        // Rien à faire : la table appartient à 2026_01_15_000010
     }
 };

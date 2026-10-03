@@ -25,7 +25,7 @@ abstract class BaseRepository
      * états génériques").
      */
     public const ACTIF = 1;
-    public const INACTIF = 0;
+    public const INACTIF = 2;
 
     /**
      * Injecte automatiquement annee_id à la création si la colonne existe
@@ -118,9 +118,14 @@ abstract class BaseRepository
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data): bool
+    /**
+     * $id accepte l'identifiant ou le modèle lui-même : les Services et
+     * Controllers qui reçoivent déjà le modèle (route model binding) le
+     * passent tel quel.
+     */
+    public function update(int|Model $id, array $data): bool
     {
-        return $this->findOrFail($id)->update($data);
+        return $this->findOrFail($this->cle($id))->update($data);
     }
 
     /**
@@ -128,16 +133,21 @@ abstract class BaseRepository
      * physique ici — voir forceDelete() ci-dessous, volontairement séparée
      * et explicite pour ne jamais être appelée par erreur.
      */
-    public function delete(int $id): bool
+    public function delete(int|Model $id): bool
     {
-        return $this->findOrFail($id)->update(['etat' => self::INACTIF]);
+        return $this->findOrFail($this->cle($id))->update(['etat' => self::INACTIF]);
     }
 
-    public function restore(int $id): bool
+    public function restore(int|Model $id): bool
     {
-        $model = $this->query()->where('etat', self::INACTIF)->findOrFail($id);
+        $model = $this->query()->where('etat', self::INACTIF)->findOrFail($this->cle($id));
 
         return $model->update(['etat' => self::ACTIF]);
+    }
+
+    private function cle(int|Model $cible): int
+    {
+        return $cible instanceof Model ? (int) $cible->getKey() : $cible;
     }
 
     /**

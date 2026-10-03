@@ -13,9 +13,13 @@
 
 @section('page_actions')
     @can('caisses.ouvrir')
+        @if ($anneeCloturee)
+            <span class="text-muted small" id="annee-cloturee"><i class="fas fa-lock me-1"></i>Année {{ $annee?->libelle }} clôturée : ouverture de caisse impossible</span>
+        @else
         <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#caisseModal">
             <i class="fas fa-plus-circle me-1"></i> Ouvrir une caisse
         </button>
+        @endif
     @endcan
 @endsection
 
@@ -175,29 +179,40 @@
 @section('contenu')
 <div class="caisses-page">
 
-    {{-- ===== Cartes statistiques ===== --}}
+    {{-- ===== Compteurs de l'année choisie (Administrateur) ===== --}}
     <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $totalCaisses }}</div>
-                    <div class="stat-label">Sessions enregistrées</div>
+        @if ($compteurs)
+            <div class="col-sm-4 col-lg-3">
+                <div class="stat-card" id="compteur-caisses">
+                    <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ $compteurs['total'] }}</div>
+                        <div class="stat-label">Caisses créées — {{ $annee?->libelle }}</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-lock-open"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $caissesOuvertes }}</div>
-                    <div class="stat-label">Caisses ouvertes</div>
+            <div class="col-sm-4 col-lg-3">
+                <div class="stat-card" id="compteur-ouvertes">
+                    <div class="stat-icon green"><i class="fas fa-lock-open"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ $compteurs['ouvertes'] }}</div>
+                        <div class="stat-label">Caisses ouvertes</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-sm-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
-            <a href="{{ route('finances.caisses.export', 0) }}"
-               class="btn btn-outline-scolarite btn-sm rounded-pill px-3 d-none"
+            <div class="col-sm-4 col-lg-3">
+                <div class="stat-card" id="compteur-fermees">
+                    <div class="stat-icon"><i class="fas fa-lock"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ $compteurs['fermees'] }}</div>
+                        <div class="stat-label">Caisses fermées</div>
+                    </div>
+                </div>
+            </div>
+        @endif
+        <div class="col d-flex align-items-center justify-content-end gap-2">
+            <a href="{{ route('finances.caisses.exportListe', request()->query()) }}"
+               class="btn btn-outline-scolarite btn-sm rounded-pill px-3"
                id="btnExportGlobal">
                 <i class="fas fa-file-excel me-1"></i> Exporter
             </a>
@@ -235,15 +250,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select name="annee_id" class="form-select filtre-input">
-                        <option value="">— Année —</option>
-                        @foreach ($annees as $a)
-                            <option value="{{ $a->id }}" @selected(($filters['annee_id'] ?? '') == $a->id)>
-                                {{ $a->libelle }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="col-md-2 text-muted small">
+                    <i class="fas fa-calendar-alt me-1"></i>Année {{ $annee?->libelle ?? '—' }}
                 </div>
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-filtrer flex-fill">
@@ -262,65 +270,66 @@
                     <thead>
                         <tr>
                             <th class="ps-4"><i class="fas fa-tag me-2"></i>Caisse</th>
-                            <th><i class="fas fa-user me-2"></i>Caissier</th>
-                            <th><i class="fas fa-toggle-on me-2"></i>Statut</th>
-                            <th class="text-end"><i class="fas fa-coins me-2"></i>Solde initial</th>
-                            <th class="text-end"><i class="fas fa-calculator me-2"></i>Solde théorique</th>
-                            <th class="text-end"><i class="fas fa-balance-scale me-2"></i>Écart</th>
-                            <th><i class="fas fa-clock me-2"></i>Ouverture</th>
-                            <th><i class="fas fa-lock me-2"></i>Clôture</th>
+                            <th><i class="fas fa-user me-2"></i>Caissier / période</th>
+                            <th class="text-end"><i class="fas fa-coins me-2"></i>Soldes</th>
+                            <th class="text-end"><i class="fas fa-balance-scale me-2"></i>Clôture</th>
                             <th class="text-center pe-4" style="width:80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                     @forelse ($caisses as $caisse)
                         <tr>
+                            {{-- 1. Caisse et statut --}}
                             <td class="ps-4">
                                 <span class="caisse-libelle">{{ $caisse->libelle }}</span>
                                 <span class="caisse-id">#{{ $caisse->id }}</span>
+                                <div class="mt-1">
+                                    @if ($caisse->isOuverte())
+                                        <span class="badge-etat badge-etat-ouverte"><span class="badge-dot"></span>Ouverte</span>
+                                    @else
+                                        <span class="badge-etat badge-etat-cloturee"><span class="badge-dot"></span>Clôturée</span>
+                                    @endif
+                                </div>
                             </td>
+
+                            {{-- 2. Caissier, ouverture et clôture --}}
                             <td>
                                 <div class="caissier-chip">
                                     <div class="caissier-avatar">
                                         {{ strtoupper(substr($caisse->caissier?->nom ?? '??', 0, 2)) }}
                                     </div>
-                                    <span class="text-sm">
+                                    <span class="text-sm fw-semibold">
                                         {{ $caisse->caissier?->nom }} {{ $caisse->caissier?->prenom }}
                                     </span>
                                 </div>
+                                <div class="text-xs text-muted mt-1">
+                                    <i class="fas fa-lock-open me-1"></i>{{ optional($caisse->date_ouverture)->format('d/m/Y H:i') ?? '—' }}
+                                    @if ($caisse->date_cloture)
+                                        <span class="ms-2"><i class="fas fa-lock me-1"></i>{{ $caisse->date_cloture->format('d/m/Y H:i') }}</span>
+                                    @endif
+                                </div>
                             </td>
-                            <td>
-                                @if ($caisse->isOuverte())
-                                    <span class="badge-etat badge-etat-ouverte"><span class="badge-dot"></span>Ouverte</span>
-                                @else
-                                    <span class="badge-etat badge-etat-cloturee"><span class="badge-dot"></span>Clôturée</span>
-                                @endif
-                            </td>
-                            <td class="text-end solde">
-                                {{ number_format($caisse->solde_initial, 2, ',', ' ') }}
-                            </td>
-                            <td class="text-end solde">
-                                {{ number_format($caisse->solde_theorique, 2, ',', ' ') }}
-                            </td>
+
+                            {{-- 3. Soldes --}}
                             <td class="text-end">
-                                @if (! is_null($caisse->ecart) && abs($caisse->ecart) > 0.01)
-                                    <span class="solde negatif">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>
-                                        {{ number_format($caisse->ecart, 2, ',', ' ') }}
-                                    </span>
-                                @elseif (! $caisse->isOuverte())
-                                    <span class="solde positif">
-                                        <i class="fas fa-check me-1"></i> 0,00
-                                    </span>
+                                <div class="text-xs text-muted">Initial <span class="solde ms-1">{{ number_format($caisse->solde_initial, 2, ',', ' ') }}</span></div>
+                                <div class="text-xs text-muted">Théorique <span class="solde ms-1">{{ number_format($caisse->solde_theorique, 2, ',', ' ') }}</span></div>
+                            </td>
+
+                            {{-- 4. Clôture : solde compté et écart --}}
+                            <td class="text-end">
+                                @if ($caisse->isOuverte())
+                                    <span class="text-muted text-sm">En cours</span>
                                 @else
-                                    <span class="text-muted text-sm">—</span>
+                                    @if (! is_null($caisse->solde_compte))
+                                        <div class="text-xs text-muted">Compté <span class="solde ms-1">{{ number_format($caisse->solde_compte, 2, ',', ' ') }}</span></div>
+                                    @endif
+                                    @if (! is_null($caisse->ecart) && abs($caisse->ecart) > 0.01)
+                                        <span class="solde negatif"><i class="fas fa-exclamation-triangle me-1"></i>Écart {{ number_format($caisse->ecart, 2, ',', ' ') }}</span>
+                                    @else
+                                        <span class="solde positif"><i class="fas fa-check me-1"></i>Sans écart</span>
+                                    @endif
                                 @endif
-                            </td>
-                            <td class="text-sm text-muted">
-                                {{ optional($caisse->date_ouverture)->format('d/m/Y H:i') ?? '—' }}
-                            </td>
-                            <td class="text-sm text-muted">
-                                {{ optional($caisse->date_cloture)->format('d/m/Y H:i') ?? '—' }}
                             </td>
                             <td class="text-center pe-4">
                                 <div class="dropdown">
@@ -359,7 +368,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9">
+                            <td colspan="5">
                                 <div class="empty-state">
                                     <i class="fas fa-cash-register"></i>
                                     <p class="mb-0 fw-medium">Aucune session de caisse enregistrée.</p>
@@ -404,13 +413,20 @@
 
                             <div class="row g-3">
                                 <div class="col-7">
-                                    <label class="form-label">Caissier responsable <span class="text-danger">*</span></label>
-                                    <select name="responsable_id" class="form-select">
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach ($caissiers as $c)
-                                            <option value="{{ $c->id }}">{{ $c->nom }} {{ $c->prenom }}</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="form-label">Responsable de la caisse <span class="text-danger">*</span></label>
+                                    @if (auth()->user()->isAdmin())
+                                        {{-- L'Administrateur peut confier la caisse à quelqu'un d'autre, ou la prendre lui-même --}}
+                                        <select name="responsable_id" class="form-select">
+                                            @foreach ($responsables as $r)
+                                                <option value="{{ $r->id }}" @selected($r->id === auth()->id())>
+                                                    {{ $r->nom }} {{ $r->prenom }}@if ($r->id === auth()->id()) (moi)@endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        {{-- Chacun ouvre sa propre caisse --}}
+                                        <div class="form-control bg-light" id="responsable-moi">{{ auth()->user()->nom }} {{ auth()->user()->prenom }} (moi)</div>
+                                    @endif
                                     <div class="text-danger text-xs mt-1" id="responsable_id-error"></div>
                                 </div>
                                 <div class="col-5">
@@ -536,7 +552,8 @@ $(function () {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
                         showErrors($openForm, xhr.responseJSON.errors);
                     } else {
-                        window.showToast("Une erreur est survenue.", 'error');
+                        // Refus métier (ex. « ce caissier a déjà une caisse ouverte ») : on affiche le motif
+                        window.showToast(xhr.responseJSON?.message || 'Une erreur est survenue.', 'error');
                     }
                 }
             });

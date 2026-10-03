@@ -4,42 +4,39 @@ namespace App\Domain\Scolarite\Models;
 
 use App\Domain\Scolarite\Types\StatutValidationInscription;
 use App\Domain\Scolarite\Types\TypeInscription;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Réécrit en entier par rapport à la version minimale utilisée pour
- * Élèves : la migration complète porte motif_rejet, date_validation,
- * utilisateur_id (qui a validé) et taux_remise (pourcentage, distinct de
- * remise_scolarite qui est un montant fixe).
+ * Inscription annuelle d'un élève.
  */
 class Inscription extends Model
 {
-    use HasFactory;
-
     protected $table = 'inscriptions';
 
     protected $fillable = [
         'date_inscription', 'eleve_id', 'cycle_id', 'niveau_id', 'last_niveau_id',
-        'classe_id', 'espace_id', 'type_inscription', 'statut_validation', 'annee_id',
-        'parent_id', 'taux_remise',
+        'classe_id', 'espace_id', 'type_inscription', 'statut_validation',
+        'annee_id', 'parent_id', 'taux_remise',
         'motif_rejet', 'date_validation', 'utilisateur_id',
-        'specialite_id_1', 'specialite_id_2', 'specialite_id_3', 'specialite_abandonne',
-        'bulletin_1', 'bulletin_2', 'bulletin_3', 'dnb',
-        'programme_provenance', 'is_cantine', 'is_bus', 'is_livre',
-        'frais_scolarite', 'frais_assurance', 'frais_inscription', 'frais_cantine',
-        'frais_bus', 'frais_livre', 'remise_scolarite', 'frais_examen',
-        'date_abandon', 'motif_abandon', 'statut_abandon', 'etat',
+        'statut_abandon', 'date_abandon', 'motif_abandon', 'abandonne_par',
+        'frais_scolarite', 'frais_assurance', 'frais_inscription',
+        'frais_cantine', 'frais_bus', 'frais_livre',
+        'remise_scolarite', 'frais_examen',
+        'is_cantine', 'is_bus', 'is_livre',
+        'etat',
     ];
 
     protected $casts = [
         'date_inscription'  => 'date',
         'date_validation'   => 'datetime',
-        'date_abandon'      => 'date',
-        'statut_abandon'    => 'integer', // 0 = actif, 1 = abandonné
-        'statut_validation' => StatutValidationInscription::class,
         'type_inscription'  => TypeInscription::class,
-        'taux_remise'       => 'integer',
+        'statut_validation' => 'integer',
+        'annee_id'          => 'integer',
+        'eleve_id'          => 'integer',
+        'classe_id'         => 'integer',
+        'niveau_id'         => 'integer',
+        'cycle_id'          => 'integer',
         'etat'              => 'integer',
         'frais_scolarite'   => 'float',
         'frais_assurance'   => 'float',
@@ -51,51 +48,59 @@ class Inscription extends Model
         'frais_examen'      => 'float',
     ];
 
-    public function eleve()
+    public function eleve(): BelongsTo
     {
-        return $this->belongsTo(Eleve::class);
+        return $this->belongsTo(Eleve::class, 'eleve_id');
     }
 
-    public function cycle()
+    public function classe(): BelongsTo
     {
-        return $this->belongsTo(Cycle::class);
+        return $this->belongsTo(Classe::class, 'classe_id');
     }
 
-    public function niveau()
+    public function niveau(): BelongsTo
     {
-        return $this->belongsTo(Niveau::class);
+        return $this->belongsTo(Niveau::class, 'niveau_id');
     }
 
-    public function classe()
+    public function cycle(): BelongsTo
     {
-        return $this->belongsTo(Classe::class);
+        return $this->belongsTo(Cycle::class, 'cycle_id');
     }
 
-    public function isAbandonnee(): bool
-    {
-        return (int) $this->statut_abandon === 1;
-    }
+    /* ===================== Cycle de vie ===================== */
 
-    public function isValidee(): bool
+    public function statut(): ?StatutValidationInscription
     {
-        return $this->statut_validation === StatutValidationInscription::Validee;
+        return StatutValidationInscription::tryFrom((int) $this->statut_validation);
     }
 
     public function isEnAttente(): bool
     {
-        return $this->statut_validation === StatutValidationInscription::EnAttente;
+        return ! $this->isAbandonnee()
+            && in_array($this->statut(), [StatutValidationInscription::EN_ATTENTE, StatutValidationInscription::EN_COURS], true);
+    }
+
+    public function isValidee(): bool
+    {
+        return $this->statut() === StatutValidationInscription::VALIDEE;
     }
 
     public function isRejetee(): bool
     {
-        return $this->statut_validation === StatutValidationInscription::Rejetee;
+        return $this->statut() === StatutValidationInscription::REJETEE;
+    }
+
+    /** Un abandon en cours d'année est porté par statut_abandon, indépendamment de la validation. */
+    public function isAbandonnee(): bool
+    {
+        return (int) $this->statut_abandon === 1 || $this->statut() === StatutValidationInscription::ABANDONNEE;
     }
 
     /**
-     * Statut affiché à l'écran : combine statut_validation ET
-     * statut_abandon (deux colonnes distinctes en base) en un badge
-     * unique, tel que demandé par le cahier des charges ("en attente,
-     * validée, rejetée, abandonnée").
+     * Statut à afficher dans les listes : l'abandon prime sur la validation.
+     *
+     * @return array{label:string, classe:string}
      */
     public function statutAffiche(): array
     {
@@ -103,34 +108,11 @@ class Inscription extends Model
             return ['label' => 'Abandonnée', 'classe' => 'badge-statut-abandon'];
         }
 
-        return match ($this->statut_validation) {
-            StatutValidationInscription::Validee   => ['label' => 'Validée', 'classe' => 'badge-statut-validee'],
-            StatutValidationInscription::Rejetee   => ['label' => 'Rejetée', 'classe' => 'badge-statut-rejetee'],
-            StatutValidationInscription::EnAttente => ['label' => 'En attente', 'classe' => 'badge-statut-attente'],
-            default                                 => ['label' => 'Inconnu', 'classe' => 'badge-statut-attente'],
+        return match ($this->statut()) {
+            StatutValidationInscription::VALIDEE => ['label' => 'Validée', 'classe' => 'badge-statut-validee'],
+            StatutValidationInscription::REJETEE => ['label' => 'Rejetée', 'classe' => 'badge-statut-rejetee'],
+            StatutValidationInscription::EN_COURS => ['label' => 'En cours', 'classe' => 'badge-statut-attente'],
+            default => ['label' => 'En attente', 'classe' => 'badge-statut-attente'],
         };
-    }
-
-    /**
-     * Somme des frais d'engagement, moins la remise scolarité — calcul
-     * PROVISOIRE du "montant dû" (voir la même note sur EleveRepository),
-     * en attendant la table situations_recouvrement du futur module
-     * Recouvrement.
-     */
-    public function getMontantEngageAttribute(): float
-    {
-        return (float) ($this->frais_scolarite ?? 0)
-            + (float) ($this->frais_cantine ?? 0)
-            + (float) ($this->frais_bus ?? 0)
-            + (float) ($this->frais_livre ?? 0)
-            + (float) ($this->frais_assurance ?? 0)
-            + (float) ($this->frais_inscription ?? 0)
-            + (float) ($this->frais_examen ?? 0)
-            - (float) ($this->remise_scolarite ?? 0);
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('etat', 1);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Domain\Finances\Models;
 
-use App\Domain\Administration\Models\Utilisateur;
+use App\Domain\Administration\Models\User;
 use App\Domain\Finances\Types\MouvementType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

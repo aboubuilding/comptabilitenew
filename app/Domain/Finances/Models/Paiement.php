@@ -2,66 +2,61 @@
 
 namespace App\Domain\Finances\Models;
 
-use App\Domain\Administration\Models\User;
 use App\Domain\Finances\Types\ModePaiement;
-use App\Domain\Finances\Types\StatutPaiement;
-use App\Domain\Scolarite\Models\Inscription;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\Finances\Types\PaiementStatut;
+use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * L'en-tête d'un paiement (une opération = un Paiement + plusieurs
- * Detail, un par ligne/nature). 'inscription_id' ici sert de référence
- * principale d'affichage (l'écolage de l'élève concerné), pas de lien
- * exclusif : la ventilation réelle par nature vit dans les Detail liés.
- */
 class Paiement extends Model
 {
-    use HasFactory;
-
     protected $table = 'paiements';
 
     protected $fillable = [
-        'reference', 'payeur', 'motif_suppression', 'telephone_payeur', 'date_paiement',
-        'statut_paiement', 'mode_paiement', 'inscription_id', 'utilisateur_id',
-        'cheque_id', 'annee_id', 'montant', 'etat',
+        'reference', 'payeur', 'telephone_payeur',
+        'motif_suppression',
+        'date_paiement', 'statut_paiement', 'mode_paiement',
+        'inscription_id', 'utilisateur_id', 'cheque_id', 'annee_id',
+        'montant', 'montant_recu', 'etat',
     ];
 
     protected $casts = [
-        'date_paiement'    => 'date',
-        'statut_paiement'  => StatutPaiement::class,
-        'mode_paiement'    => ModePaiement::class,
-        'montant'          => 'float',
-        'etat'             => 'integer',
+        'statut_paiement' => PaiementStatut::class,
+        'mode_paiement'   => ModePaiement::class,
+        'date_paiement'   => 'date',
+        'montant'         => 'float',
+        'montant_recu'    => 'float',
     ];
 
-    public function details()
+    public function details(): HasMany
     {
-        return $this->hasMany(Detail::class);
+        return $this->hasMany(Detail::class, 'paiement_id');
     }
 
-    public function inscription()
+    /** Inscription réglée : donne l'élève et sa classe. */
+    public function inscription(): BelongsTo
     {
-        return $this->belongsTo(Inscription::class);
+        return $this->belongsTo(\App\Domain\Scolarite\Models\Inscription::class, 'inscription_id');
     }
 
-    public function utilisateur()
+    public function comptable(): BelongsTo
     {
         return $this->belongsTo(User::class, 'utilisateur_id');
     }
 
-    public function isEncaisse(): bool
+    public function cheque(): BelongsTo
     {
-        return $this->statut_paiement === StatutPaiement::Encaisse;
+        return $this->belongsTo(Cheque::class, 'cheque_id');
     }
 
-    public function isAnnule(): bool
+    public function isEnAttente(): bool
     {
-        return ! empty($this->motif_suppression);
+        return $this->statut_paiement === PaiementStatut::EN_ATTENTE;
     }
 
-    public function scopeActive($query)
+    public function peutEtreModifie(): bool
     {
-        return $query->where('etat', 1);
+        return $this->isEnAttente();
     }
 }

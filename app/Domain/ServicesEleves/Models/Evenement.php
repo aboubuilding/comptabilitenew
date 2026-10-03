@@ -2,52 +2,75 @@
 
 namespace App\Domain\ServicesEleves\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\ServicesEleves\Types\TypeEvenement;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Evenement extends Model
 {
-    use HasFactory;
-
     protected $table = 'evenements';
 
     protected $fillable = [
-        'nom', 'type', 'date_evenement', 'participation', 'capacite',
+        'nom', 'type', 'date_evenement', 'participation',
+        'capacite', 'capacite_limitee', 'date_limite_confirmation',
         'description', 'annee_id', 'etat',
     ];
 
     protected $casts = [
-        'date_evenement' => 'date',
-        'participation'  => 'float',
-        'etat'           => 'integer',
+        'type'                   => TypeEvenement::class,
+        'date_evenement'         => 'date',
+        'date_limite_confirmation'=> 'date',
+        'participation'          => 'float',
+        'capacite_limitee'       => 'boolean',
     ];
 
-    public function participations()
+    public function participations(): HasMany
     {
         return $this->hasMany(ParticipationEvenement::class, 'evenement_scolaire_id');
     }
 
-    /**
-     * null = capacité illimitée — condition explicite du cahier des
-     * charges pour qu'un événement soit ajoutable librement au panier
-     * ("un événement sans capacité limitée").
-     */
-    public function estSansLimiteCapacite(): bool
+    public function isCapaciteLimitee(): bool
     {
-        return is_null($this->capacite);
+        return (bool) $this->capacite_limitee;
     }
 
-    public function placesRestantes(): ?int
+    public function isDateLimitePassee(): bool
     {
-        if ($this->estSansLimiteCapacite()) {
+        return $this->date_limite_confirmation
+            && $this->date_limite_confirmation->isPast();
+    }
+
+    /** Nombre de participants confirmés. */
+    public function getNombreConfirmesAttribute(): int
+    {
+        return $this->participations()
+            ->where('statut', \App\Domain\ServicesEleves\Types\StatutParticipation::CONFIRME->value)
+            ->count();
+    }
+
+    /** Nombre de pré-inscrits en attente de confirmation. */
+    public function getNombrePreInscritsAttribute(): int
+    {
+        return $this->participations()
+            ->where('statut', \App\Domain\ServicesEleves\Types\StatutParticipation::PRE_INSCRIT->value)
+            ->count();
+    }
+
+    /** Places restantes (null si pas de capacité limitée). */
+    public function getPlacesRestantesAttribute(): ?int
+    {
+        if (! $this->isCapaciteLimitee() || ! $this->capacite) {
             return null;
         }
-
-        return max(0, $this->capacite - $this->participations()->where('etat', 1)->count());
+        return max(0, (int) $this->capacite - $this->nombre_confirmes);
     }
 
-    public function scopeActive($query)
+    /** Taux de remplissage (%). */
+    public function getTauxRemplissageAttribute(): float
     {
-        return $query->where('etat', 1);
+        if (! $this->isCapaciteLimitee() || ! $this->capacite) {
+            return 0.0;
+        }
+        return round(($this->nombre_confirmes / (int) $this->capacite) * 100, 1);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Scolarite;
+namespace App\Http\Controllers\Domain\Scolarite;
 
 use App\Domain\Scolarite\Models\Inscription;
 use App\Domain\Scolarite\Repositories\ClasseRepository;
@@ -11,9 +11,9 @@ use App\Domain\Scolarite\Repositories\NiveauRepository;
 use App\Domain\Scolarite\Services\InscriptionService;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Scolarite\AbandonInscriptionRequest;
-use App\Http\Requests\Scolarite\InscriptionRequest;
-use App\Http\Requests\Scolarite\RejeterInscriptionRequest;
+use App\Http\Requests\Domain\Scolarite\AbandonInscriptionRequest;
+use App\Http\Requests\Domain\Scolarite\InscriptionRequest;
+use App\Http\Requests\Domain\Scolarite\RejeterInscriptionRequest;
 use App\Support\AnneeScolaireContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,13 +40,17 @@ class InscriptionController extends Controller
         private ClasseRepository $classes,
         private AnneeScolaireContext $anneeContext,
     ) {
+        $this->middleware('permission:inscriptions.voir')->only(['index', 'certificat']);
+        $this->middleware('permission:inscriptions.saisir')->only(['store']);
+        $this->middleware('permission:inscriptions.valider')->only(['valider', 'rejeter']);
+        $this->middleware('permission:inscriptions.saisir,inscriptions.valider')->only(['enregistrerAbandon']);
     }
 
     public function index(Request $request): View
     {
         $anneeId = (int) ($request->input('annee_id') ?: $this->anneeContext->id());
 
-        return view('admin.scolarite.inscriptions.index', [
+        return view('domain.scolarite.inscriptions.index', [
             'inscriptions'   => $this->inscriptions->paginateWithFilters($request->only([
                 'cycle_id', 'niveau_id', 'classe_id', 'statut', 'search',
             ]), $anneeId),
@@ -63,12 +67,35 @@ class InscriptionController extends Controller
         return $this->runAjax(function () use ($request) {
             $data = $request->validated();
             $data['annee_id']          = $this->anneeContext->id();
-            $data['statut_validation'] = \App\Domain\Scolarite\Types\StatutValidationInscription::EnAttente->value;
+            $data['statut_validation'] = \App\Domain\Scolarite\Types\StatutValidationInscription::EN_ATTENTE->value;
 
             $inscription = $this->inscriptions->create($data);
 
             return ['inscription' => $inscription];
         }, "Inscription créée avec succès, en attente de validation.");
+    }
+
+    /**
+     * Certificat de scolarité (cahier des charges § 4, 1.3) : délivré pour une
+     * inscription validée et non abandonnée.
+     */
+    public function certificat(Inscription $inscription)
+    {
+        abort_unless(
+            $inscription->isValidee() && ! $inscription->isAbandonnee(),
+            422,
+            "Un certificat de scolarité ne se délivre que pour une inscription validée et en cours."
+        );
+
+        $inscription->load(['eleve', 'cycle', 'niveau', 'classe']);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('domain.scolarite.inscriptions.certificat_pdf', [
+            'inscription' => $inscription,
+            'eleve'       => $inscription->eleve,
+            'annee'       => \App\Domain\Scolarite\Models\Annee::find($inscription->annee_id),
+        ])->setPaper('A4');
+
+        return $pdf->download('certificat_scolarite_' . ($inscription->eleve?->matricule ?? $inscription->id) . '.pdf');
     }
 
     public function valider(Inscription $inscription): RedirectResponse

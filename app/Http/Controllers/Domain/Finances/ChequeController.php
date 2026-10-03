@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Domain\Finances;
 
-use App\Domain\Administration\Models\Annee;
+use App\Domain\Scolarite\Models\Annee;
 use App\Domain\Finances\DTO\ChequeData;
 use App\Domain\Finances\Repositories\BanqueRepository;
 use App\Domain\Finances\Repositories\ChequeRepository;

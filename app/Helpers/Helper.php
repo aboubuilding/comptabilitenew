@@ -2,16 +2,16 @@
 
 namespace App\Helpers;
 
-use App\Models\Annee;
-use App\Models\Detail;
-use App\Models\Espace;
-use App\Models\FraisEcole;
-use App\Models\Inscription;
-use App\Models\Niveau;
-use App\Models\Paiement;
-use App\Types\ModePaiement;
-use App\Types\StatutPaiement;
-use App\Types\TypePaiement;
+use App\Domain\Scolarite\Models\Annee;
+use App\Domain\Finances\Models\Detail;
+use App\Domain\Scolarite\Models\Espace;
+use App\Domain\Finances\Models\FraisEcole;
+use App\Domain\Scolarite\Models\Inscription;
+use App\Domain\Scolarite\Models\Niveau;
+use App\Domain\Finances\Models\Paiement;
+use App\Domain\Finances\Types\ModePaiement;
+use App\Domain\Finances\Types\StatutPaiement;
+use App\Domain\Finances\Types\TypePaiement;
 use App\Types\TypeStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Date;

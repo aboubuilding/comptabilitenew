@@ -12,9 +12,11 @@
 @endsection
 
 @section('page_actions')
+    @can('inscriptions.saisir')
     <button type="button" class="btn btn-nouveau" id="btnNouvelleInscription" data-bs-toggle="modal" data-bs-target="#inscriptionModal">
         <i class="fas fa-plus-circle me-1"></i> Nouvelle inscription
     </button>
+    @endcan
 @endsection
 
 @section('css')
@@ -184,6 +186,7 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
                                                 @if ($inscription->isEnAttente())
+                                                    @can('inscriptions.valider')
                                                     <li>
                                                         <form action="{{ route('scolarite.inscriptions.valider', $inscription) }}" method="POST"
                                                               class="form-confirm-delete"
@@ -203,8 +206,9 @@
                                                             <i class="fas fa-times-circle"></i> Rejeter
                                                         </button>
                                                     </li>
+                                                    @endcan
                                                 @endif
-                                                @if ($inscription->isValidee() && !$inscription->isAbandonnee())
+                                                @if ($inscription->isValidee() && !$inscription->isAbandonnee() && (auth()->user()->can('inscriptions.saisir') || auth()->user()->can('inscriptions.valider')))
                                                     <li>
                                                         <button type="button" class="dropdown-item btn-motif"
                                                                 data-url="{{ route('scolarite.inscriptions.abandon', $inscription) }}"
@@ -214,12 +218,13 @@
                                                         </button>
                                                     </li>
                                                 @endif
-                                                <li>
-                                                    {{-- TODO : édition du certificat, prochain tour --}}
-                                                    <a href="#" class="dropdown-item">
-                                                        <i class="fas fa-certificate"></i> Certificat de scolarité
-                                                    </a>
-                                                </li>
+                                                @if ($inscription->isValidee() && !$inscription->isAbandonnee())
+                                                    <li>
+                                                        <a href="{{ route('scolarite.inscriptions.certificat', $inscription) }}" class="dropdown-item">
+                                                            <i class="fas fa-certificate"></i> Certificat de scolarité
+                                                        </a>
+                                                    </li>
+                                                @endif
                                             </ul>
                                         </div>
                                     </td>
@@ -244,6 +249,7 @@
         </div>
 
         {{-- Modale de création --}}
+        @can('inscriptions.saisir')
         <div class="modal fade" id="inscriptionModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content modal-inscriptions">
@@ -348,6 +354,9 @@
             </div>
         </div>
 
+        @endcan
+
+        @canany(['inscriptions.saisir', 'inscriptions.valider'])
         {{-- Modale générique motif (rejet ou abandon — même formulaire,
              action/titre définis en JS selon le bouton cliqué). Soumission
              en POST classique (pas d'AJAX) : rechargement + flash de
@@ -373,6 +382,7 @@
                 </div>
             </div>
         </div>
+        @endcanany
     </div>
 @endsection
 

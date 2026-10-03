@@ -12,9 +12,11 @@
 @endsection
 
 @section('page_actions')
+    @can('frais.gerer')
     <button type="button" class="btn btn-nouveau" id="btnNouveauPlan" data-bs-toggle="modal" data-bs-target="#planModal">
         <i class="fas fa-plus-circle me-1"></i> Nouveau plan
     </button>
+    @endcan
 @endsection
 
 @section('css')
@@ -70,28 +72,29 @@
                                                 <li>
                                                     <button type="button" class="dropdown-item btn-edit-plan"
                                                             data-id="{{ $plan->id }}"
+                                                            data-lecture="{{ auth()->user()->can('frais.gerer') ? 0 : 1 }}"
                                                             data-bs-toggle="modal" data-bs-target="#planModal">
-                                                        <i class="fas fa-pen"></i> Modifier
+                                                        @can('frais.gerer')
+                                                            <i class="fas fa-pen"></i> Modifier le plan et ses échéances
+                                                        @else
+                                                            <i class="fas fa-eye"></i> Consulter les échéances
+                                                        @endcan
                                                     </button>
                                                 </li>
-                                                <li>
-                                                    {{-- TODO : gestion des lignes (échéances), prochain tour --}}
-                                                    <a href="#" class="dropdown-item">
-                                                        <i class="fas fa-list-ol"></i> Gérer les échéances
-                                                    </a>
-                                                </li>
+                                                @can('frais.gerer')
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                    <form action="{{ route('finances.plan-echeanciers.archiver', $plan) }}"
+                                                    <form action="{{ route('finances.plan-echeanciers.destroy', $plan) }}"
                                                           method="POST" class="form-confirm-delete"
                                                           data-confirm-title="Archiver ce plan ?"
-                                                          data-confirm-text="Les frais qui l'utilisent perdront leur échéancier associé.">
-                                                        @csrf
+                                                          data-confirm-text="Un plan encore rattaché à des frais ne peut pas être archivé.">
+                                                        @csrf @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger">
                                                             <i class="fas fa-box-archive"></i> Archiver
                                                         </button>
                                                     </form>
                                                 </li>
+                                                @endcan
                                             </ul>
                                         </div>
                                     </td>
@@ -114,9 +117,9 @@
         <div class="mt-3">{{ $plans->links() }}</div>
 
         <div class="modal fade" id="planModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content modal-plans">
-                    <form id="plan-form">
+                    <form id="plan-form" @cannot('frais.gerer') data-lecture-seule @endcannot>
                         @csrf
                         <input type="hidden" name="_method" id="plan-method" value="POST">
                         <div class="modal-header modal-header-plans">
@@ -135,10 +138,40 @@
                                     <textarea name="description" id="plan-description" class="form-control" rows="2"></textarea>
                                 </div>
                             </div>
+
+                            {{-- Échéances du plan : au moins une, et 100 % au total --}}
+                            <div class="form-section mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0">Échéances <span class="text-danger">*</span></label>
+                                    <button type="button" class="btn btn-sm btn-annuler" id="plan-ajouter-ligne">
+                                        <i class="fas fa-plus me-1"></i> Ajouter une échéance
+                                    </button>
+                                </div>
+                                <table class="table table-sm align-middle mb-2" id="plan-lignes">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:38px;">#</th>
+                                            <th>Libellé</th>
+                                            <th style="width:170px;">Date d'échéance</th>
+                                            <th style="width:120px;">Part (%)</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-semibold">Total</td>
+                                            <td class="fw-bold" id="plan-total">0 %</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                <div class="text-danger small" id="plan-lignes-error"></div>
+                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i>Enregistrer</button>
+                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Fermer</button>
+                            <button type="submit" class="btn btn-enregistrer" id="plan-enregistrer"><i class="fas fa-save me-1"></i>Enregistrer</button>
                         </div>
                     </form>
                 </div>
@@ -161,35 +194,98 @@ $(function () {
     const storeUrl = '{{ route('finances.plan-echeanciers.store') }}';
     let currentId  = null;
 
+    const $lignes       = $('#plan-lignes tbody');
+    const $lignesError  = $('#plan-lignes-error');
+    const $total        = $('#plan-total');
+
+    function ajouterLigne(ligne = {}) {
+        const $tr = $(`
+            <tr class="plan-ligne">
+                <td class="plan-ligne-ordre text-muted"></td>
+                <td><input type="text" class="form-control form-control-sm plan-ligne-libelle" maxlength="100" placeholder="Ex : 1re tranche"></td>
+                <td><input type="date" class="form-control form-control-sm plan-ligne-date"></td>
+                <td><input type="number" class="form-control form-control-sm plan-ligne-part" min="0" max="100" step="0.01"></td>
+                <td><button type="button" class="btn btn-sm btn-light plan-ligne-retirer" title="Retirer"><i class="fas fa-times text-danger"></i></button></td>
+            </tr>`);
+        $tr.find('.plan-ligne-libelle').val(ligne.libelle ?? '');
+        $tr.find('.plan-ligne-date').val((ligne.date_echeance ?? '').substring(0, 10));
+        $tr.find('.plan-ligne-part').val(ligne.pourcentage ?? '');
+        $lignes.append($tr);
+        renumeroter();
+    }
+
+    // Les champs sont nommés au dernier moment : l'ordre des lignes peut
+    // changer tant que la modale est ouverte (ajout, retrait).
+    function renumeroter() {
+        let total = 0;
+        $lignes.find('tr').each(function (i) {
+            const $tr = $(this);
+            $tr.find('.plan-ligne-ordre').text(i + 1);
+            $tr.find('.plan-ligne-libelle').attr('name', `lignes[${i}][libelle]`);
+            $tr.find('.plan-ligne-date').attr('name', `lignes[${i}][date_echeance]`);
+            $tr.find('.plan-ligne-part').attr('name', `lignes[${i}][pourcentage]`);
+            total += parseFloat($tr.find('.plan-ligne-part').val() || 0);
+        });
+        total = Math.round(total * 100) / 100;
+        $total.text(total.toLocaleString('fr-FR') + ' %')
+              .toggleClass('text-danger', Math.abs(total - 100) > 0.01)
+              .toggleClass('text-success', Math.abs(total - 100) <= 0.01);
+    }
+
+    function lectureSeule(oui) {
+        $form.find('input:not([type=hidden]), textarea').prop('readonly', oui);
+        $('#plan-ajouter-ligne, #plan-enregistrer').toggle(!oui);
+        $lignes.find('.plan-ligne-retirer').toggle(!oui);
+    }
+
     function resetForm() {
         $form[0].reset();
         currentId = null;
         $method.val('POST');
         $nomError.text('');
+        $lignesError.text('');
         $nom.removeClass('is-invalid');
+        $lignes.empty();
+        lectureSeule(false);
+        renumeroter();
     }
+
+    $('#plan-ajouter-ligne').on('click', () => ajouterLigne());
+    $(document).on('click', '.plan-ligne-retirer', function () { $(this).closest('tr').remove(); renumeroter(); });
+    $(document).on('input', '.plan-ligne-part', renumeroter);
 
     $('#btnNouveauPlan').on('click', function () {
         resetForm();
         $title.html('<i class="fas fa-plus-circle me-2"></i>Nouveau plan');
+        ajouterLigne();
     });
 
     $(document).on('click', '.btn-edit-plan', function () {
         resetForm();
         currentId = $(this).data('id');
-        $title.html('<i class="fas fa-pen me-2"></i>Modifier le plan');
+        const consultation = String($(this).data('lecture')) === '1';
+        $title.html(consultation
+            ? '<i class="fas fa-eye me-2"></i>Échéances du plan'
+            : '<i class="fas fa-pen me-2"></i>Modifier le plan');
         $method.val('PUT');
 
-        $.getJSON(`{{ url('finances/plan-echeanciers') }}/${currentId}/edit`, function (data) {
+        $.getJSON(`{{ url('finances/plan-echeanciers') }}/${currentId}`, function (data) {
             $nom.val(data.plan.nom);
             $('#plan-description').val(data.plan.description);
+            (data.plan.lignes || [])
+                .filter(l => parseInt(l.etat ?? 1, 10) === 1)
+                .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))
+                .forEach(ajouterLigne);
+            lectureSeule(consultation);
         });
     });
 
     $form.on('submit', function (e) {
         e.preventDefault();
         $nomError.text('');
+        $lignesError.text('');
         $nom.removeClass('is-invalid');
+        renumeroter();
 
         const url = currentId ? `{{ url('finances/plan-echeanciers') }}/${currentId}` : storeUrl;
 
@@ -202,9 +298,19 @@ $(function () {
                 window.showToastThenReload(res.message, 'success');
             },
             error: function (xhr) {
-                if (xhr.status === 422 && xhr.responseJSON?.errors?.nom) {
-                    $nom.addClass('is-invalid');
-                    $nomError.text(xhr.responseJSON.errors.nom[0]);
+                const erreurs = xhr.responseJSON?.errors;
+                if (xhr.status === 422 && erreurs) {
+                    if (erreurs.nom) {
+                        $nom.addClass('is-invalid');
+                        $nomError.text(erreurs.nom[0]);
+                    }
+                    const autres = Object.keys(erreurs).filter(champ => champ !== 'nom');
+                    if (autres.length) {
+                        $lignesError.text(erreurs[autres[0]][0]);
+                    }
+                } else if (xhr.status === 422 && xhr.responseJSON?.message) {
+                    // Règle de gestion refusée par le service (total ≠ 100 %, etc.)
+                    $lignesError.text(xhr.responseJSON.message);
                 } else {
                     window.showToast("Une erreur est survenue.", 'error');
                 }

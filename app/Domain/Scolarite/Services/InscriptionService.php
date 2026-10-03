@@ -22,7 +22,7 @@ class InscriptionService
     public function valider(Inscription $inscription, int $validateurId): void
     {
         $this->inscriptions->update($inscription->id, [
-            'statut_validation' => StatutValidationInscription::Validee->value,
+            'statut_validation' => StatutValidationInscription::VALIDEE->value,
             'date_validation'   => now(),
             'utilisateur_id'    => $validateurId,
             'motif_rejet'       => null,
@@ -34,7 +34,7 @@ class InscriptionService
     public function rejeter(Inscription $inscription, string $motif, int $validateurId): void
     {
         $this->inscriptions->update($inscription->id, [
-            'statut_validation' => StatutValidationInscription::Rejetee->value,
+            'statut_validation' => StatutValidationInscription::REJETEE->value,
             'date_validation'   => now(),
             'utilisateur_id'    => $validateurId,
             'motif_rejet'       => $motif,

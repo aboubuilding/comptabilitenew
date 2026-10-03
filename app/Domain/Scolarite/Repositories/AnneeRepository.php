@@ -15,8 +15,11 @@ class AnneeRepository extends BaseRepository
 
     public function findOuverte(): ?Annee
     {
+        // Plusieurs années peuvent être ouvertes pendant la période de
+        // réinscription : la plus récente est l'année par défaut.
         return $this->activeQuery()
             ->where('statut_annee', StatutAnnee::Ouvert->value)
+            ->orderBy('date_rentree', 'desc')
             ->first();
     }
 
@@ -50,6 +53,11 @@ class AnneeRepository extends BaseRepository
      * Persistance pure (changement de statut) — la décision "peut-on
      * clôturer cette année ?" reste dans AnneeService, pas ici.
      */
+    public function ouvrir(int $anneeId): bool
+    {
+        return $this->update($anneeId, ['statut_annee' => StatutAnnee::Ouvert->value]);
+    }
+
     public function cloturer(int $anneeId): bool
     {
         return $this->update($anneeId, ['statut_annee' => StatutAnnee::Cloture->value]);

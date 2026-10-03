@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cheques', function (Blueprint $table) {
-            $table->float('montant')->nullable()->after('emetteur');
+            if (!Schema::hasColumn('cheques', 'montant')) {
+                $table->float('montant')->nullable()->after('emetteur');
+            }
             $table->date('date_rapprochement')->nullable()->after('date_encaissement');
             $table->unsignedBigInteger('rapproche_par')->nullable()->after('date_rapprochement');
             $table->string('motif_rejet')->nullable()->after('rapproche_par');

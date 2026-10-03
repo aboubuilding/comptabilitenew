@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Scolarite;
+namespace App\Http\Controllers\Domain\Scolarite;
 
 use App\Domain\Scolarite\Models\Annee;
 use App\Domain\Scolarite\Repositories\AnneeRepository;
@@ -9,7 +9,7 @@ use App\Domain\Scolarite\Repositories\NiveauRepository;
 use App\Domain\Scolarite\Services\AnneeService;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Scolarite\AnneeRequest;
+use App\Http\Requests\Domain\Scolarite\AnneeRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,11 +32,13 @@ class AnneeController extends Controller
         private CycleRepository $cycles,
         private NiveauRepository $niveaux,
     ) {
+        $this->middleware('permission:structure.voir')->only(['index', 'edit']);
+        $this->middleware('permission:structure.gerer')->only(['store', 'update', 'ouvrir', 'cloturer']);
     }
 
     public function index(Request $request): View
     {
-        return view('admin.scolarite.annees.index', [
+        return view('domain.scolarite.annees.index', [
             'annees'       => $this->annees->paginateWithFilters($request->only(['search'])),
             'cyclesCount'  => $this->cycles->activeQuery()->count(),
             'niveauxCount' => $this->niveaux->activeQuery()->count(),
@@ -51,7 +53,10 @@ class AnneeController extends Controller
     public function store(AnneeRequest $request): JsonResponse
     {
         return $this->runAjax(function () use ($request) {
-            $annee = $this->annees->create($request->validated());
+            // Une année se crée à l'avance : elle n'est active qu'une fois ouverte.
+            $annee = $this->annees->create($request->validated() + [
+                'statut_annee' => \App\Domain\Scolarite\Types\StatutAnnee::NonOuvert->value,
+            ]);
 
             return ['annee' => $annee];
         }, 'Année scolaire créée avec succès.');
@@ -69,6 +74,13 @@ class AnneeController extends Controller
      * année change son statut, pas ses attributs de formulaire — d'où sa
      * propre route/méthode plutôt qu'un passage par update().
      */
+    public function ouvrir(Annee $annee): RedirectResponse
+    {
+        return $this->runWeb(function () use ($annee) {
+            $this->anneeService->ouvrir($annee);
+        }, 'scolarite.annees.index', 'Année scolaire ouverte avec succès.');
+    }
+
     public function cloturer(Annee $annee): RedirectResponse
     {
         return $this->runWeb(function () use ($annee) {

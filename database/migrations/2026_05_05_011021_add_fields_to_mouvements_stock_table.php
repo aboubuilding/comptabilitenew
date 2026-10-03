@@ -16,7 +16,10 @@ return new class extends Migration
        Schema::table('stocks', function (Blueprint $table) {
     $table->bigInteger('magasin_dest_id')->nullable();
     $table->string('reference')->nullable();
-    $table->bigInteger('utilisateur_id')->nullable();
+    // utilisateur_id est déjà posée par 2026_01_25_000003
+    if (!Schema::hasColumn('stocks', 'utilisateur_id')) {
+        $table->bigInteger('utilisateur_id')->nullable();
+    }
     // type_mouvement : 1 entrée, 2 sortie, 3 transfert
 });
     }
@@ -28,8 +31,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('mouvements_stock', function (Blueprint $table) {
-            //
+        Schema::table('stocks', function (Blueprint $table) {
+            $table->dropColumn(['magasin_dest_id', 'reference']);
         });
     }
 };

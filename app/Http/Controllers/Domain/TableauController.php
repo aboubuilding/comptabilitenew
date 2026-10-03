@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Domain;
 
 use App\Domain\Administration\Repositories\UserRepository;
 use App\Domain\Administration\Types\RoleUtilisateur;
@@ -44,13 +44,14 @@ class TableauController extends Controller
             ? $this->annees->find($this->anneeContext->id())
             : null;
 
-        return view('admin.tableau', [
+        return view('domain.tableau', [
             'user'             => $user,
             'nomComplet'       => $user->full_name,
             'roleLabel'        => $user->role_label,
             'anneeActive'      => $anneeActive,
-            'stats'            => $this->buildStats(),
-            'recentActivities' => $this->getRecentActivities(),
+            'stats'            => $user->can('utilisateurs.voir') ? $this->buildStats() : [],
+            'recentActivities' => $user->can('journal.voir') ? $this->getRecentActivities() : [],
+            'acces'            => $this->accesRapides($user),
         ]);
     }
 
@@ -68,17 +69,43 @@ class TableauController extends Controller
             'total_roles'    => $this->users->activeQuery()->pluck('role')->filter()->unique()->count(),
             'role_admin'     => $this->users->getByRole(RoleUtilisateur::Administrateur)->count(),
             'role_directeur' => $this->users->getByRole(RoleUtilisateur::Directeur)->count(),
+            'activites_7j'   => \App\Domain\Administration\Models\JournalAction::where('created_at', '>=', now()->subDays(7))->count(),
         ];
     }
 
     /**
-     * TODO : brancher sur un vrai journal d'activités ("Journal &
-     * Traçabilité", pas encore construit) une fois qu'il existe. Un
-     * tableau vide plutôt que des données inventées — la vue gère déjà
-     * proprement ce cas ("Aucune activité récente").
+     * Écrans du menu (config/menu.php) accessibles à l'utilisateur, par menu :
+     * mêmes règles que la barre de navigation, donc aucun lien interdit.
      */
+    private function accesRapides($user): \Illuminate\Support\Collection
+    {
+        return collect(config('menu', []))
+            ->map(fn (array $menu) => [
+                'libelle' => $menu['libelle'],
+                'icone'   => $menu['icone'],
+                'entrees' => collect($menu['groupes'])
+                    ->flatten(1)
+                    ->filter(fn (array $entree) => \Illuminate\Support\Facades\Route::has($entree[2]) && $user->can($entree[3]))
+                    ->take(6)
+                    ->values()
+                    ->all(),
+            ])
+            ->filter(fn (array $menu) => $menu['entrees'] !== [])
+            ->values();
+    }
+
+    /** Dix dernières lignes du journal (§ 6.4 Journal & Traçabilité). */
     private function getRecentActivities(): array
     {
-        return [];
+        return \App\Domain\Administration\Models\JournalAction::query()
+            ->latest('created_at')
+            ->limit(10)
+            ->get(['description', 'action', 'entite', 'user_nom', 'user_login', 'created_at'])
+            ->map(fn ($ligne) => [
+                'action' => $ligne->description ?: trim("{$ligne->action} {$ligne->entite}"),
+                'user'   => $ligne->user_nom ?: ($ligne->user_login ?: '—'),
+                'date'   => optional($ligne->created_at)->format('d/m/Y H:i'),
+            ])
+            ->all();
     }
 }

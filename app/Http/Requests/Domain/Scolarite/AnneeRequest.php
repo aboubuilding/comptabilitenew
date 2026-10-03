@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Scolarite;
+namespace App\Http\Requests\Domain\Scolarite;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

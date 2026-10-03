@@ -4,10 +4,16 @@ namespace App\Domain\Administration\Models;
 
 use App\Domain\Administration\Types\RoleUtilisateur;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Modèle utilisateur standard Laravel (table users).
+ * Le mot de passe est porté par la colonne mot_passe.
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
@@ -22,23 +28,12 @@ class User extends Authenticatable
         'mot_passe',
         'photo',
         'role',
+        'role_id',
         'etat',
     ];
 
-    /**
-     * last_login_at / last_login_ip sont volontairement absents de
-     * $fillable : ils ne sont renseignés que par
-     * UserRepository::recordLogin() après une connexion réussie, jamais
-     * via un formulaire.
-     *
-     * Colonne 'password' (ajoutée par improve_users_table) non utilisée :
-     * getAuthPassword() renvoie 'mot_passe', qui reste la seule colonne
-     * de mot de passe active. À nettoyer si une migration vers le champ
-     * natif 'password' est prévue un jour.
-     */
     protected $hidden = [
         'mot_passe',
-        'password',
         'remember_token',
     ];
 
@@ -46,28 +41,61 @@ class User extends Authenticatable
         'etat'          => 'integer',
         'role'          => RoleUtilisateur::class,
         'last_login_at' => 'datetime',
+        'deleted_at'    => 'datetime',
     ];
 
     /**
-     * Alignées sur App\Repositories\BaseRepository (ACTIF = 1 / INACTIF =
-     * 0, pas de 3e valeur).
+     * Laravel attend getAuthPassword() pour l'authentification.
      */
-    public const ETAT_ACTIF   = 1;
-    public const ETAT_INACTIF = 0;
-
-    public function getAuthPassword()
+    public function getAuthPassword(): string
     {
-        return $this->mot_passe;
+        return (string) $this->mot_passe;
     }
+
+    /* ===================== Authentification & profil ===================== */
 
     public function isActive(): bool
     {
-        return (int) $this->etat === self::ETAT_ACTIF;
+        return (int) $this->etat === 1;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === RoleUtilisateur::Administrateur;
+        return $this->aLeProfil(RoleUtilisateur::Administrateur);
+    }
+
+    /**
+     * Profils complémentaires (cahier des charges § 3 : un utilisateur peut
+     * cumuler plusieurs profils). roles.id reprend le code du profil.
+     */
+    public function profilsComplementaires(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')->withTimestamps();
+    }
+
+    /**
+     * Profil principal suivi des profils complémentaires, sans doublon.
+     *
+     * @return RoleUtilisateur[]
+     */
+    public function profils(): array
+    {
+        $profils = $this->role ? [$this->role] : [];
+
+        foreach ($this->profilsComplementaires as $complementaire) {
+            $profil = RoleUtilisateur::tryFrom((int) $complementaire->id);
+
+            if ($profil && ! in_array($profil, $profils, true)) {
+                $profils[] = $profil;
+            }
+        }
+
+        return $profils;
+    }
+
+    public function aLeProfil(RoleUtilisateur $profil): bool
+    {
+        return in_array($profil, $this->profils(), true);
     }
 
     public function getFullNameAttribute(): string
@@ -90,18 +118,27 @@ class User extends Authenticatable
         return $this->isActive() ? 'Actif' : 'Inactif';
     }
 
-    public function scopeActive($query)
+    /**
+     * Profil applicatif (nouveau référentiel).
+     */
+    public function roleRelation(): BelongsTo
     {
-        return $query->where('etat', self::ETAT_ACTIF);
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function scopeAdmins($query)
+    /**
+     * Nom complet.
+     */
+    public function getNomCompletAttribute(): string
     {
-        return $query->where('role', RoleUtilisateur::Administrateur->value);
+        return trim(($this->nom ?? '') . ' ' . ($this->prenom ?? ''));
     }
 
-    public function scopeByRole($query, RoleUtilisateur $role)
+    /**
+     * Scope actifs.
+     */
+    public function scopeActif($query)
     {
-        return $query->where('role', $role->value);
+        return $query->where('etat', 1);
     }
 }

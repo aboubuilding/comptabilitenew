@@ -2,36 +2,31 @@
 
 namespace App\Domain\Finances\Types;
 
-/**
- * Correspond directement aux natures de frais listées au cahier des
- * charges §4 (2.1) : "Définir un frais (scolarité, inscription,
- * assurance, cantine, bus, livres, examen)".
- */
 enum TypeForfait: int
 {
-    case Scolarite   = 1;
-    case Inscription = 2;
-    case Assurance   = 3;
-    case Cantine     = 4;
-    case Bus         = 5;
-    case Livres      = 6;
-    case Examen      = 7;
+    case OBLIGATOIRE = 1;   // scolarité, inscription, assurance
+    case OPTIONNEL   = 2;   // cantine, bus, activités
 
     public function label(): string
     {
         return match ($this) {
-            self::Scolarite   => 'Scolarité',
-            self::Inscription => 'Inscription',
-            self::Assurance   => 'Assurance',
-            self::Cantine     => 'Cantine',
-            self::Bus         => 'Bus',
-            self::Livres      => 'Livres',
-            self::Examen      => 'Examen',
+            self::OBLIGATOIRE => 'Obligatoire',
+            self::OPTIONNEL   => 'Optionnel',
+        };
+    }
+
+    public function css(): string
+    {
+        return match ($this) {
+            self::OBLIGATOIRE => 'obligatoire',
+            self::OPTIONNEL   => 'optionnel',
         };
     }
 
     public static function options(): array
     {
-        return collect(self::cases())->mapWithKeys(fn ($c) => [$c->value => $c->label()])->all();
+        return collect(self::cases())
+            ->mapWithKeys(fn (self $c) => [$c->value => $c->label()])
+            ->all();
     }
 }

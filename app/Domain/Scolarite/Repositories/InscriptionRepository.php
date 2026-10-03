@@ -3,8 +3,10 @@
 namespace App\Domain\Scolarite\Repositories;
 
 use App\Domain\Scolarite\Models\Inscription;
+use App\Domain\Scolarite\Types\StatutValidationInscription;
 use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class InscriptionRepository extends BaseRepository
 {
@@ -40,5 +42,22 @@ class InscriptionRepository extends BaseRepository
             })
             ->latest('date_inscription')
             ->paginate($perPage);
+    }
+
+    /**
+     * Inscriptions de l'année sur lesquelles un engagement peut être créé
+     * (ni rejetées, ni abandonnées), pour alimenter un sélecteur d'élèves.
+     */
+    public function listePourSelect(int $anneeId): Collection
+    {
+        return $this->activeQuery()
+            ->where('annee_id', $anneeId)
+            ->where('statut_abandon', 0)
+            ->where('statut_validation', '!=', StatutValidationInscription::REJETEE->value)
+            ->whereHas('eleve')
+            ->with(['eleve:id,nom,prenom,matricule', 'classe:id,libelle', 'niveau:id,libelle'])
+            ->get(['id', 'eleve_id', 'classe_id', 'niveau_id'])
+            ->sortBy(fn (Inscription $i) => mb_strtolower($i->eleve->nom . ' ' . $i->eleve->prenom))
+            ->values();
     }
 }

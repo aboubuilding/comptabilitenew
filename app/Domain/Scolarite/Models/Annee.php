@@ -23,20 +23,20 @@ class Annee extends Model
     ];
 
     protected $casts = [
-        'date_rentree'                 => 'date',
-        'date_fin'                     => 'date',
-        'date_ouverture_inscription'   => 'date',
-        'date_fermeture_reinscription' => 'date',
+        'date_rentree'                 => 'date:Y-m-d',
+        'date_fin'                     => 'date:Y-m-d',
+        'date_ouverture_inscription'   => 'date:Y-m-d',
+        'date_fermeture_reinscription' => 'date:Y-m-d',
         'statut_annee'                 => StatutAnnee::class,
         'etat'                         => 'integer',
     ];
 
     /**
      * Alignées sur App\Repositories\BaseRepository (ACTIF = 1 / INACTIF =
-     * 0).
+     * 2).
      */
     public const ETAT_ACTIF   = 1;
-    public const ETAT_INACTIF = 0;
+    public const ETAT_INACTIF = 2;
 
     public function isOuverte(): bool
     {
@@ -46,6 +46,12 @@ class Annee extends Model
     public function isCloturee(): bool
     {
         return $this->statut_annee === StatutAnnee::Cloture;
+    }
+
+    /** Année créée mais pas encore ouverte (ou sans statut dans la base historique). */
+    public function isNonOuverte(): bool
+    {
+        return ! $this->isOuverte() && ! $this->isCloturee();
     }
 
     public function getStatutLabelAttribute(): ?string

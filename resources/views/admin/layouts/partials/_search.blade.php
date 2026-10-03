@@ -250,14 +250,9 @@
         const input = document.getElementById('searchInput');
         const resultsContainer = document.getElementById('searchResults');
 
-        // url() et non route('recherche') : cette modale est incluse sur
-        // TOUTES les pages admin (via layouts/app.blade.php) — un nom de
-        // route inexistant planterait donc l'application entière au
-        // premier rendu, pas seulement la recherche. Tant que le
-        // Controller/route de recherche n'existe pas, l'appel échoue
-        // proprement (voir handleError ci-dessous) plutôt que de
-        // provoquer un crash au chargement.
-        const searchUrl = '{{ url('/recherche') }}';
+        // Recherche globale : écrans du menu, élèves, familles — filtrés
+        // selon les droits de l'utilisateur (RechercheController).
+        const searchUrl = '{{ route('recherche') }}';
 
         // Format JSON attendu du futur endpoint : un tableau d'objets
         // { title, subtitle, icon, category, url } — voir renderResults().

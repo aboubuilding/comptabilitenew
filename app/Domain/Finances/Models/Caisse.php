@@ -4,6 +4,7 @@ namespace App\Domain\Finances\Models;
 
 use App\Domain\Administration\Models\User;
 use App\Domain\Finances\Types\CaisseStatut;
+use App\Domain\Finances\Types\StatutEcartCaisse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,13 +19,14 @@ class Caisse extends Model
         'ecart', 'motif_ecart',
         'date_ouverture', 'date_cloture',
         'statut',
-        'User_id', 'responsable_id', 'annee_id',
-        'valide_par', 'date_validation_ecart',
+        'utilisateur_id', 'responsable_id', 'annee_id',
+        'statut_ecart', 'valide_par', 'date_validation_ecart', 'commentaire_validation_ecart',
         'etat',
     ];
 
     protected $casts = [
         'statut'                => CaisseStatut::class,
+        'statut_ecart'          => StatutEcartCaisse::class,
         'solde_initial'         => 'float',
         'solde_final'           => 'float',
         'solde_compte'          => 'float',
@@ -43,7 +45,7 @@ class Caisse extends Model
 
     public function auteur(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'User_id');
+        return $this->belongsTo(User::class, 'utilisateur_id');
     }
 
     public function valideur(): BelongsTo
@@ -61,6 +63,12 @@ class Caisse extends Model
     public function isOuverte(): bool
     {
         return $this->statut === CaisseStatut::OUVERTE;
+    }
+
+    /** Un écart a été déclaré à la clôture et la Direction ne s'est pas encore prononcée. */
+    public function ecartEnInstance(): bool
+    {
+        return (bool) $this->statut_ecart?->isEnInstance();
     }
 
     /* =========================================================

@@ -2,40 +2,40 @@
 
 namespace App\Domain\Scolarite\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Espace familial (fratrie).
+ */
 class Espace extends Model
 {
-    use HasFactory;
-
     protected $table = 'espaces';
 
     protected $fillable = ['nom_famille', 'annee_id', 'etat'];
 
-    protected $casts = ['etat' => 'integer'];
+    protected $casts = [
+        'annee_id' => 'integer',
+        'etat'     => 'integer',
+    ];
 
-    public function parents()
-    {
-        return $this->hasMany(ParentEleve::class, 'espace_id');
-    }
-
-    public function eleves()
+    public function eleves(): HasMany
     {
         return $this->hasMany(Eleve::class, 'espace_id');
     }
 
-    public function comptes()
+    public function parents(): HasMany
+    {
+        return $this->hasMany(ParentEleve::class, 'espace_id');
+    }
+
+    /** Comptes d'accès au portail parent. */
+    public function comptes(): HasMany
     {
         return $this->hasMany(Compte::class, 'espace_id');
     }
 
-    public function parentPrincipal()
-    {
-        return $this->hasOne(ParentEleve::class, 'espace_id')->where('is_principal', 1);
-    }
-
-    public function scopeActive($query)
+    public function scopeActif($query)
     {
         return $query->where('etat', 1);
     }

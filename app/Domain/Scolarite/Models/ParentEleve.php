@@ -2,46 +2,41 @@
 
 namespace App\Domain\Scolarite\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Nommé ParentEleve (comme la table) plutôt que "Parent" : éviter toute
- * confusion avec le mot-clé PHP parent:: dans une classe portant ce nom.
+ * Parent / tuteur rattaché à un espace familial.
  */
 class ParentEleve extends Model
 {
-    use HasFactory;
-
     protected $table = 'parent_eleves';
 
     protected $fillable = [
-        'nom_parent', 'prenom_parent', 'telephone', 'whatsapp', 'email', 'profession',
+        'nom_parent', 'prenom_parent', 'telephone', 'profession',
         'espace_id', 'is_principal', 'role', 'annee_id', 'nationalite_id',
-        'quartier', 'adresse', 'etat',
+        'whatsapp', 'quartier', 'adresse', 'email', 'etat',
     ];
 
     protected $casts = [
-        'etat'         => 'integer',
-        'is_principal' => 'boolean',
+        'is_principal'   => 'integer',
+        'role'           => 'integer',
+        'annee_id'       => 'integer',
+        'nationalite_id' => 'integer',
+        'etat'           => 'integer',
     ];
 
-    public function espace()
+    public function espace(): BelongsTo
     {
         return $this->belongsTo(Espace::class, 'espace_id');
     }
 
-    public function nationalite()
+    public function getNomCompletAttribute(): string
     {
-        return $this->belongsTo(Nationalite::class);
+        return trim(($this->nom_parent ?? '') . ' ' . ($this->prenom_parent ?? ''));
     }
 
-    public function getFullNameAttribute(): string
-    {
-        return trim($this->prenom_parent . ' ' . $this->nom_parent);
-    }
-
-    public function scopeActive($query)
+    public function scopeActif($query)
     {
         return $query->where('etat', 1);
     }

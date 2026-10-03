@@ -21,7 +21,8 @@ class RapprocherChequeRequest extends FormRequest
                 ChequeStatut::REJETE->value,
             ])],
             'date_encaissement'  => ['nullable', 'date'],
-            'motif_rejet'        => ['required_if:statut,' . ChequeStatut::REJETE->value, 'string', 'min:3', 'max:500'],
+            // nullable : le formulaire envoie un motif vide lorsqu'on marque le chèque encaissé.
+            'motif_rejet'        => ['nullable', 'required_if:statut,' . ChequeStatut::REJETE->value, 'string', 'min:3', 'max:500'],
         ];
     }
 

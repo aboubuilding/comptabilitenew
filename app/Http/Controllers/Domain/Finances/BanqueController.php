@@ -21,6 +21,7 @@ class BanqueController extends Controller
     ) {
         $this->middleware('permission:banques.voir')->only(['index']);
         $this->middleware('permission:banques.gerer')->only(['store', 'update', 'destroy']);
+        $this->middleware('permission:banques.voir')->only(['show', 'exportPdf']);
     }
 
     public function index(Request $request)

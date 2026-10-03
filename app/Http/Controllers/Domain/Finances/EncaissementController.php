@@ -1,87 +1,219 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Finances;
+namespace App\Http\Controllers\Domain\Finances;
 
-use App\Domain\Finances\Models\Detail;
 use App\Domain\Finances\Repositories\CaisseRepository;
-use App\Domain\Finances\Repositories\DetailRepository;
+use App\Domain\Finances\Repositories\PaiementRepository;
 use App\Domain\Finances\Services\EncaissementService;
-use App\Domain\Finances\Types\StatutPaiement;
+use App\Domain\Finances\Services\PaiementService;
+use App\Domain\Finances\Types\ModePaiement;
+use App\Domain\Finances\Types\PaiementStatut;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Finances\AnnulerEncaissementRequest;
 use App\Support\AnneeScolaireContext;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 
 /**
- * L'écran est bloqué tant que le caissier connecté n'a pas de caisse
- * ouverte — le module Caisses (ouverture/fermeture) n'est pas encore
- * construit ; en attendant, un message explicite s'affiche plutôt qu'une
- * file vide silencieuse. Export Excel hors scope de ce tour.
+ * 2.3 Encaissements — le caissier constate l'entrée en caisse des paiements
+ * saisis par le comptable. Trois onglets : tous les encaissements, les
+ * paiements en attente, et ses encaissements du jour.
  */
 class EncaissementController extends Controller
 {
     use HandlesControllerErrors;
 
+    private const ONGLETS = ['tous', 'attente', 'jour'];
+
     public function __construct(
-        private DetailRepository $details,
-        private CaisseRepository $caisses,
-        private EncaissementService $encaissementService,
-        private AnneeScolaireContext $anneeContext,
+        private PaiementRepository  $paiements,
+        private CaisseRepository    $caisses,
+        private EncaissementService $service,
+        private PaiementService     $paiementService,
     ) {
+        $this->middleware('permission:encaissements.voir')->only(['index', 'resume', 'recuPdf', 'recuPaiement']);
+        $this->middleware('permission:encaissements.creer')->only(['nouveau', 'paiementsEnAttente', 'encaisserPaiement']);
+        $this->middleware('permission:encaissements.annuler')->only(['annulerEncaissement']);
+        $this->middleware('permission:paiements-en-attente.annuler')->only(['annulerPaiement']);
     }
 
-    public function index(): View
+    /**
+     * Les encaissements portent sur l'année scolaire choisie dans l'en-tête
+     * (cloisonnement par année) ; à défaut, l'année active.
+     */
+    private function anneeActive(): \App\Domain\Scolarite\Models\Annee
     {
-        $anneeId = (int) $this->anneeContext->id();
-        $caisse = $this->caisses->caisseOuvertePour(Auth::id(), $anneeId);
+        $id = app(AnneeScolaireContext::class)->id();
 
-        $enAttente = collect();
-        $historiqueJour = collect();
+        return ($id ? \App\Domain\Scolarite\Models\Annee::find($id) : null)
+            ?? app(\App\Domain\Scolarite\Services\AnneeService::class)->resolveActive();
+    }
 
-        if ($caisse) {
-            $enAttente = $this->details->activeQuery()
-                ->where('annee_id', $anneeId)
-                ->where('statut_paiement', StatutPaiement::EnAttente->value)
-                ->with(['paiement.inscription.eleve', 'paiement.utilisateur'])
-                ->oldest('date_paiement')
-                ->get();
+    public function index(Request $request)
+    {
+        $annee   = $this->anneeActive();
+        $anneeId = (int) $annee->id;
+        $user    = $request->user();
 
-            $historiqueJour = $this->details->activeQuery()
-                ->where('caissier_id', Auth::id())
-                ->whereDate('date_encaissement', today())
-                ->with(['paiement.inscription.eleve', 'paiement.utilisateur', 'caisse'])
-                ->latest('date_encaissement')
-                ->get();
-        }
+        $filtres = $request->only(['search', 'date_debut', 'date_fin', 'caisse_id']) + ['annee_id' => $anneeId];
+        $recherche = ['search' => $request->input('recherche_attente'), 'annee_id' => $anneeId];
 
-        return view('admin.finances.encaissements.index', [
-            'caisse'         => $caisse,
-            'enAttente'      => $enAttente,
-            'historiqueJour' => $historiqueJour,
+        $onglet = in_array($request->input('onglet'), self::ONGLETS, true)
+            ? $request->input('onglet')
+            : ($user->can('encaissements.creer') ? 'jour' : 'tous');
+
+        $duJour = $this->paiements->encaissementsDuJour((int) $user->id);
+
+        return view('domain.finances.encaissements.index', [
+            'onglet'        => $onglet,
+            'annee'         => $annee,
+            'filtres'       => $filtres,
+            'recherche'     => $recherche,
+            'encaissements' => $this->paiements->encaissementsPagines($filtres),
+            'enAttente'     => $this->paiements->paiementsEnAttentePagines($recherche),
+            'duJour'        => $duJour,
+            'totalJour'     => round((float) $duJour->sum('montant'), 2),
+            'compteurAttente' => $this->paiements->compterPaiementsEnAttente($anneeId),
+            'caisseOuverte' => $this->caisses->findOuverteParCaissier((int) $user->id),
+            'caisses'       => $this->caisses->listePourSelect($anneeId),
         ]);
     }
 
-    public function encaisser(Detail $detail): RedirectResponse
+    /** Écran « Nouvel encaissement » : choix du paiement en attente, détail, montant reçu. */
+    public function nouveau(Request $request)
     {
-        $anneeId = (int) $this->anneeContext->id();
-        $caisse = $this->caisses->caisseOuvertePour(Auth::id(), $anneeId);
-
-        if (! $caisse) {
-            return back()->with('error', "Vous n'avez aucune caisse ouverte.");
-        }
-
-        return $this->runWeb(function () use ($detail, $caisse) {
-            $this->encaissementService->encaisser($detail, $caisse, Auth::id());
-        }, 'finances.encaissements.index', 'Paiement encaissé avec succès.');
+        return view('domain.finances.encaissements.nouveau', [
+            'annee'         => $this->anneeActive(),
+            'caisseOuverte' => $this->caisses->findOuverteParCaissier((int) $request->user()->id),
+        ]);
     }
 
-    public function annuler(AnnulerEncaissementRequest $request, Detail $detail): RedirectResponse
+    /** AJAX (liste avec recherche) : paiements en attente, par nom d'élève, matricule, payeur ou référence. */
+    public function paiementsEnAttente(Request $request)
     {
-        return $this->runWeb(function () use ($request, $detail) {
-            $this->encaissementService->annuler($detail, $request->validated()['motif']);
-        }, 'finances.encaissements.index', 'Encaissement annulé.');
+        $q = trim((string) $request->input('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $paiements = $this->paiements
+            ->paiementsEnAttenteQuery(['search' => $q, 'annee_id' => (int) $this->anneeActive()->id])
+            ->limit(20)
+            ->get();
+
+        return response()->json(['results' => $paiements->map(function ($p) {
+            $eleve = $p->inscription?->eleve;
+
+            return [
+                'id'   => $p->id,
+                'text' => trim(($eleve ? "{$eleve->nom} {$eleve->prenom}" : $p->payeur) . ' — ' . $p->reference . ' — '
+                    . number_format((float) $p->details->sum('montant'), 0, ',', ' ') . ' F'),
+            ];
+        })->values()]);
+    }
+
+    /** Fragment HTML : détail d'un paiement (fenêtres d'encaissement et de consultation). */
+    public function resume(int $paiement)
+    {
+        $paiement = $this->paiements->findPourEncaissement($paiement);
+
+        return view('domain.finances.encaissements.partials.resume', [
+            'paiement'   => $paiement,
+            'aEncaisser' => round((float) $paiement->details
+                ->filter(fn ($d) => $d->statut_paiement === PaiementStatut::EN_ATTENTE)->sum('montant'), 2),
+        ]);
+    }
+
+    /** Encaisse un paiement dans la caisse ouverte du caissier, avec le montant réellement reçu. */
+    public function encaisserPaiement(Request $request, int $paiement)
+    {
+        $valide = $request->validate([
+            'montant_recu' => ['required', 'numeric', 'min:0.01'],
+        ], [
+            'montant_recu.required' => 'Saisissez le montant réellement encaissé.',
+        ]);
+
+        return $this->runAjax(function () use ($paiement, $valide) {
+            $annee = $this->anneeActive();
+            if ((int) \App\Domain\Finances\Models\Paiement::whereKey($paiement)->value('annee_id') !== (int) $annee->id) {
+                throw new \RuntimeException("Ce paiement n'appartient pas à l'année scolaire sélectionnée ({$annee->libelle}).");
+            }
+
+            $resultat = $this->service->encaisserParCaissier($paiement, (float) $valide['montant_recu'], (int) Auth::id());
+
+            return [
+                'montant'  => $resultat['montant'],
+                'monnaie'  => $resultat['monnaie'],
+                'recu_url' => route('finances.encaissements.paiement.recu', $paiement),
+            ];
+        }, 'Encaissement effectué.');
+    }
+
+    /** Annule l'encaissement d'un paiement (caisse encore ouverte), avec un motif. */
+    public function annulerEncaissement(Request $request, int $paiement)
+    {
+        $valide = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:500']]);
+
+        return $this->runAjax(
+            fn () => ['details' => $this->service->annulerEncaissementPaiement($paiement, $valide['motif'], (int) Auth::id())],
+            'Encaissement annulé : le paiement est de nouveau en attente.'
+        );
+    }
+
+    /** Annule un paiement en attente (Administrateur). */
+    public function annulerPaiement(Request $request, int $paiement)
+    {
+        $valide = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:500']]);
+
+        return $this->runAjax(
+            fn () => ['paiement' => $this->paiementService->annuler($paiement, $valide['motif'], (int) Auth::id())],
+            'Paiement annulé.'
+        );
+    }
+
+    /** Reçu d'un paiement encaissé (toutes ses lignes encaissées). */
+    public function recuPaiement(int $paiement)
+    {
+        $paiement = $this->paiements->findPourEncaissement($paiement);
+        $detail = $paiement->details->first(fn ($d) => $d->statut_paiement === PaiementStatut::ENCAISSE);
+
+        abort_if(! $detail, 404, "Aucun reçu disponible : ce paiement n'est pas encore encaissé.");
+
+        return $this->recuPdf($detail->id);
+    }
+
+    /** Génère le PDF du reçu d'un encaissement. */
+    public function recuPdf(int $detail)
+    {
+        $detailModel = $this->paiements->findDetailAvecRelations($detail);
+
+        if ($detailModel->statut_paiement !== PaiementStatut::ENCAISSE) {
+            abort(404, "Aucun reçu disponible : ce détail n'est pas encore encaissé.");
+        }
+
+        $paiement = $this->paiements->findPourEncaissement((int) $detailModel->paiement_id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('domain.finances.encaissements.recu', [
+            'detail'    => $detailModel,
+            'paiement'  => $paiement,
+            'eleve'     => $paiement->inscription?->eleve,
+            'caisse'    => $detailModel->caisse,
+            'genereLe'  => now(),
+            'generePar' => auth()->user(),
+        ])
+        ->setPaper('A5', 'portrait') // A5 = format ticket/reçu
+        ->setOptions([
+            'defaultFont'          => 'DejaVu Sans',
+            'isHtml5ParserEnabled' => true,
+            'dpi'                  => 150,
+            'margin_top'           => 8,
+            'margin_bottom'        => 8,
+            'margin_left'          => 10,
+            'margin_right'         => 10,
+        ]);
+
+        $filename = sprintf('recu_%s_%s.pdf', $paiement->reference ?? 'paiement', $detailModel->id);
+
+        return $pdf->stream($filename);
     }
 }

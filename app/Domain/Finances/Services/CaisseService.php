@@ -10,6 +10,7 @@ use App\Domain\Finances\Models\Mouvement;
 use App\Domain\Finances\Repositories\CaisseRepository;
 use App\Domain\Finances\Repositories\MouvementRepository;
 use App\Domain\Finances\Types\CaisseStatut;
+use App\Domain\Finances\Types\StatutEcartCaisse;
 use App\Support\AnneeScolaireContext;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -29,6 +30,14 @@ class CaisseService
      */
     public function ouvrir(OuvertureCaisseData $data): Caisse
     {
+        // La caisse est rattachée à l'année de travail : une année clôturée est figée
+        $annee = \App\Domain\Scolarite\Models\Annee::find(app(AnneeScolaireContext::class)->id());
+        if ($annee?->isCloturee()) {
+            throw new RuntimeException(
+                "L'année scolaire {$annee->libelle} est clôturée : on ne peut plus y ouvrir de caisse."
+            );
+        }
+
         if ($this->caisses->findOuverteParCaissier($data->caissierId)) {
             throw new RuntimeException(
                 "Ce caissier a déjà une caisse ouverte. Clôturez-la avant d'en ouvrir une nouvelle."
@@ -73,8 +82,50 @@ class CaisseService
                 'solde_compte' => $data->soldeCompte,
                 'ecart'        => $ecart,
                 'motif_ecart'  => abs($ecart) > 0.01 ? $data->motifEcart : null,
+                // Tout écart est soumis à la validation de la Direction
+                'statut_ecart' => (abs($ecart) > 0.01 ? StatutEcartCaisse::EN_ATTENTE : StatutEcartCaisse::AUCUN)->value,
                 'date_cloture' => now(),
                 'statut'       => CaisseStatut::CLOTUREE->value,
+            ]);
+
+            return $caisse->refresh();
+        });
+    }
+
+    /**
+     * Décision de la Direction sur un écart déclaré à la clôture.
+     *
+     * Un écart validé ou refusé est définitif. « En vérification » laisse
+     * l'écart en instance : la Direction statuera à nouveau plus tard.
+     * Le journal de la caisse, lui, reste figé : statuer ne modifie aucun solde.
+     */
+    public function statuerSurEcart(int $caisseId, StatutEcartCaisse $decision, int $valideurId, ?string $commentaire = null): Caisse
+    {
+        if (! in_array($decision, StatutEcartCaisse::decisions(), true)) {
+            throw new RuntimeException("Décision invalide sur un écart de caisse.");
+        }
+
+        return DB::transaction(function () use ($caisseId, $decision, $valideurId, $commentaire) {
+            $caisse = $this->caisses->findOrFail($caisseId);
+
+            if ($caisse->isOuverte()) {
+                throw new RuntimeException("Cette caisse est encore ouverte : l'écart se constate à la clôture.");
+            }
+            if (! $caisse->ecartEnInstance()) {
+                throw new RuntimeException("Cette caisse n'a pas d'écart en attente de décision.");
+            }
+            if ((int) $caisse->responsable_id === $valideurId) {
+                throw new RuntimeException("Le caissier responsable ne peut pas statuer sur l'écart de sa propre caisse.");
+            }
+            if ($decision !== StatutEcartCaisse::VALIDE && blank($commentaire)) {
+                throw new RuntimeException("Un commentaire est obligatoire pour refuser un écart ou demander une vérification.");
+            }
+
+            $this->caisses->update($caisse->id, [
+                'statut_ecart'                 => $decision->value,
+                'valide_par'                   => $valideurId,
+                'date_validation_ecart'        => now(),
+                'commentaire_validation_ecart' => $commentaire,
             ]);
 
             return $caisse->refresh();
@@ -171,6 +222,29 @@ class CaisseService
      *     totalSorties: float
      * }
      */
+    /**
+     * Totaux des paiements encaissés dans une caisse, par type de paiement
+     * (scolarité, cantine, produit…), du plus élevé au plus faible.
+     *
+     * @return \Illuminate\Support\Collection<int, array{libelle:string, montant:float, nb:int}>
+     */
+    public function totauxEncaissesParType(int $caisseId): \Illuminate\Support\Collection
+    {
+        return DB::table('details')
+            ->where('caisse_id', $caisseId)
+            ->where('etat', 1)
+            ->where('statut_paiement', \App\Domain\Finances\Types\PaiementStatut::ENCAISSE->value)
+            ->groupBy('type_paiement')
+            ->selectRaw('type_paiement, SUM(montant) as montant, COUNT(*) as nb')
+            ->orderByDesc('montant')
+            ->get()
+            ->map(fn ($l) => [
+                'libelle' => \App\Domain\Finances\Types\TypeDetail::tryFrom((int) $l->type_paiement)?->label() ?? 'Autre',
+                'montant' => round((float) $l->montant, 2),
+                'nb'      => (int) $l->nb,
+            ]);
+    }
+
     public function preparerJournal(int $caisseId): array
     {
         $caisse     = $this->caisses->findAvecJournal($caisseId);

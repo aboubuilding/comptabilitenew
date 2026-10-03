@@ -4,16 +4,19 @@ namespace App\Domain\Scolarite\Types;
 
 enum StatutAnnee: int
 {
-    case Ouvert  = 1;
-    case Cloture = 2;
+    // Codes de l'ancienne classe App\Types\StatutAnnee
+    case NonOuvert = 1;
+    case Ouvert    = 2;
+    case Cloture   = 3;
 
     public function label(): string
     {
         // "Active" / "Clôturée" : terminologie exacte du cahier des
         // charges (§4, 1.4), pas "Ouverte" comme dans la version d'origine.
         return match ($this) {
-            self::Ouvert  => 'Active',
-            self::Cloture => 'Clôturée',
+            self::NonOuvert => 'Non ouverte',
+            self::Ouvert    => 'Active',
+            self::Cloture   => 'Clôturée',
         };
     }
 }

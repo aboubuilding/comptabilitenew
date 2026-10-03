@@ -134,6 +134,7 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                            @can('banques.gerer')
                                             <li>
                                                 <button type="button" class="dropdown-item btn-edit-banque"
                                                         data-id="{{ $banque->id }}"
@@ -142,8 +143,10 @@
                                                     <i class="fas fa-pen"></i> Modifier
                                                 </button>
                                             </li>
+                                            @endcan
                                             @if (($banque->cheques_total ?? 0) === 0)
                                                 <li><hr class="dropdown-divider"></li>
+                                                @can('banques.gerer')
                                                 <li>
                                                     <form action="{{ route('finances.banques.destroy', $banque) }}"
                                                           method="POST" class="form-confirm-delete"
@@ -156,6 +159,7 @@
                                                         </button>
                                                     </form>
                                                 </li>
+                                                @endcan
                                             @endif
                                         </ul>
                                     </div>

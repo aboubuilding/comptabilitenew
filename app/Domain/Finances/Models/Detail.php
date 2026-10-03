@@ -2,134 +2,58 @@
 
 namespace App\Domain\Finances\Models;
 
-use App\Domain\Logistique\Models\Produit;
-use App\Domain\ServicesEleves\Models\AbonnementBus;
-use App\Domain\ServicesEleves\Models\Activite;
-use App\Domain\ServicesEleves\Models\Evenement;
-use App\Domain\ServicesEleves\Models\InscriptionCantine;
-use App\Domain\Finances\Types\StatutPaiement;
-use App\Domain\Scolarite\Models\Inscription;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\Finances\Types\PaiementStatut;
+use App\Domain\Finances\Types\TypeDetail;
+use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Réécrit avec les champs ajoutés par les migrations récentes
- * (produit_id, service_id, activite_id, evenement_id, quantite,
- * remise_percent, abonnement_bus_id, inscription_cantine_id). La
- * "nature" d'une ligne (cahier des charges §4, 2.2) se déduit de la
- * colonne FK renseignée — voir nature()/natureLabel().
- */
 class Detail extends Model
 {
-    use HasFactory;
-
     protected $table = 'details';
 
     protected $fillable = [
-        'montant', 'remise_percent', 'libelle', 'paiement_id', 'type_paiement',
-        'inscription_id', 'frais_ecole_id', 'statut_paiement', 'annee_id', 'souscription_id',
-        'caisse_id', 'comptable_id', 'caissier_id', 'date_paiement', 'date_encaissement',
-        'motif_annulation', 'etat',
-        'produit_id', 'service_id', 'activite_id', 'evenement_id', 'quantite',
-        'abonnement_bus_id', 'inscription_cantine_id',
+        'montant', 'quantite', 'prix_unitaire', 'libelle',
+        'paiement_id', 'type_paiement',
+        'inscription_id', 'frais_ecole_id', 'souscription_id',
+        'produit_id', 'service_id', 'activite_id', 'evenement_id',
+        'statut_paiement', 'annee_id',
+        'caisse_id', 'comptable_id', 'caissier_id',
+        'date_paiement', 'date_encaissement', 'etat',
     ];
 
     protected $casts = [
-        'montant'           => 'float',
-        'remise_percent'    => 'float',
-        'quantite'          => 'integer',
-        'date_paiement'     => 'date',
+        'type_paiement'   => TypeDetail::class,
+        'statut_paiement' => PaiementStatut::class,
+        'montant'         => 'float',
+        'quantite'        => 'float',
+        'prix_unitaire'   => 'float',
+        'date_paiement'   => 'date',
         'date_encaissement' => 'date',
-        'statut_paiement'   => StatutPaiement::class,
-        'etat'              => 'integer',
     ];
 
-    public function paiement()
+    public function paiement(): BelongsTo
     {
-        return $this->belongsTo(Paiement::class);
+        return $this->belongsTo(Paiement::class, 'paiement_id');
     }
 
-    public function inscription()
+    public function caisse(): BelongsTo
     {
-        return $this->belongsTo(Inscription::class);
+        return $this->belongsTo(Caisse::class, 'caisse_id');
     }
 
-    public function produit()
+    public function comptable(): BelongsTo
     {
-        return $this->belongsTo(Produit::class);
+        return $this->belongsTo(User::class, 'comptable_id');
     }
 
-    public function service()
+    public function caissier(): BelongsTo
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(User::class, 'caissier_id');
     }
 
-    public function activite()
+    public function isEncaisse(): bool
     {
-        return $this->belongsTo(Activite::class);
-    }
-
-    public function evenement()
-    {
-        return $this->belongsTo(Evenement::class);
-    }
-
-    public function abonnementBus()
-    {
-        return $this->belongsTo(AbonnementBus::class);
-    }
-
-    public function inscriptionCantine()
-    {
-        return $this->belongsTo(InscriptionCantine::class);
-    }
-
-    public function caisse()
-    {
-        return $this->belongsTo(Caisse::class);
-    }
-
-    /**
-     * Nature de la ligne, déduite de la FK renseignée — un seul type de
-     * FK est censé être non nul à la fois. Ordre de préséance sans
-     * incidence en usage normal, choisi pour être explicite en cas de
-     * données incohérentes.
-     */
-    public function nature(): string
-    {
-        return match (true) {
-            ! is_null($this->produit_id)             => 'produit',
-            ! is_null($this->service_id)              => 'service',
-            ! is_null($this->activite_id)              => 'activite',
-            ! is_null($this->evenement_id)              => 'evenement',
-            ! is_null($this->abonnement_bus_id)          => 'bus',
-            ! is_null($this->inscription_cantine_id)      => 'cantine',
-            ! is_null($this->frais_ecole_id)               => 'ecolage',
-            default                                         => 'autre',
-        };
-    }
-
-    public function natureLabel(): string
-    {
-        return match ($this->nature()) {
-            'produit'   => 'Produit',
-            'service'   => 'Service',
-            'activite'  => 'Activité',
-            'evenement' => 'Événement',
-            'bus'       => 'Bus',
-            'cantine'   => 'Cantine',
-            'ecolage'   => 'Écolage',
-            default     => 'Autre',
-        };
-    }
-
-    public function scopeEncaisse($query)
-    {
-        return $query->whereNotNull('date_encaissement');
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('etat', 1);
+        return $this->statut_paiement === PaiementStatut::ENCAISSE;
     }
 }

@@ -1,76 +1,67 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Finances;
+namespace App\Http\Controllers\Domain\Finances;
 
-use App\Domain\Finances\Models\PlanEcheancier;
+use App\Domain\Scolarite\Models\Annee;
+use App\Domain\Finances\DTO\PlanEcheancierData;
 use App\Domain\Finances\Repositories\PlanEcheancierRepository;
+use App\Domain\Finances\Services\PlanEcheancierService;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Finances\PlanEcheancierRequest;
-use App\Support\AnneeScolaireContext;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Domain\Finances\StorePlanEcheancierRequest;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
-/**
- * CRUD minimal du plan lui-même (nom/description) — même pattern que
- * Cycle. La gestion des lignes (échéances) du plan est un écran de
- * détail à part, pas encore construit (prochaine étape, comme la
- * gestion des parents/fratrie sur Espaces).
- */
 class PlanEcheancierController extends Controller
 {
     use HandlesControllerErrors;
 
     public function __construct(
         private PlanEcheancierRepository $plans,
-        private AnneeScolaireContext $anneeContext,
+        private PlanEcheancierService    $service,
     ) {
+        $this->middleware('permission:frais.voir')->only(['index', 'show']);
+        $this->middleware('permission:frais.gerer')->only(['store', 'update', 'destroy']);
     }
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        $anneeId = (int) ($request->input('annee_id') ?: $this->anneeContext->id());
+        $filters = $request->only(['annee_id', 'search']);
 
-        return view('admin.finances.plan-echeanciers.index', [
-            'plans'   => $this->plans->activeQuery()
-                ->where('annee_id', $anneeId)
-                ->withCount('lignes')
-                ->orderBy('nom')
-                ->paginate(20),
-            'anneeId' => $anneeId,
+        return view('domain.finances.plan-echeanciers.index', [
+            'plans'   => $this->plans->listePaginee($filters),
+            'filters' => $filters,
+            'annees'  => Annee::orderByDesc('libelle')->get(['id', 'libelle']),
         ]);
     }
 
-    public function edit(PlanEcheancier $planEcheancier): JsonResponse
+    public function show(int $plan)
     {
-        return response()->json(['plan' => $planEcheancier]);
+        return response()->json([
+            'plan' => $this->plans->findAvecLignes($plan),
+        ]);
     }
 
-    public function store(PlanEcheancierRequest $request): JsonResponse
+    public function store(StorePlanEcheancierRequest $request)
     {
-        return $this->runAjax(function () use ($request) {
-            $data = $request->validated();
-            $data['annee_id'] = $this->anneeContext->id();
-
-            $plan = $this->plans->create($data);
-
-            return ['plan' => $plan];
-        }, 'Plan d\'échéancier créé avec succès.');
+        return $this->runAjax(
+            fn () => ['plan' => $this->service->creer(PlanEcheancierData::fromRequest($request->validated()))],
+            'Plan d\'échéancier créé.'
+        );
     }
 
-    public function update(PlanEcheancierRequest $request, PlanEcheancier $planEcheancier): JsonResponse
+    public function update(StorePlanEcheancierRequest $request, int $plan)
     {
-        return $this->runAjax(function () use ($request, $planEcheancier) {
-            $this->plans->update($planEcheancier->id, $request->validated());
-        }, 'Plan modifié avec succès.');
+        return $this->runAjax(
+            fn () => ['plan' => $this->service->modifier($plan, PlanEcheancierData::fromRequest($request->validated()))],
+            'Plan d\'échéancier mis à jour.'
+        );
     }
 
-    public function archiver(PlanEcheancier $planEcheancier): RedirectResponse
+    public function destroy(int $plan)
     {
-        return $this->runWeb(function () use ($planEcheancier) {
-            $this->plans->delete($planEcheancier->id);
-        }, 'finances.plan-echeanciers.index', 'Plan archivé avec succès.');
+        return $this->runAjax(function () use ($plan) {
+            $this->service->supprimer($plan);
+            return null;
+        }, 'Plan désactivé.');
     }
 }

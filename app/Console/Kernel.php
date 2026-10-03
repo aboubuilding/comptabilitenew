@@ -16,6 +16,11 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        $schedule->job(new \App\Jobs\RecalculerSituationsRecouvrement())
+            ->dailyAt('02:00')
+            ->name('recouvrement:recalculer')
+            ->withoutOverlapping();
     }
 
     /**

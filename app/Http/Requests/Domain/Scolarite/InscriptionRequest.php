@@ -1,8 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Scolarite;
+namespace App\Http\Requests\Domain\Scolarite;
 
+use App\Domain\Scolarite\Types\StatutValidationInscription;
+use App\Support\AnneeScolaireContext;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Validator;
 
 class InscriptionRequest extends FormRequest
 {
@@ -30,6 +34,31 @@ class InscriptionRequest extends FormRequest
             'frais_livre'       => ['nullable', 'numeric', 'min:0'],
             'remise_scolarite'  => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    /**
+     * Un élève n'a qu'une inscription en cours par année scolaire : un
+     * dossier rejeté ou abandonné n'empêche pas d'en saisir un nouveau.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->has('eleve_id')) {
+                return;
+            }
+
+            $dejaInscrit = DB::table('inscriptions')
+                ->where('eleve_id', $this->integer('eleve_id'))
+                ->where('annee_id', app(AnneeScolaireContext::class)->id())
+                ->where('etat', 1)
+                ->where('statut_abandon', 0)
+                ->where('statut_validation', '!=', StatutValidationInscription::REJETEE->value)
+                ->exists();
+
+            if ($dejaInscrit) {
+                $validator->errors()->add('eleve_id', 'Cet élève a déjà une inscription en cours pour cette année scolaire.');
+            }
+        });
     }
 
     public function messages(): array

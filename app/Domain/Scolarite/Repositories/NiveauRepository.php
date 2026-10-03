@@ -14,6 +14,14 @@ class NiveauRepository extends BaseRepository
         parent::__construct($model);
     }
 
+    public function listePourSelect(): Collection
+    {
+        return $this->activeQuery()
+            ->orderBy('numero_ordre')
+            ->orderBy('libelle')
+            ->get(['id', 'libelle', 'cycle_id']);
+    }
+
     public function byCycle(int $cycleId): Collection
     {
         return $this->activeQuery()
@@ -44,6 +52,9 @@ class NiveauRepository extends BaseRepository
      */
     public function canDelete(int $niveauId): bool
     {
-        return true; // TODO : brancher sur Classe une fois ce module construit
+        return ! \App\Domain\Scolarite\Models\Classe::query()
+            ->where('niveau_id', $niveauId)
+            ->where('etat', 1)
+            ->exists();
     }
 }

@@ -62,6 +62,24 @@ class AnneeService
      * "impossible si des inscriptions sont encore en attente") : à
      * enrichir si le cahier des charges précise des conditions de blocage.
      */
+    /**
+     * Ouvre une année créée à l'avance : elle devient sélectionnable comme
+     * année de travail. Une année clôturée ne se rouvre pas.
+     */
+    public function ouvrir(Annee $annee): void
+    {
+        if ($annee->isCloturee()) {
+            throw new \RuntimeException('Une année clôturée ne peut pas être rouverte.');
+        }
+
+        $this->annees->ouvrir($annee->id);
+
+        Log::info('Année scolaire ouverte', [
+            'annee_id' => $annee->id,
+            'libelle'  => $annee->libelle,
+        ]);
+    }
+
     public function cloturer(Annee $annee): void
     {
         $this->annees->cloturer($annee->id);

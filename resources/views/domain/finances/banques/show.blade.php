@@ -23,6 +23,13 @@
    class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
     <i class="fas fa-file-pdf me-1"></i> Exporter PDF
 </a>
+
+@can('cheques.rapprocher')
+    <a href="{{ route('finances.banques.rapprochement.index', $banque) }}"
+       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+        <i class="fas fa-file-import me-1"></i> Rapprochement
+    </a>
+@endcan
 @endsection
 
 @section('css')

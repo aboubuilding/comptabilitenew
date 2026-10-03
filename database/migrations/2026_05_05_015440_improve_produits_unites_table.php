@@ -42,13 +42,11 @@ return new class extends Migration
             if (!Schema::hasColumn('produits', 'prix_achat')) {
                 $table->decimal('prix_achat', 12, 2)->nullable()->after('prix_unitaire');
             }
-            if (!Schema::hasColumn('produits', 'prix_vente')) {
-                $table->renameColumn('prix_unitaire', 'prix_vente');
-            }
-            
+            // Le prix de vente reste porté par prix_unitaire (nom utilisé par le modèle Produit)
+
             // Stock minimum et alerte (déjà existants ou à ajouter)
             if (!Schema::hasColumn('produits', 'quantite_stock')) {
-                $table->float('quantite_stock')->default(0)->after('prix_vente');
+                $table->float('quantite_stock')->default(0)->after('prix_unitaire');
             }
             if (!Schema::hasColumn('produits', 'seuil_alerte')) {
                 $table->float('seuil_alerte')->default(5)->after('quantite_stock');
@@ -75,10 +73,6 @@ return new class extends Migration
                 'unite_vente', 'conversion_vente', 'prix_achat', 'quantite_stock',
                 'seuil_alerte', 'stock_min', 'stock_max'
             ]);
-            // Renommer prix_vente vers prix_unitaire si besoin
-            if (Schema::hasColumn('produits', 'prix_vente')) {
-                $table->renameColumn('prix_vente', 'prix_unitaire');
-            }
         });
     }
 };

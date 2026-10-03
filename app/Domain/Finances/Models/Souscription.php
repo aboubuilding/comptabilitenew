@@ -2,43 +2,57 @@
 
 namespace App\Domain\Finances\Models;
 
-use App\Domain\Finances\Types\TypePaiement;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\Scolarite\Models\Inscription;
+use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Modèle SEULEMENT — dépendance de référence pour FraisEcole. Le workflow
- * "Souscrire un frais pour une famille et appliquer une remise" relève
- * plutôt de l'écran financier d'un élève/inscription (pas de cet écran
- * de paramétrage des frais) — à construire avec ce module.
- */
 class Souscription extends Model
 {
-    use HasFactory;
-
     protected $table = 'souscriptions';
 
     protected $fillable = [
-        'date_souscription', 'montant_annuel_prevu', 'taux_remise', 'type_paiement',
-        'frais_ecole_id', 'niveau_id', 'annee_id', 'inscription_id', 'utilisateur_id',
-        'ligne_id', 'zone_id', 'etat',
+        'date_souscription', 'montant_annuel_prevu', 'taux_remise',
+        'type_paiement', 'frais_ecole_id', 'niveau_id', 'annee_id',
+        'inscription_id', 'utilisateur_id', 'ligne_id', 'zone_id', 'etat',
     ];
 
     protected $casts = [
-        'date_souscription'     => 'date',
-        'montant_annuel_prevu'  => 'float',
-        'taux_remise'           => 'float',
-        'type_paiement'         => TypePaiement::class,
-        'etat'                  => 'integer',
+        'date_souscription'    => 'date',
+        'montant_annuel_prevu' => 'float',
+        'taux_remise'          => 'float',
     ];
 
-    public function fraisEcole()
+    public function fraisEcole(): BelongsTo
     {
-        return $this->belongsTo(FraisEcole::class);
+        return $this->belongsTo(FraisEcole::class, 'frais_ecole_id');
     }
 
-    public function scopeActive($query)
+    public function inscription(): BelongsTo
     {
-        return $query->where('etat', 1);
+        return $this->belongsTo(Inscription::class, 'inscription_id');
+    }
+
+    public function auteur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'utilisateur_id');
+    }
+
+    /** Montant après application de la remise. */
+    public function getMontantNetAttribute(): float
+    {
+        return round(
+            (float) $this->montant_annuel_prevu * (1 - (float) $this->taux_remise / 100),
+            2
+        );
+    }
+
+    /** Montant total de la remise accordée. */
+    public function getMontantRemiseAttribute(): float
+    {
+        return round(
+            (float) $this->montant_annuel_prevu * ((float) $this->taux_remise / 100),
+            2
+        );
     }
 }
