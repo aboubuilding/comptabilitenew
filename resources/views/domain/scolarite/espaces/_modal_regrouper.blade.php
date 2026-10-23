@@ -15,8 +15,8 @@
         </div>
 
         {{-- Mode --}}
-        <div class="form-section mb-3">
-            <label class="form-label">Mode de regroupement</label>
+        <x-section class="mb-3">
+            <x-libelle>Mode de regroupement</x-libelle>
             <div class="d-flex gap-3">
                 <div class="form-check">
                     <input type="radio" name="mode" value="nouveau" class="form-check-input" id="mode-nouveau"
@@ -29,32 +29,32 @@
                     <label class="form-check-label" for="mode-existant">Affecter à un espace existant</label>
                 </div>
             </div>
-        </div>
+        </x-section>
 
         {{-- Nom famille (nouveau) --}}
-        <div class="form-section mb-3" id="bloc-nouveau">
-            <label class="form-label">Nom de la nouvelle famille <span class="text-danger">*</span></label>
+        <x-section class="mb-3" id="bloc-nouveau">
+            <x-libelle requis>Nom de la nouvelle famille</x-libelle>
             <input type="text" name="nom_famille" class="form-control" maxlength="150"
                    value="{{ old('nom_famille') }}" placeholder="Ex : Famille DIOP">
-        </div>
+        </x-section>
 
         {{-- Espace existant --}}
-        <div class="form-section mb-3 d-none" id="bloc-existant">
-            <label class="form-label">Espace familial existant <span class="text-danger">*</span></label>
+        <x-section class="mb-3 d-none" id="bloc-existant">
+            <x-libelle requis>Espace familial existant</x-libelle>
             <select name="espace_id" class="form-select">
                 <option value="">— Sélectionner —</option>
                 @foreach($espaces as $e)
                     <option value="{{ $e->id }}" @selected(old('espace_id') == $e->id)>{{ $e->nom_famille }}</option>
                 @endforeach
             </select>
-        </div>
+        </x-section>
 
         {{-- Liste des élèves --}}
-        <div class="form-section">
-            <label class="form-label">
+        <x-section>
+            <x-libelle>
                 Élèves à regrouper
                 <span class="badge bg-secondary" id="count-eleves">{{ $eleves->count() }}</span>
-            </label>
+            </x-libelle>
 
             @if($eleves->isEmpty())
                 <div class="alert alert-warning">
@@ -81,7 +81,7 @@
                     @endforeach
                 </div>
             @endif
-        </div>
+        </x-section>
     </div>
 
     <div class="modal-footer">

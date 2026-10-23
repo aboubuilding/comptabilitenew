@@ -13,47 +13,40 @@
 
 @section('page_actions')
     @can('banques.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouvelleBanque"
-                data-bs-toggle="modal" data-bs-target="#banqueModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouvelleBanque" data-bs-toggle="modal" data-bs-target="#banqueModal">
             <i class="fas fa-plus-circle me-1"></i> Nouveau compte bancaire
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .banques-page { --banques-bg-soft: #faf6ee; --banques-border: #ece4d6; }
+    .banques-page { --banques-bg-soft: var(--eim-cream); --banques-border: var(--eim-border); }
     .text-xs { font-size: .72rem; }
     .text-sm { font-size: .8rem; }
 
-    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom: 1px solid var(--banques-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--banques-border); padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .search-wrapper { position: relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform: translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left: 36px !important; }
 
     .btn-filtrer { background: var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-filtrer:hover { background: var(--school-red-dark); color:#fff; }
 
     .compteur-badge { display:inline-block; background: var(--banques-bg-soft); color: var(--school-red); font-weight:600; font-size:.85rem; padding:.45rem .9rem; border-radius:999px; border:1px solid var(--banques-border); }
 
-    .btn-nouveau { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; box-shadow:0 4px 14px rgba(200,30,58,.25); }
     .btn-nouveau:hover { color:#fff; transform: translateY(-2px); }
 
     .table-banques thead tr { background: var(--banques-bg-soft); }
     .table-banques thead th { color: var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--banques-border); padding:.9rem 1rem; }
     .table-banques thead th i { color: var(--school-gold-dark); }
     .table-banques tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--banques-border); font-size:.9rem; color: var(--school-ink); vertical-align:middle; }
-    .table-banques tbody tr:hover { background:#fdfaf5; }
+    .table-banques tbody tr:hover { background:var(--eim-hover); }
 
     .banque-nom { font-weight:700; color: var(--school-ink); display:block; }
     .banque-id { font-size:.72rem; color: var(--school-muted); }
 
-    .empty-state { padding: 3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding: 3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
     .empty-state p { font-size:.9rem; }
 
@@ -65,9 +58,8 @@
     .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--school-red); margin-bottom:.75rem; display:flex; align-items:center; gap:6px; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color: var(--school-ink); }
     .form-section .form-control { border-radius:8px; border:1px solid var(--banques-border); padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .btn-annuler { background:#fff; border:1px solid var(--banques-border); color:#5b6b7a; border-radius:8px; font-weight:500; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--banques-border); color:var(--eim-ink-soft); border-radius:8px; font-weight:500; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-annuler:hover { background: var(--banques-bg-soft); }
     .btn-enregistrer { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
     .btn-enregistrer:hover { color:#fff; }
@@ -78,36 +70,32 @@
 <div class="banques-page">
 
     {{-- Tableau principal --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-3 align-items-center">
                 <div class="col-md-6">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Rechercher une banque..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Rechercher une banque..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-3 col-6">
-                    <button type="submit" class="btn btn-filtrer w-100">
+                    <x-bouton variante="filtrer" type="submit" class="w-100">
                         <i class="fas fa-filter me-1"></i> Filtrer
-                    </button>
+                    </x-bouton>
                 </div>
                 <div class="col-md-3 col-6 text-end">
-                    <span class="compteur-badge">{{ $banques->total() }} banque(s)</span>
+                    <x-compteur>{{ $banques->total() }} banque(s)</x-compteur>
+                    <div class="text-muted small mt-1" id="annee-cheques"><i class="fas fa-calendar-alt me-1"></i>Chèques de l'année {{ \App\Domain\Scolarite\Models\Annee::find($filters['annee_id'] ?? null)?->libelle ?? '—' }}</div>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-banques align-middle mb-0">
+            <x-tableau class="table-banques align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4"><i class="fas fa-university me-2"></i>Banque</th>
                             <th class="text-center"><i class="fas fa-money-check me-2"></i>Chèques</th>
-                            <th class="text-center"><i class="fas fa-clock me-2"></i>En attente</th>
-                            <th class="text-end"><i class="fas fa-coins me-2"></i>Montant en attente</th>
+                            <th class="text-end"><i class="fas fa-check-circle me-2"></i>Réellement perçu</th>
+                            <th class="text-end"><i class="fas fa-hourglass-half me-2"></i>Reste à percevoir</th>
                             <th class="text-center pe-4" style="width:80px;">Actions</th>
                         </tr>
                     </thead>
@@ -119,21 +107,21 @@
                                     <span class="banque-id">#{{ $banque->id }}</span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="compteur-badge">{{ $banque->cheques_total ?? 0 }}</span>
+                                    <x-compteur>{{ $banque->cheques_total ?? 0 }}</x-compteur>
+                                    <div class="text-muted small mt-1">{{ $banque->cheques_en_attente ?? 0 }} en attente</div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="compteur-badge">{{ $banque->cheques_en_attente ?? 0 }}</span>
-                                </td>
-                                <td class="text-end" style="font-variant-numeric: tabular-nums; font-weight:600;">
-                                    {{ number_format($banque->montant_en_attente, 2, ',', ' ') }}
-                                </td>
+                                @foreach (['montant-percu' => [$banque->montant_percu, '#1F7A4D'], 'montant-reste' => [$banque->montant_reste, 'var(--school-red)']] as $classe => [$montant, $couleur])
+                                    <td class="text-end {{ $classe }}" style="font-variant-numeric: tabular-nums; font-weight:600; color:{{ (float) $montant > 0 ? $couleur : 'var(--school-muted)' }};">
+                                        {{ (float) $montant > 0 ? number_format((float) $montant, 2, ',', ' ') : '—' }}
+                                    </td>
+                                @endforeach
                                 <td class="text-center pe-4">
-                                    <div class="dropdown">
-                                        <button class="btn-action dropdown-toggle" type="button"
-                                                data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                    <x-actions>
+                                            <li>
+                                                <a class="dropdown-item" href="{{ route('finances.banques.show', ['banque' => $banque->id, 'onglet' => 'attente']) }}">
+                                                    <i class="fas fa-money-check"></i> Paiements et chèques
+                                                </a>
+                                            </li>
                                             @can('banques.gerer')
                                             <li>
                                                 <button type="button" class="dropdown-item btn-edit-banque"
@@ -147,77 +135,43 @@
                                             @if (($banque->cheques_total ?? 0) === 0)
                                                 <li><hr class="dropdown-divider"></li>
                                                 @can('banques.gerer')
-                                                <li>
-                                                    <form action="{{ route('finances.banques.destroy', $banque) }}"
-                                                          method="POST" class="form-confirm-delete"
-                                                          data-confirm-title="Désactiver cette banque ?"
-                                                          data-confirm-text="Elle n'apparaîtra plus dans les listes.">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash"></i> Désactiver
-                                                        </button>
-                                                    </form>
-                                                </li>
+                                                <x-actions.supprimer :action="route('finances.banques.destroy', $banque)" data-confirm-title="Désactiver cette banque ?" data-confirm-text="Elle n'apparaîtra plus dans les listes." />
                                                 @endcan
                                             @endif
-                                        </ul>
-                                    </div>
+                                        </x-actions>
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <i class="fas fa-university"></i>
-                                        <p class="mb-0 fw-medium">Aucun compte bancaire enregistré.</p>
-                                    </div>
-                                </td>
-                            </tr>
+                            <x-vide colspan="5" icone="fas fa-university" :paragraphe="false"><p class="mb-0 fw-medium">Aucun compte bancaire enregistré.</p></x-vide>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
     <div class="mt-4">
-        {{ $banques->appends(request()->query())->links('vendor.pagination.custom') }}
+        <x-pagination :liste="$banques->appends(request()->query())" />
     </div>
 
     {{-- Modale création / édition --}}
     @can('banques.gerer')
-    <div class="modal fade" id="banqueModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-banques">
-                <form id="banque-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="banque-method" value="POST">
-                    <div class="modal-header modal-header-banques">
-                        <h5 class="modal-title" id="banque-modal-title">
-                            <i class="fas fa-university me-2"></i>Nouveau compte bancaire
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section">
-                            <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations</div>
-                            <label class="form-label">Nom de la banque <span class="text-danger">*</span></label>
-                            <input type="text" name="nom" id="banque-nom" class="form-control"
-                                   maxlength="150" placeholder="Ex : Ecobank, BOA, UTB...">
-                            <div class="text-danger text-xs mt-1" id="nom-error"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer">
-                            <i class="fas fa-save me-1"></i> Enregistrer
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <x-modale id="banqueModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-banques" entete-class="modal-header-banques" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="banque-form">@csrf
+                    <input type="hidden" name="_method" id="banque-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="banque-modal-title"><i class="fas fa-university me-2"></i>Nouveau compte bancaire</x-slot:titre>
+        <x-section titre="Informations" icone="fas fa-info-circle">
+            <x-libelle requis>Nom de la banque</x-libelle>
+            <input type="text" name="nom" id="banque-nom" class="form-control"
+                   maxlength="150" placeholder="Ex : Ecobank, BOA, UTB...">
+            <div class="text-danger text-xs mt-1" id="nom-error"></div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit">
+                <i class="fas fa-save me-1"></i> Enregistrer
+            </x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

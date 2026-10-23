@@ -25,7 +25,7 @@ class ChequeController extends Controller
         private BanqueRepository $banques,
         private ChequeService    $service,
     ) {
-        $this->middleware('permission:cheques.voir')->only(['index', 'export']);
+        $this->middleware('permission:cheques.voir')->only(['index', 'export', 'paiement']);
         $this->middleware('permission:cheques.gerer')->only(['store']);
         $this->middleware('permission:cheques.rapprocher')->only(['rapprocher']);
     }
@@ -43,6 +43,16 @@ class ChequeController extends Controller
             'compteurs'       => $this->cheques->compterParStatut(),
             'montantAttente'  => $this->cheques->montantEnAttente(),
         ]);
+    }
+
+    /** Fragment HTML : contenu du paiement qui a abouti au chèque. */
+    public function paiement(int $cheque)
+    {
+        $cheque = $this->cheques->findOrFail($cheque);
+        $paiementId = $this->cheques->paiementLie($cheque);
+        abort_unless($paiementId, 404, "Aucun paiement n'est rattaché à ce chèque.");
+
+        return view('domain.finances.banques.partials.paiement', $this->cheques->contenuPaiement($cheque, $paiementId));
     }
 
     public function store(StoreChequeRequest $request)

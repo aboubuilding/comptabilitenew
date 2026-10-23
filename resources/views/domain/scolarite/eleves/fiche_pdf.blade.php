@@ -6,10 +6,10 @@
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #222; }
         h1, h2, h3 { margin: 0 0 8px; }
-        .entete { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 8px; margin-bottom: 16px; }
-        .entete h1 { color: #8B0000; }
+        .entete { text-align: center; border-bottom: 2px solid #D4A94D; padding-bottom: 8px; margin-bottom: 16px; }
+        .entete h1 { color: #8E1216; }
         .section { margin-bottom: 16px; }
-        .section h3 { background: #f5f5f5; padding: 6px; border-left: 3px solid #8B0000; }
+        .section h3 { background: #f5f5f5; padding: 6px; border-left: 3px solid #8E1216; }
         table { width: 100%; border-collapse: collapse; }
         td { padding: 4px 6px; vertical-align: top; }
         .label { color: #666; width: 30%; }
@@ -19,6 +19,7 @@
 </head>
 <body>
     <div class="entete">
+        <div style="text-align: center; margin-bottom: 4px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '20mm'])</div>
         <h1>École Internationale Mariam</h1>
         <p>Fiche élève — {{ $eleve->matricule }}</p>
     </div>

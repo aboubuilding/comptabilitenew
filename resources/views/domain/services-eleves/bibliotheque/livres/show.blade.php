@@ -11,23 +11,22 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
+    </x-bouton>
     @can('bibliotheque.preter')
         @if ($livre->nombre_disponibles > 0)
-            <button type="button" class="btn btn-nouveau"
-                    data-bs-toggle="modal" data-bs-target="#pretShowModal">
+            <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#pretShowModal">
                 <i class="fas fa-hand-holding me-1"></i> Prêter
-            </button>
+            </x-bouton>
         @endif
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
-    .main-card .card-header { border-bottom:1px solid #ece4d6 !important; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
+    .main-card .card-header { border-bottom:1px solid var(--eim-border) !important; }
 
     .info-row { display:flex; justify-content:space-between; padding:.6rem 0; border-bottom:1px solid #f1ece2; }
     .info-row:last-child { border-bottom:none; }
@@ -36,7 +35,7 @@
     .info-value.grand { font-size:1.15rem; color:var(--school-red-dark); }
 
     .dispo-card {
-        background:linear-gradient(135deg,#1c7a4d,#2ecc71);
+        background:linear-gradient(135deg,var(--eim-success),#2ecc71);
         color:#fff; border-radius:16px; padding:1.25rem 1.5rem;
         box-shadow:0 8px 24px rgba(28,122,77,.18);
         margin-bottom:1.25rem;
@@ -45,17 +44,11 @@
     .dispo-card .label { font-size:.8rem; opacity:.85; text-transform:uppercase; letter-spacing:.5px; }
     .dispo-card .value { font-size:2rem; font-weight:700; margin-top:4px; }
 
-    .table-historique thead tr { background:#faf6ee; }
-    .table-historique thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.7rem .9rem; border-bottom:1px solid #ece4d6; }
-    .table-historique tbody td { padding:.7rem .9rem; border-bottom:1px solid #ece4d6; font-size:.85rem; vertical-align:middle; }
-    .table-historique tbody tr:hover { background:#fdfaf5; }
+    .table-historique thead tr { background:var(--eim-cream); }
+    .table-historique thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.7rem .9rem; border-bottom:1px solid var(--eim-border); }
+    .table-historique tbody td { padding:.7rem .9rem; border-bottom:1px solid var(--eim-border); font-size:.85rem; vertical-align:middle; }
+    .table-historique tbody tr:hover { background:var(--eim-hover); }
 
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-statut.encours { background:#e0ecfc; color:#2563eb; }
-    .badge-statut.rendu   { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.retard  { background:#fdecea; color:var(--school-red); font-weight:700; }
-    .badge-statut.perdu   { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 </style>
 @endsection
 
@@ -74,7 +67,7 @@
         </div>
 
         {{-- Infos --}}
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4">
                 <h6 class="mb-0"><i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i> Informations</h6>
             </div>
@@ -108,17 +101,17 @@
                     <span class="info-value" style="font-family:monospace;">{{ $livre->numero_isbn ?? '—' }}</span>
                 </div>
                 @if ($livre->description)
-                    <div class="mt-3 p-2 rounded" style="background:#faf6ee;font-size:.85rem;color:#4a5560;">
+                    <div class="mt-3 p-2 rounded" style="background:var(--eim-cream);font-size:.85rem;color:var(--eim-ink-soft);">
                         <strong>Description :</strong> {{ $livre->description }}
                     </div>
                 @endif
             </div>
-        </div>
+        </x-carte>
     </div>
 
     {{-- Colonne droite --}}
     <div class="col-lg-8">
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-history me-1" style="color:var(--school-gold-dark);"></i> Historique des prêts</h6>
                 <span class="text-xs text-muted">{{ $livre->prets->count() }} prêt(s)</span>
@@ -130,8 +123,7 @@
                         Aucun prêt enregistré pour ce livre.
                     </div>
                 @else
-                    <div class="table-responsive">
-                        <table class="table table-historique mb-0">
+                    <x-tableau class="table-historique mb-0">
                             <thead>
                                 <tr>
                                     <th class="ps-4">Élève</th>
@@ -154,18 +146,16 @@
                                     <td class="text-sm">{{ optional($p->date_retour_pret)->format('d/m/Y') }}</td>
                                     <td class="text-sm">{{ optional($p->date_retour_reel)->format('d/m/Y') ?? '—' }}</td>
                                     <td>
-                                        <span class="badge-statut {{ $p->statut_pret?->css() }}">
-                                            <span class="badge-dot"></span>{{ $p->statut_pret?->label() }}
-                                        </span>
+                                        <x-badge class="{{ $p->statut_pret?->css() }}" point>{{ $p->statut_pret?->label() }}
+                                        </x-badge>
                                     </td>
                                 </tr>
                             @endforeach
                             </tbody>
-                        </table>
-                    </div>
+                        </x-tableau>
                 @endif
             </div>
-        </div>
+        </x-carte>
     </div>
 </div>
 @endsection

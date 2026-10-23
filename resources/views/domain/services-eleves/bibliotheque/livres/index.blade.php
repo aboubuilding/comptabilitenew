@@ -11,52 +11,40 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.bibliotheque.livres.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.livres.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
-    <a href="{{ route('services-eleves.bibliotheque.prets.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.prets.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-exchange-alt me-1"></i> Prêts
-    </a>
-    <a href="{{ route('services-eleves.bibliotheque.referentiels.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.referentiels.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-cog me-1"></i> Référentiels
-    </a>
+    </x-bouton>
     @can('bibliotheque.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouveauLivre"
-                data-bs-toggle="modal" data-bs-target="#livreModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouveauLivre" data-bs-toggle="modal" data-bs-target="#livreModal">
             <i class="fas fa-plus-circle me-1"></i> Nouveau livre
-        </button>
+        </x-bouton>
     @endcan
 
-    <a href="{{ route('services-eleves.bibliotheque.livres.exportPdf', request()->query()) }}"
-   class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.livres.exportPdf', request()->query()) }}" class="btn-sm rounded-pill px-3">
     <i class="fas fa-file-pdf me-1"></i> PDF
-</a>
+</x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .biblio-page { --b-bg-soft:#faf6ee; --b-border:#ece4d6; }
+    .biblio-page { --b-bg-soft:var(--eim-cream); --b-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--b-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition:transform .2s; }
-    .stat-card:hover { transform:translateY(-2px); }
-    .stat-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-    .stat-icon.blue  { background:rgba(37,99,235,.10);  color:#2563eb; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
-    .stat-icon.red   { background:rgba(200,30,58,.10);  color:var(--school-red); }
+    .stat-card { background:#fff; border:1px solid var(--b-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition:transform .2s; }
     .stat-info .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--b-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--b-border); padding:.55rem .9rem; font-size:.88rem; }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
     .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
     .btn-outline-scolarite { border:1px solid var(--b-border); color:var(--school-ink); background:#fff; font-size:.82rem; }
@@ -65,7 +53,7 @@
     .table-livres thead tr { background:var(--b-bg-soft); }
     .table-livres thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--b-border); white-space:nowrap; }
     .table-livres tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--b-border); font-size:.9rem; vertical-align:middle; }
-    .table-livres tbody tr:hover { background:#fdfaf5; }
+    .table-livres tbody tr:hover { background:var(--eim-hover); }
 
     .titre-livre { font-weight:700; color:var(--school-ink); display:block; }
     .sub { font-size:.75rem; color:var(--school-muted); }
@@ -73,21 +61,19 @@
     .num.grand { color:var(--school-red-dark); }
 
     .badge-dispo { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:700; }
-    .badge-dispo.ok   { background:#e3f7ec; color:#1c7a4d; }
+    .badge-dispo.ok   { background:#e3f7ec; color:var(--eim-success); }
     .badge-dispo.low  { background:#fdf4e0; color:var(--school-gold-dark); }
     .badge-dispo.none { background:#fdecea; color:var(--school-red); }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .modal-livres { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
     .modal-header-livres { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-bottom:none; padding:1.15rem 1.5rem; }
     .form-section { background:var(--b-bg-soft); border:1px solid var(--b-border); border-radius:12px; padding:1.1rem; }
-    .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; color:var(--school-red); margin-bottom:.75rem; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
     .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid var(--b-border); padding:.55rem .75rem; font-size:.88rem; }
-    .btn-annuler { background:#fff; border:1px solid var(--b-border); color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--b-border); color:var(--eim-ink-soft); border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-enregistrer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
 </style>
 @endsection
@@ -98,53 +84,25 @@
     {{-- Stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-book"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['total_livres'] }}</div>
-                    <div class="stat-label">Titres au catalogue</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-book" couleur="blue" libelle="Titres au catalogue">{{ $stats['total_livres'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-layer-group"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['total_exemplaires'] }}</div>
-                    <div class="stat-label">Exemplaires total</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-layer-group" couleur="gold" libelle="Exemplaires total">{{ $stats['total_exemplaires'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['total_disponibles'] }}</div>
-                    <div class="stat-label">Disponibles</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check-circle" couleur="green" libelle="Disponibles">{{ $stats['total_disponibles'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['livres_indisponibles'] }}</div>
-                    <div class="stat-label">Titres indisponibles</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-times-circle" couleur="red" libelle="Titres indisponibles">{{ $stats['livres_indisponibles'] }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Titre, auteur, ISBN..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Titre, auteur, ISBN..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-2">
                     <select name="categorie_livre_id" class="form-select filtre-input">
@@ -169,14 +127,13 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                    <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-livres align-middle mb-0">
+            <x-tableau class="table-livres align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Titre</th>
@@ -231,9 +188,7 @@
                                 @endif
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('services-eleves.bibliotheque.livres.show', $livre) }}">
                                                 <i class="fas fa-eye"></i> Voir la fiche
@@ -269,162 +224,132 @@
                                                 </button>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form action="{{ route('services-eleves.bibliotheque.livres.destroy', $livre) }}" method="POST" class="form-confirm-delete">
-                                                    @csrf @method('DELETE')
-                                                    <button class="dropdown-item text-danger"><i class="fas fa-trash"></i> Désactiver</button>
-                                                </form>
-                                            </li>
+                                            <x-actions.supprimer :action="route('services-eleves.bibliotheque.livres.destroy', $livre)" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-book"></i><p>Aucun livre au catalogue.</p></div></td></tr>
+                        <x-vide colspan="6" icone="fas fa-book">Aucun livre au catalogue.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $livres->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$livres->appends(request()->query())" /></div>
 </div>
 
 {{-- Modal livre --}}
 @can('bibliotheque.gerer')
-<div class="modal fade" id="livreModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content modal-livres">
-            <form id="livre-form">
-                @csrf
-                <input type="hidden" name="_method" id="livre-method" value="POST">
-                <div class="modal-header modal-header-livres">
-                    <h5 class="modal-title" id="livre-title"><i class="fas fa-book me-2"></i>Nouveau livre</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="form-section mb-3">
-                        <div class="form-section-title"><i class="fas fa-info-circle"></i> Identité de l'ouvrage</div>
-                        <div class="row g-3">
-                            <div class="col-md-8">
-                                <label class="form-label">Titre <span class="text-danger">*</span></label>
-                                <input type="text" name="titre" id="l-titre" class="form-control" maxlength="200" required>
-                                <div class="text-danger text-xs mt-1" id="titre-error"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Nombre d'exemplaires <span class="text-danger">*</span></label>
-                                <input type="number" name="nombre_exemplaires" id="l-exemplaires" class="form-control" min="1" max="999" value="1" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">N° interne</label>
-                                <input type="text" name="numero" id="l-numero" class="form-control" maxlength="50">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">N° ISBN</label>
-                                <input type="text" name="numero_isbn" id="l-isbn" class="form-control" maxlength="50">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Auteur</label>
-                                <select name="auteur_id" id="l-auteur" class="form-select">
-                                    <option value="">— Aucun —</option>
-                                    @foreach ($auteurs as $a)
-                                        <option value="{{ $a->id }}">{{ $a->nom_prenom }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Catégorie</label>
-                                <select name="categorie_livre_id" id="l-categorie" class="form-select">
-                                    <option value="">— Aucune —</option>
-                                    @foreach ($categories as $c)
-                                        <option value="{{ $c->id }}">{{ $c->libelle }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Maison d'édition</label>
-                                <select name="maison_edition_id" id="l-maison" class="form-select">
-                                    <option value="">— Aucune —</option>
-                                    @foreach ($maisons as $m)
-                                        <option value="{{ $m->id }}">{{ $m->libelle }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Année d'édition</label>
-                                <select name="annee_edition_id" id="l-annee" class="form-select">
-                                    <option value="">— Aucune —</option>
-                                    {{-- à itérer sur les années d'édition --}}
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Description</label>
-                                <textarea name="description" id="l-description" rows="2" class="form-control" maxlength="2000"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                </div>
-            </form>
+<x-modale id="livreModal" data-bs-backdrop="static" dialogue="modal-dialog-centered modal-lg" contenu-class="modal-livres" entete-class="modal-header-livres" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire id="livre-form">@csrf
+                <input type="hidden" name="_method" id="livre-method" value="POST"></x-slot:formulaire>
+    <x-slot:titre id="livre-title"><i class="fas fa-book me-2"></i>Nouveau livre</x-slot:titre>
+    <x-section titre="Identité de l'ouvrage" icone="fas fa-info-circle" class="mb-3">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <x-libelle requis>Titre</x-libelle>
+                <input type="text" name="titre" id="l-titre" class="form-control" maxlength="200" required>
+                <div class="text-danger text-xs mt-1" id="titre-error"></div>
+            </div>
+            <div class="col-md-4">
+                <x-libelle requis>Nombre d'exemplaires</x-libelle>
+                <input type="number" name="nombre_exemplaires" id="l-exemplaires" class="form-control" min="1" max="999" value="1" required>
+            </div>
+            <div class="col-md-4">
+                <x-libelle>N° interne</x-libelle>
+                <input type="text" name="numero" id="l-numero" class="form-control" maxlength="50">
+            </div>
+            <div class="col-md-4">
+                <x-libelle>N° ISBN</x-libelle>
+                <input type="text" name="numero_isbn" id="l-isbn" class="form-control" maxlength="50">
+            </div>
+            <div class="col-md-4">
+                <x-libelle>Auteur</x-libelle>
+                <select name="auteur_id" id="l-auteur" class="form-select">
+                    <option value="">— Aucun —</option>
+                    @foreach ($auteurs as $a)
+                        <option value="{{ $a->id }}">{{ $a->nom_prenom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-4">
+                <x-libelle>Catégorie</x-libelle>
+                <select name="categorie_livre_id" id="l-categorie" class="form-select">
+                    <option value="">— Aucune —</option>
+                    @foreach ($categories as $c)
+                        <option value="{{ $c->id }}">{{ $c->libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-6">
+                <x-libelle>Maison d'édition</x-libelle>
+                <select name="maison_edition_id" id="l-maison" class="form-select">
+                    <option value="">— Aucune —</option>
+                    @foreach ($maisons as $m)
+                        <option value="{{ $m->id }}">{{ $m->libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-6">
+                <x-libelle>Année d'édition</x-libelle>
+                <select name="annee_edition_id" id="l-annee" class="form-select">
+                    <option value="">— Aucune —</option>
+                    {{-- à itérer sur les années d'édition --}}
+                </select>
+            </div>
+            <div class="col-12">
+                <x-libelle>Description</x-libelle>
+                <textarea name="description" id="l-description" rows="2" class="form-control" maxlength="2000"></textarea>
+            </div>
         </div>
-    </div>
-</div>
+    </x-section>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+        <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+    </x-slot:pied>
+</x-modale>
 @endcan
 
 {{-- Modal prêt --}}
 @can('bibliotheque.preter')
-<div class="modal fade" id="pretModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-livres">
-            <form id="pret-form">
-                @csrf
-                <input type="hidden" name="livre_id" id="pret-livre-id">
-                <div class="modal-header modal-header-livres">
-                    <h5 class="modal-title"><i class="fas fa-hand-holding me-2"></i>Prêter un livre</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert alert-light border-0 small mb-3" style="background:var(--b-bg-sold,#faf6ee);color:var(--school-muted);">
-                        <strong>Livre :</strong> <span id="pret-livre-titre">—</span>
-                    </div>
-                    <div class="form-section">
-                        <div class="mb-3">
-                            <label class="form-label">Emprunteur (élève) <span class="text-danger">*</span></label>
-                            @include('admin.partials.select-eleve')
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Date du prêt <span class="text-danger">*</span></label>
-                                <input type="date" name="date_pret" class="form-control" value="{{ now()->toDateString() }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Retour prévu <span class="text-danger">*</span></label>
-                                <input type="date" name="date_retour_pret" class="form-control" value="{{ now()->addDays(14)->toDateString() }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Caution</label>
-                                <input type="number" name="caution" step="0.01" min="0" class="form-control">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Observations</label>
-                                <textarea name="observations" rows="2" class="form-control" maxlength="2000"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Prêter</button>
-                </div>
-            </form>
-        </div>
+<x-modale id="pretModal" data-bs-backdrop="static" contenu-class="modal-livres" entete-class="modal-header-livres" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire id="pret-form">@csrf
+                <input type="hidden" name="livre_id" id="pret-livre-id"></x-slot:formulaire>
+    <x-slot:titre><i class="fas fa-hand-holding me-2"></i>Prêter un livre</x-slot:titre>
+    <div class="alert alert-light border-0 small mb-3" style="background:var(--b-bg-sold,var(--eim-cream));color:var(--school-muted);">
+        <strong>Livre :</strong> <span id="pret-livre-titre">—</span>
     </div>
-</div>
+    <x-section>
+        <div class="mb-3">
+            <x-libelle requis>Emprunteur (élève)</x-libelle>
+            @include('admin.partials.select-eleve')
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <x-libelle requis>Date du prêt</x-libelle>
+                <input type="date" name="date_pret" class="form-control" value="{{ now()->toDateString() }}" required>
+            </div>
+            <div class="col-md-6">
+                <x-libelle requis>Retour prévu</x-libelle>
+                <input type="date" name="date_retour_pret" class="form-control" value="{{ now()->addDays(14)->toDateString() }}" required>
+            </div>
+            <div class="col-md-6">
+                <x-libelle>Caution</x-libelle>
+                <input type="number" name="caution" step="0.01" min="0" class="form-control">
+            </div>
+            <div class="col-12">
+                <x-libelle>Observations</x-libelle>
+                <textarea name="observations" rows="2" class="form-control" maxlength="2000"></textarea>
+            </div>
+        </div>
+    </x-section>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+        <x-bouton type="submit"><i class="fas fa-save me-1"></i> Prêter</x-bouton>
+    </x-slot:pied>
+</x-modale>
 @endcan
 @endsection
 

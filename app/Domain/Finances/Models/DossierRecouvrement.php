@@ -16,7 +16,7 @@ class DossierRecouvrement extends Model
     protected $fillable = [
         'inscription_id', 'nature',
         'montant_initial_du', 'montant_recouvre', 'statut',
-        'date_ouverture', 'date_cloture', 'motif_cloture',
+        'date_ouverture', 'date_cloture', 'motif_cloture', 'paiement_cloture_id',
         'utilisateur_id', 'annee_id', 'etat',
     ];
 
@@ -38,6 +38,18 @@ class DossierRecouvrement extends Model
     public function responsable(): BelongsTo
     {
         return $this->belongsTo(User::class, 'utilisateur_id');
+    }
+
+    /** Échéances réclamées (reprises à chaque recalcul). */
+    public function echeances(): HasMany
+    {
+        return $this->hasMany(DossierEcheance::class, 'dossier_recouvrement_id')->orderBy('date_echeance');
+    }
+
+    /** Paiement qui a soldé le dossier. */
+    public function paiementCloture(): BelongsTo
+    {
+        return $this->belongsTo(Paiement::class, 'paiement_cloture_id');
     }
 
     public function relances(): HasMany

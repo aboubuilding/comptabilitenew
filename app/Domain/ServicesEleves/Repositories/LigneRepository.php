@@ -17,7 +17,8 @@ class LigneRepository extends BaseRepository
     public function listePaginee(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         return $this->activeQuery()
-            ->withCount('abonnements')
+            ->with(['chauffeur:id,nom,prenom,telephone', 'voiture:id,plaque,marque,modele', 'zones:id,libelle,ligne_id'])
+            ->withCount(['abonnements' => fn ($q) => $q->where('etat', 1)->where('statut', 1)])
             ->when($filters['annee_id'] ?? null, fn ($q, $v) => $q->where('annee_id', $v))
             ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('libelle', 'like', "%{$v}%"))
             ->orderBy('libelle')
@@ -25,10 +26,12 @@ class LigneRepository extends BaseRepository
             ->withQueryString();
     }
 
-    public function listePourSelect(): Collection
+    public function listePourSelect(?int $anneeId = null): Collection
     {
         return $this->activeQuery()
+            ->with(['chauffeur:id,nom,prenom', 'voiture:id,plaque'])
+            ->when($anneeId, fn ($q) => $q->where('annee_id', $anneeId))
             ->orderBy('libelle')
-            ->get(['id', 'libelle', 'prix_minimal', 'prix_plafond']);
+            ->get(['id', 'libelle', 'chauffeur_id', 'voiture_id']);
     }
 }

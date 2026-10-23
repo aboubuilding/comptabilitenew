@@ -74,12 +74,12 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('scolarite.eleves.index') }}" class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}" placeholder="Nom, prénom ou matricule...">
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Sexe</label>
+                <x-libelle class="small">Sexe</x-libelle>
                 <select name="sexe" class="form-select filtre-input">
                     <option value="">Tous</option>
                     <option value="1" @selected(($filtres['sexe'] ?? '') == 1)>Masculin</option>
@@ -87,7 +87,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Nationalité</label>
+                <x-libelle class="small">Nationalité</x-libelle>
                 <select name="nationalite_id" class="form-select filtre-input">
                     <option value="">Toutes</option>
                     @foreach($nationalites as $n)
@@ -96,7 +96,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Classe</label>
+                <x-libelle class="small">Classe</x-libelle>
                 <select name="classe_id" class="form-select filtre-input">
                     <option value="">Toutes</option>
                     @foreach($classes as $c)
@@ -105,7 +105,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Situation</label>
+                <x-libelle class="small">Situation</x-libelle>
                 <select name="situation" class="form-select filtre-input">
                     <option value="inscrits" @selected(($filtres['situation'] ?? 'inscrits') === 'inscrits')>Inscrits de l'année</option>
                     <option value="sans" @selected(($filtres['situation'] ?? '') === 'sans')>Sans inscription validée</option>
@@ -123,8 +123,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th style="width:36px;">
@@ -169,9 +168,9 @@
                             <td class="classe-cell">
                                 {{-- Classe : badge OU "Non affecté" --}}
                                 @if($insc?->classe)
-                                    <span class="badge-statut bg-primary">{{ $insc->classe->libelle }}</span>
+                                    <x-badge class="bg-primary">{{ $insc->classe->libelle }}</x-badge>
                                 @else
-                                    <span class="badge-statut bg-warning text-dark">Non affecté</span>
+                                    <x-badge class="bg-warning text-dark">Non affecté</x-badge>
                                 @endif
 
                                 {{-- Niveau + Cycle : TOUJOURS affichés --}}
@@ -193,16 +192,12 @@
                                 {{ number_format($e->montant_encaisse ?? 0, 0, ',', ' ') }}
                             </td>
                             <td>
-                                <span class="badge-statut bg-{{ $e->etat ? 'success' : 'secondary' }}">
+                                <x-badge class="bg-{{ $e->etat ? 'success' : 'secondary' }}">
                                     {{ $e->etat ? 'Actif' : 'Inactif' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('scolarite.eleves.show', $e) }}">
                                                 <i class="fa fa-eye"></i> Consulter
@@ -229,35 +224,18 @@
                                             </a>
                                         </li>
                                         @can('eleves.gerer')
-                                        <li>
-                                            <form action="{{ route('scolarite.eleves.destroy', $e) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-archive"></i> Archiver
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('scolarite.eleves.destroy', $e)" icone="fa fa-archive">Archiver</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="12">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-user-graduate fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucun élève inscrit pour l'année active.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="12" icone="fa fa-user-graduate fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucun élève inscrit pour l'année active.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $eleves->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$eleves" />
         </div>
     </div>
 
@@ -273,18 +251,10 @@
     </div>
 
     {{-- Modale élève --}}
-    <div class="modal fade" id="modalEleve" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content" id="modalEleveContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalEleve" aria-hidden="true" dialogue="modal-xl modal-dialog-centered" contenu-id="modalEleveContent" />
 
     {{-- Modale affectation --}}
-    <div class="modal fade" id="modalAffectation" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalAffectationContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalAffectation" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalAffectationContent" />
 
 @endsection
 

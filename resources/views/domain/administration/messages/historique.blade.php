@@ -12,7 +12,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-6">
-                <label class="form-label small">Email du destinataire</label>
+                <x-libelle class="small">Email du destinataire</x-libelle>
                 <input type="email" name="email" class="form-control filtre-input"
                        value="{{ $email ?? '' }}" required>
             </div>
@@ -24,8 +24,7 @@
 
     @if($email)
         <div class="main-card">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
+            <x-tableau class="table-hover mb-0">
                     <thead class="table-light">
                         <tr><th>Date</th><th>Sujet</th><th>Statut</th></tr>
                     </thead>
@@ -39,17 +38,16 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <span class="badge-statut bg-{{ $l->statut_envoi?->couleur() ?? 'secondary' }}">
+                                    <x-badge class="bg-{{ $l->statut_envoi?->couleur() ?? 'secondary' }}">
                                         {{ $l->statut_envoi?->libelle() ?? '—' }}
-                                    </span>
+                                    </x-badge>
                                 </td>
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-center py-4 text-muted">Aucune communication pour cet email.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
     @endif
 @endsection

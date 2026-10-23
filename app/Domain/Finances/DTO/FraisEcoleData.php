@@ -4,6 +4,10 @@ namespace App\Domain\Finances\DTO;
 
 final readonly class FraisEcoleData
 {
+    /**
+     * @param array<int, array{libelle:?string, date_echeance:string, montant:float|string}> $echeances
+     *        échéancier saisi avec le frais (frais échelonné)
+     */
     public function __construct(
         public string  $libelle,
         public float   $montant,
@@ -12,6 +16,7 @@ final readonly class FraisEcoleData
         public int     $typeForfait,
         public ?int    $niveauId,
         public ?int    $planEcheancierId,
+        public array   $echeances = [],
     ) {}
 
     public static function fromRequest(array $data): self
@@ -24,6 +29,7 @@ final readonly class FraisEcoleData
             typeForfait:      (int) $data['type_forfait'],
             niveauId:         isset($data['niveau_id']) ? (int) $data['niveau_id'] : null,
             planEcheancierId: isset($data['plan_echeancier_id']) ? (int) $data['plan_echeancier_id'] : null,
+            echeances:        array_values($data['echeances'] ?? []),
         );
     }
 }

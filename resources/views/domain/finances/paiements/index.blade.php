@@ -11,42 +11,31 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.paiements.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.paiements.export', ['onglet' => in_array($onglet ?? '', ['mes', 'tous'], true) ? $onglet : null] + request()->except('onglet')) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
+    </x-bouton>
     @can('paiements.creer')
-        <a href="{{ route('finances.paiements.recherche') }}" class="btn btn-nouveau">
+        <x-bouton variante="nouveau" href="{{ route('finances.paiements.recherche') }}">
             <i class="fas fa-plus-circle me-1"></i> Nouveau paiement
-        </a>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .pay-page { --py-bg-soft:#faf6ee; --py-border:#ece4d6; }
+    .pay-page { --py-bg-soft:var(--eim-cream); --py-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--py-border); border-radius:12px; padding:1.05rem 1.15rem; display:flex; align-items:center; gap:.9rem; transition:transform .2s; box-shadow:0 2px 8px rgba(122,15,28,.04); }
-    .stat-card:hover { transform:translateY(-2px); }
-    .stat-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
-    .stat-icon.red   { background:rgba(200,30,58,.10);  color:var(--school-red); }
+    .stat-card { background:#fff; border:1px solid var(--py-border); border-radius:12px; padding:1.05rem 1.15rem; display:flex; align-items:center; gap:.9rem; transition:transform .2s; box-shadow:0 2px 8px rgba(142,18,22,.04); }
     .stat-info .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--py-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--py-border); padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-filtrer:hover { background:var(--school-red-dark); color:#fff; }
     .compteur-badge { display:inline-block; background:var(--py-bg-soft); color:var(--school-red); font-weight:600; font-size:.85rem; padding:.45rem .9rem; border-radius:999px; border:1px solid var(--py-border); }
     .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
     .btn-outline-scolarite { border:1px solid var(--py-border); color:var(--school-ink); background:#fff; font-size:.82rem; }
@@ -55,25 +44,34 @@
     .table-pay thead tr { background:var(--py-bg-soft); }
     .table-pay thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--py-border); white-space:nowrap; }
     .table-pay tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--py-border); font-size:.9rem; color:var(--school-ink); vertical-align:middle; }
-    .table-pay tbody tr:hover { background:#fdfaf5; }
+    .table-pay tbody tr:hover { background:var(--eim-hover); }
 
     .reference { font-family:monospace; font-size:.8rem; background:var(--py-bg-soft); color:var(--school-red); padding:2px 8px; border-radius:6px; font-weight:700; }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
 
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-statut.attente  { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-statut.encaisse { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.annule   { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
+    .onglets { border-bottom:2px solid var(--py-border, var(--eim-border)); gap:.25rem; flex-wrap:nowrap; overflow-x:auto; margin-bottom:1.25rem; }
+    .onglets .nav-link { border:none; border-bottom:3px solid transparent; color:var(--school-muted); font-weight:600; font-size:.92rem; padding:.7rem 1rem; white-space:nowrap; margin-bottom:-2px; background:none; }
+    .onglets .nav-link.active { color:var(--school-red); border-bottom-color:var(--school-red); }
+    .table-types { table-layout:fixed; width:100%; }
+    .table-types thead th { color:var(--school-red); font-size:.74rem; font-weight:700; text-transform:uppercase; background:var(--py-bg-soft, var(--eim-cream)); padding:.7rem .9rem; border-bottom:2px solid var(--py-border, var(--eim-border)); }
+    .table-types thead th small { display:block; font-weight:500; text-transform:none; color:var(--school-muted); font-size:.7rem; }
+    .table-types tbody td, .table-types tfoot td { padding:.6rem .9rem; border-bottom:1px solid var(--py-border, var(--eim-border)); font-size:.88rem; overflow-wrap:anywhere; }
+    .table-types tfoot td { font-weight:700; background:var(--eim-hover); }
+    .table-types .num { text-align:right; font-variant-numeric:tabular-nums; }
+    .table-types .zero { color:#b8c2cc; }
+    .bloc-type-titre { font-size:.85rem; font-weight:700; padding:.8rem 1.1rem; display:flex; align-items:center; gap:.5rem; }
+    .bloc-type-titre.encaisse { color:var(--eim-success); }
+    .bloc-type-titre.attente { color:var(--school-gold-dark); }
     .totaux-encaisses { background:linear-gradient(135deg,#fff,var(--py-bg-soft)); border:1px solid var(--py-border); border-radius:14px; padding:1rem 1.15rem; margin-bottom:1.5rem; }
     .totaux-titre { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--school-red); margin-bottom:.75rem; }
     .total-case { background:#fff; border:1px solid var(--py-border); border-radius:10px; padding:.75rem .9rem; height:100%; }
     .total-case .total-label { font-size:.72rem; color:var(--school-muted); text-transform:uppercase; font-weight:600; }
-    .total-case .total-valeur { font-size:1.15rem; font-weight:700; color:#1c7a4d; font-variant-numeric:tabular-nums; line-height:1.3; }
-    .total-case .total-periode { font-size:.7rem; color:#9aa7b2; }
+    .total-case .total-valeur { font-size:1.15rem; font-weight:700; color:var(--eim-success); font-variant-numeric:tabular-nums; line-height:1.3; }
+    .total-case .total-periode { font-size:.7rem; color:#7A6A6A; }
 
     .cell-sub { font-size:.74rem; color:var(--school-muted); line-height:1.35; }
+    .nature { display:inline-block; background:var(--py-bg-soft, var(--eim-cream)); color:var(--school-red); font-weight:600; font-size:.7rem; padding:.15rem .6rem; border-radius:999px; border:1px solid var(--py-border, var(--eim-border)); }
     /* Colonnes contenues : le tableau tient dans la largeur, la colonne Actions reste visible sans défilement */
     .table-pay { table-layout:auto; }
     .table-pay td.col-paiement { white-space:nowrap; }
@@ -85,13 +83,222 @@
     .table-pay td.col-montant { white-space:nowrap; }
     .table-pay td.col-actions { width:56px; }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 </style>
 @endsection
 
 @section('contenu')
 <div class="pay-page">
+
+    {{-- Onglets : « Mes paiements » (ses propres saisies), « Tous les paiements » (Administrateur et Direction),
+         lignes de paiement (Administrateur) et totaux par type (Administrateur et Direction) --}}
+    <ul class="nav onglets" id="onglets-paiements">
+        @if ($voitMes)
+            <li class="nav-item">
+                <a class="nav-link @if ($onglet === 'mes') active @endif" id="onglet-mes" href="{{ route('finances.paiements.index', ['onglet' => 'mes']) }}">
+                    <i class="fas fa-user-edit me-1"></i> Mes paiements
+                </a>
+            </li>
+        @endif
+        @if ($voitTous)
+            <li class="nav-item">
+                <a class="nav-link @if ($onglet === 'tous') active @endif" id="onglet-tous" href="{{ route('finances.paiements.index', ['onglet' => 'tous']) }}">
+                    <i class="fas fa-list me-1"></i> Tous les paiements
+                </a>
+            </li>
+        @endif
+        @if ($voitDetails)
+            <li class="nav-item">
+                <a class="nav-link @if ($onglet === 'details') active @endif" id="onglet-details" href="{{ route('finances.paiements.index', ['onglet' => 'details']) }}">
+                    <i class="fas fa-stream me-1"></i> Détails des paiements
+                </a>
+            </li>
+        @endif
+        @if ($voitTotaux)
+            <li class="nav-item">
+                <a class="nav-link @if ($onglet === 'totaux') active @endif" id="onglet-totaux" href="{{ route('finances.paiements.index', ['onglet' => 'totaux']) }}">
+                    <i class="fas fa-chart-bar me-1"></i> Totaux par type de paiement
+                </a>
+            </li>
+        @endif
+    </ul>
+
+    @if ($onglet === 'details')
+        @php
+            $fmtD = fn ($v) => number_format((float) $v, 0, ',', ' ');
+            $statutsLigne = \App\Domain\Finances\Types\PaiementStatut::cases();
+        @endphp
+        {{-- ==================== Lignes de paiement (table details) ==================== --}}
+        <x-carte id="details-paiements">
+            <div class="card-header bg-white py-3 px-4">
+                <form method="GET" class="row g-2 align-items-center" id="filtres-details">
+                    <input type="hidden" name="onglet" value="details">
+                    <div class="col-md-4">
+                        <x-recherche name="search" placeholder="Élève, matricule, référence, payeur, libellé..." value="{{ $filtresDetails['search'] ?? '' }}" />
+                    </div>
+                    <div class="col-md-3">
+                        <select name="type_paiement" class="form-select filtre-input" title="Type de paiement">
+                            <option value="">— Tous les types —</option>
+                            @foreach ($types as $v => $l)
+                                <option value="{{ $v }}" @selected(($filtresDetails['type_paiement'] ?? '') == $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="statut_ligne" class="form-select filtre-input" title="Statut de la ligne">
+                            <option value="">— Statut —</option>
+                            @foreach ($statutsLigne as $st)
+                                <option value="{{ $st->value }}" @selected(($filtresDetails['statut_ligne'] ?? '') === (string) $st->value)>{{ $st->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="mode_paiement" class="form-select filtre-input" title="Mode de paiement">
+                            <option value="">— Mode —</option>
+                            @foreach ($modes as $v => $l)
+                                <option value="{{ $v }}" @selected(($filtresDetails['mode_paiement'] ?? '') == $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-0">Saisi du</label>
+                        <input type="date" name="date_debut" class="form-control filtre-input" value="{{ $filtresDetails['date_debut'] ?? '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-0">au</label>
+                        <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filtresDetails['date_fin'] ?? '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-1 align-self-end">
+                        <x-bouton variante="filtrer" type="submit" class="flex-fill" title="Filtrer"><i class="fas fa-filter"></i></x-bouton>
+                        <x-bouton variante="contour" href="{{ route('finances.paiements.index', ['onglet' => 'details']) }}" title="Réinitialiser"><i class="fas fa-undo"></i></x-bouton>
+                    </div>
+                </form>
+                <div class="small text-muted mt-2" id="total-details">
+                    {{ $fmtD($totauxDetails['lignes']) }} ligne(s) de paiement en {{ $annee?->libelle }} pour ces critères —
+                    total <strong style="color:var(--school-red-dark);">{{ $fmtD($totauxDetails['montant']) }} F</strong>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-types align-middle mb-0" id="table-details">
+                    <thead>
+                        <tr>
+                            <th style="width:20%;">Paiement</th>
+                            <th style="width:26%;">Élève / Payeur</th>
+                            <th>Ligne de paiement</th>
+                            <th class="text-end" style="width:17%;">Montant</th>
+                            <th class="text-center" style="width:96px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse ($details as $d)
+                        @php
+                            $type = \App\Domain\Finances\Types\TypeDetail::tryFrom((int) $d->type_paiement);
+                            $statut = \App\Domain\Finances\Types\PaiementStatut::tryFrom((int) $d->statut_paiement);
+                            $mode = \App\Domain\Finances\Types\ModePaiement::tryFrom((int) $d->mode_paiement);
+                        @endphp
+                        <tr data-detail="{{ $d->id }}">
+                            <td>
+                                <span class="reference">{{ $d->reference ?? '—' }}</span>
+                                <div class="cell-sub mt-1"><i class="far fa-calendar me-1"></i>{{ $d->date_paiement ? \Illuminate\Support\Carbon::parse($d->date_paiement)->format('d/m/Y') : '—' }}</div>
+                                @if ($mode)<div class="cell-sub"><i class="fas {{ $mode->icone() }} me-1"></i>{{ $mode->label() }}</div>@endif
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ trim(($d->nom ?? '') . ' ' . ($d->prenom ?? '')) ?: ($d->payeur ?? '—') }}</div>
+                                <div class="cell-sub">{{ $d->matricule }}@if ($d->niveau) · {{ $d->niveau }}@endif @if ($d->classe) · {{ $d->classe }}@endif</div>
+                                @if ($d->payeur)<div class="cell-sub">Payé par {{ $d->payeur }}@if ($d->telephone_payeur) · {{ $d->telephone_payeur }}@endif</div>@endif
+                            </td>
+                            <td>
+                                <span class="nature">{{ $type?->label() ?? 'Non précisé' }}</span>
+                                <div class="mt-1">{{ $d->libelle ?: '—' }}@if ((float) $d->quantite > 1) <span class="cell-sub">× {{ rtrim(rtrim(number_format((float) $d->quantite, 2, ',', ' '), '0'), ',') }}</span>@endif</div>
+                                @if ($d->frais && $d->frais !== $d->libelle)<div class="cell-sub">Frais : {{ $d->frais }}</div>@endif
+                            </td>
+                            <td class="num">
+                                <div class="fw-bold">{{ $fmtD($d->montant) }} F</div>
+                                <x-badge class="{{ $statut?->css() ?? 'annule' }} mt-1" point>{{ $statut?->label() ?? '—' }}</x-badge>
+                                @if ($d->date_encaissement)<div class="cell-sub">encaissé le {{ \Illuminate\Support\Carbon::parse($d->date_encaissement)->format('d/m/Y') }}</div>@endif
+                            </td>
+                            <td class="text-center">
+                                <x-actions>
+                                    @if ($d->paiement_id)
+                                        <li><a class="dropdown-item" href="{{ route('finances.paiements.detail', $d->paiement_id) }}"><i class="fas fa-eye"></i> Voir le paiement</a></li>
+                                    @endif
+                                </x-actions>
+                            </td>
+                        </tr>
+                    @empty
+                        <x-vide colspan="5" icone="fas fa-receipt">Aucune ligne de paiement pour ces critères.</x-vide>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-carte>
+        <div class="mt-4" id="pagination-details"><x-pagination :liste="$details" /></div>
+
+    @elseif ($onglet === 'totaux')
+        @php
+            $fmtT = fn ($v) => (float) $v > 0 ? number_format((float) $v, 0, ',', ' ') . ' F' : '<span class="zero">—</span>';
+            $maintenant = now();
+            $periodesT = [
+                'annee'   => ["Année", $annee?->libelle ?? '—'],
+                'mois'    => ['Mois', ucfirst($maintenant->copy()->locale('fr')->isoFormat('MMMM YYYY'))],
+                'semaine' => ['Semaine', 'du ' . $maintenant->copy()->startOfWeek(\Carbon\Carbon::MONDAY)->format('d/m') . ' au ' . $maintenant->copy()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('d/m')],
+                'jour'    => ['Jour', $maintenant->format('d/m/Y')],
+            ];
+            $blocs = [
+                'encaisse' => ['Paiements encaissés', 'encaisse', 'fa-check-circle'],
+                'attente'  => ["Paiements en attente d'encaissement", 'attente', 'fa-hourglass-half'],
+            ];
+        @endphp
+        <div id="totaux-par-type">
+            @foreach ($blocs as $cle => [$titre, $classe, $icone])
+                <x-carte class="mb-4 bloc-type" data-statut="{{ $cle }}">
+                    <div class="bloc-type-titre {{ $classe }}"><i class="fas {{ $icone }}"></i> {{ $titre }}</div>
+                    <div class="card-body p-0">
+                        <table class="table table-types align-middle mb-0" id="table-types-{{ $cle }}">
+                            <thead>
+                                <tr>
+                                    <th style="width:28%;">Type de paiement</th>
+                                    @foreach ($periodesT as [$libelleP, $detailP])
+                                        <th class="text-end">{{ $libelleP }}<small>{{ $detailP }}</small></th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @forelse ($parType[$cle] as $ligne)
+                                <tr data-type="{{ $ligne->type }}">
+                                    <td>
+                                        <span class="fw-semibold">{{ $ligne->libelle }}</span>
+                                        <div class="text-muted" style="font-size:.72rem;">{{ number_format($ligne->lignes, 0, ',', ' ') }} ligne(s) sur l'année</div>
+                                    </td>
+                                    @foreach (array_keys($periodesT) as $periode)
+                                        <td class="num">{!! $fmtT($ligne->$periode) !!}</td>
+                                    @endforeach
+                                </tr>
+                            @empty
+                                <x-vide colspan="5" icone="fas fa-receipt">Aucun paiement de ce type pour {{ $annee?->libelle }}.</x-vide>
+                            @endforelse
+                            </tbody>
+                            @if ($parType[$cle]->isNotEmpty())
+                                <tfoot>
+                                    <tr>
+                                        <td>Total</td>
+                                        @foreach (array_keys($periodesT) as $periode)
+                                            <td class="num total-{{ $periode }}">{!! $fmtT($parType[$cle]->sum($periode)) !!}</td>
+                                        @endforeach
+                                    </tr>
+                                </tfoot>
+                            @endif
+                        </table>
+                    </div>
+                </x-carte>
+            @endforeach
+            <p class="text-muted small">
+                Lignes de paiement actives de l'année scolaire {{ $annee?->libelle }}. Pour un paiement encaissé, la date retenue est celle
+                de l'encaissement (à défaut celle de la saisie) ; pour un paiement en attente, celle de la saisie.
+            </p>
+        </div>
+    @else
 
     {{-- Totaux encaissés : réservés à l'Administrateur et à la Direction --}}
     @if ($totaux)
@@ -122,44 +329,36 @@
 
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-hourglass-half"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['attente'] }}</div>
-                    <div class="stat-label">En attente d'encaissement</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-hourglass-half" couleur="gold" libelle="En attente d'encaissement">{{ $compteurs['attente'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['encaisse'] }}</div>
-                    <div class="stat-label">Encaissés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check-circle" couleur="green" libelle="Encaissés">{{ $compteurs['encaisse'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['annule'] }}</div>
-                    <div class="stat-label">Annulés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-times-circle" couleur="red" libelle="Annulés">{{ $compteurs['annule'] }}</x-stat>
         </div>
     </div>
 
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
-            <form method="GET" class="row g-2 align-items-center">
+            <form method="GET" class="row g-2 align-items-center" id="filtres-paiements">
+                <input type="hidden" name="onglet" value="{{ $onglet }}">
+                @if ($onglet === 'mes')
+                    <div class="col-12 small text-muted" id="aide-mes-paiements"><i class="fas fa-user-edit me-1"></i>Paiements que vous avez saisis en {{ $annee?->libelle }}.</div>
+                @endif
                 <div class="col-md-3">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Référence, payeur..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Référence, payeur..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
+                @if ($onglet === 'tous')
+                    <div class="col-md-3">
+                        <select name="saisi_par" class="form-select filtre-input" id="filtre-saisi-par" title="Saisi par">
+                            <option value="">— Saisi par —</option>
+                            @foreach ($saisisseurs as $u)
+                                <option value="{{ $u->id }}" @selected(($filters['saisi_par'] ?? '') == $u->id)>{{ $u->nom }} ({{ $u->paiements }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-2">
                     <select name="statut_paiement" class="form-select filtre-input">
                         <option value="">— Statut —</option>
@@ -182,15 +381,15 @@
                 <div class="col-md-2">
                     <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filters['date_fin'] ?? '' }}">
                 </div>
-                <div class="col-md-1">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter"></i></button>
+                <div class="col-md-1 d-flex gap-1">
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill" title="Filtrer"><i class="fas fa-filter"></i></x-bouton>
+                    <x-bouton variante="contour" href="{{ route('finances.paiements.index', ['onglet' => $onglet]) }}" title="Réinitialiser"><i class="fas fa-undo"></i></x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-pay align-middle mb-0">
+            <x-tableau class="table-pay align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Paiement</th>
@@ -243,16 +442,13 @@
                             {{-- 4. Montant et statut --}}
                             <td class="text-end col-montant">
                                 <div class="num">{{ number_format((float) $p->montant, 2, ',', ' ') }}</div>
-                                <span class="badge-statut {{ $p->statut_paiement?->css() }} mt-1">
-                                    <span class="badge-dot"></span>{{ $p->statut_paiement?->label() }}
-                                </span>
+                                <x-badge class="{{ $p->statut_paiement?->css() }} mt-1" point>{{ $p->statut_paiement?->label() }}
+                                </x-badge>
                             </td>
 
                             {{-- 5. Actions --}}
                             <td class="text-center pe-4 col-actions">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('finances.paiements.detail', $p->id) }}"><i class="fas fa-eye"></i> Détail</a>
                                         </li>
@@ -270,19 +466,18 @@
                                         @if ($p->statut_paiement?->isVerrouille())
                                             <li><span class="dropdown-item text-muted small" style="cursor:default;"><i class="fas fa-lock"></i> Verrouillé</span></li>
                                         @endif
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-receipt"></i><p>Aucun paiement.</p></div></td></tr>
+                        <x-vide colspan="5" icone="fas fa-receipt">Aucun paiement.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $paiements->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$paiements->appends(request()->query())" /></div>
+    @endif
 </div>
 @endsection

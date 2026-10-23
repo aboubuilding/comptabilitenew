@@ -217,7 +217,11 @@ test.describe('3.4 Boutique / Point de vente', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Logistique' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord boutique' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord boutique' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord boutique' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
     await expect(page.locator('main')).toContainText(/10\s800/);
   });

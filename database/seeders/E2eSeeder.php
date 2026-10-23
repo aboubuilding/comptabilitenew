@@ -113,7 +113,8 @@ class E2eSeeder extends Seeder
             'created_at' => $maintenant, 'updated_at' => $maintenant,
         ]);
 
-        foreach ([['KOFFI', 'Ama', 2, 'E2E0001'], ['KOFFI', 'Kossi', 1, 'E2E0002']] as [$nom, $prenom, $sexe, $matricule]) {
+        // La scolarité est portée par l'inscription : 469 000, avec 20 % de remise pour Ama
+        foreach ([['KOFFI', 'Ama', 2, 'E2E0001', 20], ['KOFFI', 'Kossi', 1, 'E2E0002', 0]] as [$nom, $prenom, $sexe, $matricule, $remise]) {
             $eleveId = DB::table('eleves')->insertGetId([
                 'matricule' => $matricule, 'nom' => $nom, 'prenom' => $prenom, 'sexe' => $sexe,
                 'date_naissance' => '2019-03-12', 'nationalite_id' => $nationaliteId, 'espace_id' => $espaceId, 'etat' => 1,
@@ -125,6 +126,7 @@ class E2eSeeder extends Seeder
                 // Inscrits depuis 45 jours : au-delà du seuil d'ouverture d'un dossier de recouvrement
                 'date_inscription' => now()->subDays(45)->toDateString(),
                 'type_inscription' => 1, 'statut_validation' => StatutValidationInscription::VALIDEE->value, 'statut_abandon' => 0,
+                'frais_scolarite' => 469000, 'taux_remise' => $remise,
                 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant,
             ]);
         }
@@ -177,8 +179,8 @@ class E2eSeeder extends Seeder
         ]);
 
         // Ce que l'on peut lui souscrire
-        DB::table('zones')->insert(['libelle' => 'Zone Kégué', 'tarif_base' => 12000, 'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant]);
-        DB::table('lignes')->insert(['libelle' => 'Ligne Kégué-Centre', 'prix_minimal' => 12000, 'prix_plafond' => 15000, 'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant]);
+        $ligneKegue = DB::table('lignes')->insertGetId(['libelle' => 'Ligne Kégué-Centre', 'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant]);
+        DB::table('zones')->insert(['libelle' => 'Zone Kégué', 'tarif_base' => 12000, 'ligne_id' => $ligneKegue, 'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant]);
         DB::table('activites')->insert([
             'libelle' => 'Taekwondo', 'montant' => 30000, 'type' => 'sportive', 'encadreur' => 'M. Agbeko',
             'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant,
@@ -215,6 +217,14 @@ class E2eSeeder extends Seeder
              'modalite_paiement' => TypePaiement::COMPTANT->value, 'type_forfait' => TypeForfait::OPTIONNEL->value,
              'niveau_id' => $niveaux['CE1'], 'annee_id' => $anneeId, 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant],
         ]);
+        // Échéancier de la scolarité du CP : T1 échue depuis 30 jours, T2 à venir (dossiers de recouvrement)
+        app(\App\Domain\Finances\Services\EcheancierService::class)->definirPourFrais(
+            \App\Domain\Finances\Models\FraisEcole::where('libelle', 'Scolarité CP')->where('annee_id', $anneeId)->firstOrFail(),
+            [
+                ['libelle' => 'T1', 'date_echeance' => now()->subDays(30)->toDateString(), 'montant' => 200000],
+                ['libelle' => 'T2', 'date_echeance' => now()->addDays(90)->toDateString(), 'montant' => 269000],
+            ]
+        );
         DB::table('banques')->insert(['nom' => 'ECOBANK', 'etat' => 1, 'created_at' => $maintenant, 'updated_at' => $maintenant]);
         DB::table('centres_analytiques')->insert([
             'code' => 'CANT', 'libelle' => 'Cantine', 'type' => 'service', 'annee_id' => $anneeId, 'etat' => 1,

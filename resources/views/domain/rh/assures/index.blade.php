@@ -53,7 +53,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('rh.assures.index') }}" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small">Employé</label>
+                <x-libelle class="small">Employé</x-libelle>
                 <select name="employe_id" class="form-select filtre-input">
                     <option value="">Tous</option>
                     @foreach($employes as $employe)
@@ -64,7 +64,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label small">Assurance</label>
+                <x-libelle class="small">Assurance</x-libelle>
                 <select name="assurance_id" class="form-select filtre-input">
                     <option value="">Toutes</option>
                     @foreach($assurances as $assurance)
@@ -75,7 +75,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Statut</label>
+                <x-libelle class="small">Statut</x-libelle>
                 <select name="statut" class="form-select filtre-input">
                     <option value="">Tous</option>
                     <option value="actif" @selected(($filtres['statut'] ?? '') === 'actif')>Actif</option>
@@ -84,7 +84,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Recherche employé</label>
+                <x-libelle class="small">Recherche employé</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}" placeholder="Nom...">
             </div>
@@ -98,8 +98,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Employé</th>
@@ -132,14 +131,10 @@
                                         default    => 'secondary',
                                     };
                                 @endphp
-                                <span class="badge-statut bg-{{ $badge }}">{{ ucfirst($assure->statut ?? 'actif') }}</span>
+                                <x-badge class="bg-{{ $badge }}">{{ ucfirst($assure->statut ?? 'actif') }}</x-badge>
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('assurances.gerer')
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-assurance"
@@ -149,46 +144,23 @@
                                         </li>
                                         @endcan
                                         @can('assurances.gerer')
-                                        <li>
-                                            <form action="{{ route('rh.assures.destroy', $assure) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Désactiver
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('rh.assures.destroy', $assure)" icone="fa fa-trash" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-shield-halved fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucune assurance enregistrée.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="7" icone="fa fa-shield-halved fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucune assurance enregistrée.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $assures->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$assures" />
         </div>
     </div>
 
     {{-- Modale unique (contenu injecté en AJAX) --}}
-    <div class="modal fade" id="modalAssure" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalAssureContent">
-                {{-- Injecté par AJAX --}}
-            </div>
-        </div>
-    </div>
+    <x-modale id="modalAssure" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalAssureContent" />
 
 @endsection
 

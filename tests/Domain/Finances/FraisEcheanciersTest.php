@@ -8,7 +8,6 @@ use App\Domain\Finances\DTO\SouscriptionData;
 use App\Domain\Finances\Services\FraisEcoleService;
 use App\Domain\Finances\Services\PlanEcheancierService;
 use App\Domain\Finances\Services\SouscriptionService;
-use App\Domain\Finances\Services\TrancheService;
 use App\Domain\Finances\Types\TypeDetail;
 use App\Domain\Finances\Types\TypeForfait;
 use App\Domain\Finances\Types\TypePaiement;
@@ -134,31 +133,9 @@ class FraisEcheanciersTest extends DomainTestCase
         app(PlanEcheancierService::class)->supprimer($plan->id);
     }
 
-    public function test_les_tranches_d_un_frais_ne_depassent_jamais_100_pour_cent(): void
+    public function test_souscrire_un_service_cree_l_engagement_sans_aucun_paiement(): void
     {
-        $frais = $this->creerFrais();
-        $tranches = app(TrancheService::class);
-        $tranches->creer(['libelle' => 'Tranche 1', 'date_butoire' => '2026-09-15', 'frais_ecole_id' => $frais->id, 'taux' => 60]);
-
-        $this->expectException(RuntimeException::class);
-
-        $tranches->creer(['libelle' => 'Tranche 2', 'date_butoire' => '2026-12-15', 'frais_ecole_id' => $frais->id, 'taux' => 50]);
-    }
-
-    public function test_une_tranche_conserve_un_taux_decimal(): void
-    {
-        $frais = $this->creerFrais();
-
-        $tranche = app(TrancheService::class)->creer([
-            'libelle' => 'Tranche 1', 'date_butoire' => '2026-09-15', 'frais_ecole_id' => $frais->id, 'taux' => 52.94,
-        ]);
-
-        $this->assertEqualsWithDelta(52.94, (float) $tranche->fresh()->taux, 0.001);
-    }
-
-    public function test_souscrire_un_frais_cree_l_engagement_sans_aucun_paiement(): void
-    {
-        $frais = $this->creerFrais(469000);
+        $frais = $this->creerFrais(469000, TypeDetail::CANTINE);
         $inscription = $this->creerInscription();
 
         $souscription = app(SouscriptionService::class)->creer(
@@ -167,13 +144,23 @@ class FraisEcheanciersTest extends DomainTestCase
 
         $this->assertEqualsWithDelta(469000, (float) $souscription->montant_annuel_prevu, 0.01);
         $this->assertEqualsWithDelta(10, (float) $souscription->taux_remise, 0.01);
-        $this->assertSame(TypeDetail::FRAIS_SCOLAIRE->value, (int) $souscription->fresh()->getRawOriginal('type_paiement'));
+        $this->assertSame(TypeDetail::CANTINE->value, (int) $souscription->fresh()->getRawOriginal('type_paiement'));
         $this->assertDatabaseCount('paiements', 0);
+    }
+
+    public function test_la_scolarite_ne_se_souscrit_pas(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("portées par l'inscription");
+
+        app(SouscriptionService::class)->creer(
+            new SouscriptionData($this->creerFrais(469000)->id, $this->creerInscription()->id, 0, '2026-09-01', null)
+        );
     }
 
     public function test_un_eleve_ne_souscrit_pas_deux_fois_le_meme_frais(): void
     {
-        $frais = $this->creerFrais();
+        $frais = $this->creerFrais(108000, TypeDetail::CANTINE);
         $inscription = $this->creerInscription();
         $service = app(SouscriptionService::class);
         $service->creer(new SouscriptionData($frais->id, $inscription->id, 0, '2026-09-01', null));
@@ -188,7 +175,7 @@ class FraisEcheanciersTest extends DomainTestCase
         $this->expectException(RuntimeException::class);
 
         app(SouscriptionService::class)->creer(
-            new SouscriptionData($this->creerFrais()->id, $this->creerInscription()->id, 120, '2026-09-01', null)
+            new SouscriptionData($this->creerFrais(108000, TypeDetail::CANTINE)->id, $this->creerInscription()->id, 120, '2026-09-01', null)
         );
     }
 }

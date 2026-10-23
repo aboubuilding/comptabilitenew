@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Domain\ServicesEleves;
 
 use App\Domain\ServicesEleves\DTO\AbonnementBusData;
 use App\Domain\ServicesEleves\Repositories\AbonnementBusRepository;
-use App\Domain\ServicesEleves\Repositories\LigneRepository;
 use App\Domain\ServicesEleves\Repositories\VoitureRepository;
 use App\Domain\ServicesEleves\Repositories\ZoneRepository;
 use App\Domain\ServicesEleves\Services\AbonnementBusService;
@@ -12,6 +11,7 @@ use App\Domain\ServicesEleves\Types\SensTrajet;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Domain\ServicesEleves\StoreAbonnementBusRequest;
+use App\Support\AnneeScolaireContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,28 +24,67 @@ class AbonnementBusController extends Controller
         private AbonnementBusRepository $abonnements,
         private ZoneRepository          $zones,
         private VoitureRepository       $voitures,
-        private LigneRepository         $lignes,
         private AbonnementBusService    $service,
     ) {
         $this->middleware('permission:transport.voir')->only(['index', 'export']);
         $this->middleware('permission:transport.abonner')->only(['store']);
-        $this->middleware('permission:transport.gerer')->only(['abandonner', 'assigner']);
+        $this->middleware('permission:transport.gerer')->only(['abandonner', 'assigner', 'positionner', 'convertirSouscriptions']);
+    }
+
+    /** Filtres de la liste ; l'année est toujours celle de l'en-tête. */
+    private function filtres(Request $request): array
+    {
+        return ['annee_id' => app(AnneeScolaireContext::class)->id()]
+            + $request->only(['zone_id', 'voiture_id', 'statut', 'search', 'gps']);
     }
 
     public function index(Request $request)
     {
-        $filters = $request->only(['annee_id', 'zone_id', 'voiture_id', 'statut', 'search']);
+        $filters = $this->filtres($request);
+        $anneeId = $filters['annee_id'];
 
         return view('domain.services-eleves.transport.abonnements.index', [
             'abonnements' => $this->abonnements->listePaginee($filters),
             'filters'     => $filters,
-            'zones'       => $this->zones->listePourSelect(),
+            'zones'       => $this->zones->listePourSelect($anneeId),
             'voitures'    => $this->voitures->listePourSelect(),
-            'lignes'      => $this->lignes->listePourSelect(),
             'sens'        => SensTrajet::options(),
-            'compteurs'   => $this->abonnements->compterActifs(),
-            'parZone'     => $this->abonnements->actifsParZone(),
+            'compteurs'   => $this->abonnements->compterActifs($anneeId),
+            'parZone'     => $this->abonnements->actifsParZone($anneeId),
+            'aConvertir'  => $this->service->souscriptionsAConvertir($anneeId),
         ]);
+    }
+
+    /**
+     * Bouton « Synchroniser avec les souscriptions » : les souscriptions
+     * transport de l'année deviennent des abonnements bus.
+     */
+    public function convertirSouscriptions()
+    {
+        $anneeId = app(AnneeScolaireContext::class)->id();
+
+        return $this->runAjax(
+            fn () => ['bilan' => $this->service->convertirSouscriptions($anneeId)],
+            'Synchronisation terminée.'
+        );
+    }
+
+    /** Position GPS du domicile de l'élève, saisie après la souscription. */
+    public function positionner(Request $request, int $abonnement)
+    {
+        $data = $request->validate([
+            'latitude'  => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+        ]);
+
+        return $this->runAjax(
+            fn () => ['abonnement' => $this->service->positionner(
+                $abonnement,
+                isset($data['latitude']) ? (float) $data['latitude'] : null,
+                isset($data['longitude']) ? (float) $data['longitude'] : null,
+            )],
+            'Position GPS enregistrée.'
+        );
     }
 
     public function store(StoreAbonnementBusRequest $request)
@@ -73,11 +112,8 @@ class AbonnementBusController extends Controller
     public function assigner(Request $request, int $abonnement)
     {
         $data = $request->validate([
-            'zone_id'     => ['nullable', 'exists:zones,id'],
-            'voiture_id'  => ['nullable', 'exists:voitures,id'],
-            'ligne_id'    => ['nullable', 'exists:lignes,id'],
-            'sens'        => ['nullable', 'string', 'in:aller,retour,aller_retour'],
-            'point_arret' => ['nullable', 'string', 'max:200'],
+            'zone_id' => ['nullable', 'exists:zones,id'],
+            'sens'    => ['nullable', 'string', 'in:aller,retour,aller_retour'],
         ]);
 
         return $this->runAjax(
@@ -88,7 +124,7 @@ class AbonnementBusController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
-        $filters = $request->only(['annee_id', 'zone_id', 'voiture_id', 'statut', 'search']);
+        $filters = $this->filtres($request);
         $abonnements = $this->abonnements->listePaginee($filters, perPage: 10000);
 
         $filename = 'abonnements_bus_' . now()->format('Ymd_His') . '.csv';
@@ -99,7 +135,7 @@ class AbonnementBusController extends Controller
 
             fputcsv($out, [
                 'Élève', 'Matricule', 'Zone', 'Véhicule', 'Ligne', 'Sens',
-                'Point d\'arrêt', 'Montant mensuel', 'Nombre mois',
+                'Latitude', 'Longitude', 'Montant mensuel', 'Nombre mois',
                 'Total dû', 'Statut', 'Date début', 'Date fin',
             ], ';');
 
@@ -111,7 +147,8 @@ class AbonnementBusController extends Controller
                     $a->voiture?->plaque,
                     $a->ligne?->libelle,
                     $a->sens?->label(),
-                    $a->point_arret,
+                    $a->latitude,
+                    $a->longitude,
                     number_format((float) $a->montant_mensuel, 2, ',', ' '),
                     $a->nombre_mois,
                     number_format((float) $a->montant_total_du, 2, ',', ' '),

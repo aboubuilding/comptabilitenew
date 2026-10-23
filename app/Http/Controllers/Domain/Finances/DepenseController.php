@@ -30,7 +30,7 @@ class DepenseController extends Controller
         private DepenseService    $service,
     ) {
         $this->middleware('permission:depenses.voir')->only(['index', 'show', 'export']);
-        $this->middleware('permission:depenses.creer')->only(['store', 'update']);
+        $this->middleware('permission:depenses.creer')->only(['store', 'update', 'genererDepuisDecaissements']);
         $this->middleware('permission:depenses.valider')->only(['valider', 'rejeter']);
         $this->middleware('permission:depenses.regler')->only(['regler']);
         $this->middleware('permission:depenses.voir')->only(['exportPdf']);
@@ -46,10 +46,38 @@ class DepenseController extends Controller
             'filters'        => $filters,
             'statuts'        => DepenseStatut::options(),
             'caisses'        => $this->caisses->listePourSelect(),
+            // Lignes budgétaires de l'année, proposées à la saisie
+            'lignesBudgetaires' => app(\App\Domain\Finances\Repositories\PrevisionRepository::class)
+                ->listePourSelect(app(\App\Support\AnneeScolaireContext::class)->id()),
             'annees'         => Annee::orderByDesc('libelle')->get(['id', 'libelle']),
             'compteurs'      => $this->depenses->compterParStatut(),
             'montants'       => $this->depenses->montantParStatut(),
+            // Décaissements de caisse sans dépense (bouton « Générer les dépenses »)
+            'aGenerer'       => $this->aGenerer(),
         ]);
+    }
+
+    /** @return array{nb:int, montant:float} décaissements de l'année sans dépense */
+    private function aGenerer(): array
+    {
+        $requete = $this->service->decaissementsSansDepense(app(\App\Support\AnneeScolaireContext::class)->id());
+
+        return ['nb' => (clone $requete)->count(), 'montant' => round((float) (clone $requete)->sum('montant'), 2)];
+    }
+
+    /**
+     * Bouton « Générer les dépenses des décaissements » : chaque décaissement de
+     * caisse de l'année sans dépense en reçoit une, au statut décaissé.
+     */
+    public function genererDepuisDecaissements()
+    {
+        $anneeId = app(\App\Support\AnneeScolaireContext::class)->id();
+
+        return $this->runAjax(function () use ($anneeId) {
+            $bilan = $this->service->genererDepuisDecaissements($anneeId);
+
+            return ['bilan' => $bilan];
+        }, 'Dépenses générées depuis les décaissements.');
     }
 
     /** Saisie d'une nouvelle dépense (avec justificatif). */

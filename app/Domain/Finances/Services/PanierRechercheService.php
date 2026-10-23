@@ -30,7 +30,7 @@ class PanierRechercheService
     public function engagementsDisponibles(int $inscriptionId): array
     {
         $liens = [
-            NatureCreance::SCOLARITE->value => ['Écolage', url('/finances/souscriptions')],
+            NatureCreance::SCOLARITE->value => ['Écolage', url('/scolarite/inscriptions')],
             NatureCreance::CANTINE->value   => ['Cantine', url('/services-eleves/cantine/inscriptions')],
             NatureCreance::BUS->value       => ['Transport scolaire', url('/services-eleves/transport/abonnements')],
             NatureCreance::ACTIVITE->value  => ['Activités', url('/services-eleves/activites-evenements/inscriptions')],
@@ -192,7 +192,11 @@ class PanierRechercheService
             }
         }
 
-        if (! $type || $type === 'evenement') {
+        // Année clôturée : plus de participation à un événement (comme pour toute souscription)
+        $anneeEleve = $inscriptionId ? DB::table('inscriptions')->where('id', $inscriptionId)->value('annee_id') : null;
+        $anneeCloturee = $anneeEleve && \App\Domain\Scolarite\Models\Annee::find($anneeEleve)?->isCloturee();
+
+        if ((! $type || $type === 'evenement') && ! $anneeCloturee) {
             // Uniquement les événements SANS capacité limitée
             $evenements = DB::table('evenements')
                 ->where('etat', 1)

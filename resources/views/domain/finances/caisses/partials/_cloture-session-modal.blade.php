@@ -5,71 +5,55 @@
     $soldeTheoriqueCloture = (float) ($journal['soldeTheorique'] ?? $caisse->solde_initial ?? 0);
 @endphp
 @can('caisses.cloturer')
-<div class="modal fade" id="clotureSessionModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-caisses">
-            <form method="POST" action="{{ route('finances.caisses.cloturer', $caisse) }}" id="cloture-session-form">
-                @csrf
-                <div class="modal-header"
-                     style="background: linear-gradient(135deg, var(--school-red-deep), var(--school-red-dark)); color:#fff; border-radius: 16px 16px 0 0;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-lock me-2"></i>Clôturer la caisse
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
+<x-modale id="clotureSessionModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-caisses" entete-style="background: linear-gradient(135deg, var(--school-red-deep), var(--school-red-dark)); color:#fff; border-radius: 16px 16px 0 0;" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire method="POST" action="{{ route('finances.caisses.cloturer', $caisse) }}" id="cloture-session-form">@csrf</x-slot:formulaire>
+    <x-slot:titre><i class="fas fa-lock me-2"></i>Clôturer la caisse</x-slot:titre>
+    <div class="alert alert-warning py-2 small mb-3">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        La clôture est <strong>définitive</strong> : le journal sera figé et aucune écriture ne
+        pourra plus y être ajoutée.
+    </div>
 
-                <div class="modal-body p-4">
-                    <div class="alert alert-warning py-2 small mb-3">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        La clôture est <strong>définitive</strong> : le journal sera figé et aucune écriture ne
-                        pourra plus y être ajoutée.
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3 p-3"
-                         style="background: #faf6ee; border-radius: 10px;">
-                        <div>
-                            <div class="text-muted text-xs">Caisse</div>
-                            <div class="fw-semibold">{{ $caisse->libelle }}</div>
-                        </div>
-                        <div class="text-end">
-                            <div class="text-muted text-xs">Solde théorique</div>
-                            <div class="fw-bold fs-5">{{ number_format($soldeTheoriqueCloture, 2, ',', ' ') }}</div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Solde compté (espèces physiquement en caisse) <span class="text-danger">*</span></label>
-                        <input type="number" name="solde_compte" step="0.01" min="0" required
-                               class="form-control @error('solde_compte') is-invalid @enderror"
-                               id="cloture-session-solde" value="{{ old('solde_compte') }}">
-                        @error('solde_compte') <div class="text-danger text-xs mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div id="cloture-session-ecart" class="d-none">
-                        <div class="d-flex justify-content-between align-items-center p-2 rounded mb-2"
-                             style="background:#fdf2f2; border-left:3px solid var(--school-red);">
-                            <span class="fw-semibold" style="color: var(--school-red);">Écart constaté</span>
-                            <span class="fw-bold" style="color: var(--school-red);" id="cloture-session-ecart-valeur">0,00</span>
-                        </div>
-                        <label class="form-label">Motif de l'écart <span class="text-danger">*</span></label>
-                        <textarea name="motif_ecart" rows="2" maxlength="1000"
-                                  class="form-control @error('motif_ecart') is-invalid @enderror"
-                                  id="cloture-session-motif">{{ old('motif_ecart') }}</textarea>
-                        @error('motif_ecart') <div class="text-danger text-xs mt-1">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn"
-                            style="background: var(--school-red-dark); color: #fff; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;">
-                        <i class="fas fa-check me-1"></i> Clôturer définitivement
-                    </button>
-                </div>
-            </form>
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3"
+         style="background: var(--eim-cream); border-radius: 10px;">
+        <div>
+            <div class="text-muted text-xs">Caisse</div>
+            <div class="fw-semibold">{{ $caisse->libelle }}</div>
+        </div>
+        <div class="text-end">
+            <div class="text-muted text-xs">Solde théorique</div>
+            <div class="fw-bold fs-5">{{ number_format($soldeTheoriqueCloture, 2, ',', ' ') }}</div>
         </div>
     </div>
-</div>
+
+    <div class="mb-3">
+        <x-libelle requis>Solde compté (espèces physiquement en caisse)</x-libelle>
+        <input type="number" name="solde_compte" step="0.01" min="0" required
+               class="form-control @error('solde_compte') is-invalid @enderror"
+               id="cloture-session-solde" value="{{ old('solde_compte') }}">
+        @error('solde_compte') <div class="text-danger text-xs mt-1">{{ $message }}</div> @enderror
+    </div>
+
+    <div id="cloture-session-ecart" class="d-none">
+        <div class="d-flex justify-content-between align-items-center p-2 rounded mb-2"
+             style="background:#fdf2f2; border-left:3px solid var(--school-red);">
+            <span class="fw-semibold" style="color: var(--school-red);">Écart constaté</span>
+            <span class="fw-bold" style="color: var(--school-red);" id="cloture-session-ecart-valeur">0,00</span>
+        </div>
+        <x-libelle requis>Motif de l'écart</x-libelle>
+        <textarea name="motif_ecart" rows="2" maxlength="1000"
+                  class="form-control @error('motif_ecart') is-invalid @enderror"
+                  id="cloture-session-motif">{{ old('motif_ecart') }}</textarea>
+        @error('motif_ecart') <div class="text-danger text-xs mt-1">{{ $message }}</div> @enderror
+    </div>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+        <button type="submit" class="btn"
+                style="background: var(--school-red-dark); color: #fff; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;">
+            <i class="fas fa-check me-1"></i> Clôturer définitivement
+        </button>
+    </x-slot:pied>
+</x-modale>
 @endcan
 
 @push('js')

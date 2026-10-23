@@ -18,9 +18,9 @@
                     {{ $message->created_at?->format('d/m/Y H:i') }}
                 </small>
             </div>
-            <span class="badge-statut bg-{{ $message->statut?->couleur() ?? 'secondary' }}">
+            <x-badge class="bg-{{ $message->statut?->couleur() ?? 'secondary' }}">
                 {{ $message->statut?->libelle() }}
-            </span>
+            </x-badge>
         </div>
 
         <div class="border rounded p-3 bg-light mb-3" style="white-space:pre-wrap;">{{ $message->corps }}</div>
@@ -34,8 +34,7 @@
     </div>
 
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
+        <x-tableau class="table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Destinataire</th>
@@ -53,16 +52,15 @@
                             <td>{{ $d->email }}</td>
                             <td>{{ $d->destinataire_type }}</td>
                             <td>
-                                <span class="badge-statut bg-{{ $d->statut_envoi?->couleur() ?? 'secondary' }}">
+                                <x-badge class="bg-{{ $d->statut_envoi?->couleur() ?? 'secondary' }}">
                                     {{ $d->statut_envoi?->libelle() ?? '—' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td>{{ $d->date_envoi?->format('d/m/Y H:i') ?? '—' }}</td>
                             <td><small class="text-danger">{{ $d->erreur }}</small></td>
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
     </div>
 @endsection

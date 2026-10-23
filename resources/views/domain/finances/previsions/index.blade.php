@@ -1,300 +1,250 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Prévisions budgétaires')
+@section('title', 'Lignes budgétaires')
 @section('page_icon', 'fa-chart-line')
-@section('page_title', 'Prévisions budgétaires')
+@section('page_title', 'Lignes budgétaires')
 
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('tableau') }}">Accueil</a></li>
     <li class="breadcrumb-item">Finances &amp; Comptabilité</li>
-    <li class="breadcrumb-item active">Prévisions budgétaires</li>
+    <li class="breadcrumb-item active">Lignes budgétaires</li>
 @endsection
 
 @section('page_actions')
     @can('previsions.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouvellePrevision"
-                data-bs-toggle="modal" data-bs-target="#previsionModal">
-            <i class="fas fa-plus-circle me-1"></i> Nouvelle prévision
-        </button>
+        <x-bouton variante="nouveau" type="button" id="btnNouvellePrevision" data-bs-toggle="modal" data-bs-target="#previsionModal">
+            <i class="fas fa-plus-circle me-1"></i> Nouvelle ligne budgétaire
+        </x-bouton>
     @endcan
 @endsection
 
-@section('css')
+@push('css')
 <style>
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
-    .main-card .card-header { border-bottom:1px solid #ece4d6 !important; }
-    .filtre-input { border-radius:10px; border:1px solid #ece4d6; padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
-    .table-prev thead tr { background:#faf6ee; }
-    .table-prev thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid #ece4d6; white-space:nowrap; }
-    .table-prev tbody td { padding:.9rem 1rem; border-bottom:1px solid #ece4d6; font-size:.9rem; color:var(--school-ink); vertical-align:middle; }
-    .table-prev tbody tr:hover { background:#fdfaf5; }
-    .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-    .num.positif { color:#1c7a4d; }
-    .num.negatif { color:var(--school-red); }
-    .badge-type { display:inline-flex; padding:.3em .8em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-type.recette { background:#e3f7ec; color:#1c7a4d; }
-    .badge-type.depense { background:#fdecea; color:var(--school-red); }
-    .centre-code { font-family:monospace; background:#faf6ee; color:var(--school-red); padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700; }
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
-    .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
-    .modal-prev { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
-    .modal-header-prev { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-bottom:none; padding:1.15rem 1.5rem; }
-    .form-section { background:#faf6ee; border:1px solid #ece4d6; border-radius:12px; padding:1.1rem; }
-    .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; color:var(--school-red); margin-bottom:.75rem; }
-    .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
-    .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid #ece4d6; padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus, .form-section .form-select:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .btn-annuler { background:#fff; border:1px solid #ece4d6; color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
-    .btn-enregistrer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
+    .lignes-page .stat-card { background:#fff; border:1px solid var(--eim-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(142,18,22,.04); height:100%; }
+    .lignes-page .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
+    .lignes-page .stat-label { font-size:.75rem; color:var(--school-muted); }
+    .filtre-input { border-radius:10px; border:1px solid var(--eim-border); padding:.55rem .9rem; font-size:.88rem; }
+    .table-prev thead tr { background:var(--eim-cream); }
+    .table-prev thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--eim-border); white-space:nowrap; }
+    .table-prev tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--eim-border); font-size:.9rem; color:var(--school-ink); vertical-align:middle; }
+    .table-prev tfoot td { padding:.85rem 1rem; font-weight:700; background:var(--eim-hover); }
+    .num { font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+    .cell-sub { font-size:.74rem; color:var(--school-muted); line-height:1.35; }
+    .jauge { height:6px; border-radius:999px; background:var(--eim-border); overflow:hidden; margin-top:.35rem; max-width:160px; margin-left:auto; }
+    .jauge > span { display:block; height:100%; background:var(--eim-success); }
+    .jauge.depasse > span { background:var(--school-red); }
+    .reste-ok { color:var(--eim-success); }
+    .reste-depasse { color:var(--school-red); }
+    #depenses-ligne thead th { font-size:.7rem; text-transform:uppercase; color:var(--school-red); background:var(--eim-cream); }
 </style>
-@endsection
+@endpush
 
 @section('contenu')
-<div>
-    <div class="card main-card">
+@php
+    $fmt = fn ($v) => number_format((float) $v, 0, ',', ' ');
+    $resteTotal = $totaux['global'] - $totaux['depenses'];
+@endphp
+<div class="lignes-page">
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-4">
+            <x-stat icone="fas fa-wallet" couleur="blue" id="total-global">{{ $fmt($totaux['global']) }} F
+                <x-slot:libelle>Budget global — année {{ $annee?->libelle }}</x-slot:libelle>
+            </x-stat>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <x-stat icone="fas fa-file-invoice-dollar" couleur="red" id="total-depenses">{{ $fmt($totaux['depenses']) }} F
+                <x-slot:libelle>Dépenses imputées (décaissées)</x-slot:libelle>
+            </x-stat>
+        </div>
+        <div class="col-sm-12 col-lg-4">
+            <x-stat icone="fas fa-piggy-bank" :couleur="$resteTotal >= 0 ? 'green' : 'red'" id="total-reste">{{ $fmt(abs($resteTotal)) }} F
+                <x-slot:libelle>{{ $resteTotal >= 0 ? 'Reste disponible' : 'Dépassement' }}</x-slot:libelle>
+            </x-stat>
+        </div>
+    </div>
+
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
-                <div class="col-md-3">
-                    <input type="text" name="search" class="form-control filtre-input"
-                           placeholder="Rechercher..." value="{{ $filters['search'] ?? '' }}">
+                <div class="col-md-6">
+                    <x-recherche name="search" placeholder="Rechercher une ligne budgétaire..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
-                <div class="col-md-2">
-                    <select name="type" class="form-select filtre-input">
-                        <option value="">— Type —</option>
-                        @foreach ($types as $v => $l)
-                            <option value="{{ $v }}" @selected(($filters['type'] ?? '') === $v)>{{ $l }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-md-2 d-flex gap-2">
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill" title="Filtrer"><i class="fas fa-filter"></i></x-bouton>
+                    <x-bouton variante="contour" href="{{ route('finances.previsions.index') }}" title="Réinitialiser"><i class="fas fa-undo"></i></x-bouton>
                 </div>
-                <div class="col-md-3">
-                    <select name="centre_analytique_id" class="form-select filtre-input">
-                        <option value="">— Centre analytique —</option>
-                        @foreach ($centres as $c)
-                            <option value="{{ $c->id }}" @selected(($filters['centre_analytique_id'] ?? '') == $c->id)>
-                                {{ $c->code }} — {{ $c->libelle }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="annee_id" class="form-select filtre-input">
-                        <option value="">— Année —</option>
-                        @foreach ($annees as $a)
-                            <option value="{{ $a->id }}" @selected(($filters['annee_id'] ?? '') == $a->id)>{{ $a->libelle }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                <div class="col-md-4 text-end">
+                    <x-compteur>{{ $previsions->total() }} ligne(s)</x-compteur>
                 </div>
             </form>
         </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-prev align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">Libellé</th>
-                            <th>Type</th>
-                            <th>Centre</th>
-                            <th>Période</th>
-                            <th class="text-end">Prévisionnel</th>
-                            <th class="text-end">Réalisé</th>
-                            <th class="text-end">Écart</th>
-                            <th class="text-center pe-4" style="width:80px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @forelse ($previsions as $p)
-                        @php $ecart = $p->ecart(); @endphp
-                        <tr>
-                            <td class="ps-4 fw-semibold">{{ $p->libelle }}</td>
-                            <td><span class="badge-type {{ $p->type?->css() }}">{{ $p->type?->label() }}</span></td>
-                            <td>
-                                @if ($p->centre)
-                                    <span class="centre-code">{{ $p->centre->code }}</span>
-                                    <div class="text-xs text-muted mt-1">{{ $p->centre->libelle }}</div>
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
-                            </td>
-                            <td class="text-sm">
-                                @if ($p->date_debut && $p->date_fin)
-                                    {{ $p->date_debut->format('d/m/Y') }} → {{ $p->date_fin->format('d/m/Y') }}
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
-                            </td>
-                            <td class="num">{{ number_format($p->montant_previsionnel, 2, ',', ' ') }}</td>
-                            <td class="num">{{ number_format($p->montant_realise ?? 0, 2, ',', ' ') }}</td>
-                            <td class="num {{ $ecart >= 0 ? 'positif' : 'negatif' }}">
-                                {{ $ecart >= 0 ? '+' : '' }}{{ number_format($ecart, 2, ',', ' ') }}
-                            </td>
-                            <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
-                                        @can('previsions.gerer')
-                                        <li>
-                                            <button type="button" class="dropdown-item btn-edit-prev"
-                                                    data-id="{{ $p->id }}"
-                                                    data-libelle="{{ $p->libelle }}"
-                                                    data-type="{{ $p->type?->value }}"
-                                                    data-montant="{{ $p->montant_previsionnel }}"
-                                                    data-centre="{{ $p->centre_analytique_id }}"
-                                                    data-debut="{{ optional($p->date_debut)->toDateString() }}"
-                                                    data-fin="{{ optional($p->date_fin)->toDateString() }}"
-                                                    data-bs-toggle="modal" data-bs-target="#previsionModal">
-                                                <i class="fas fa-pen"></i> Modifier
-                                            </button>
-                                        </li>
-                                        @endcan
-                                        <li><hr class="dropdown-divider"></li>
-                                        @can('previsions.gerer')
-                                        <li>
-                                            <form action="{{ route('finances.previsions.destroy', $p) }}" method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Supprimer</button>
-                                            </form>
-                                        </li>
-                                        @endcan
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-chart-line"></i><p>Aucune prévision.</p></div></td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        <x-tableau class="table-prev align-middle mb-0" id="table-lignes">
+            <thead>
+                <tr>
+                    <th class="ps-4">Ligne budgétaire</th>
+                    <th class="text-end">Montant global</th>
+                    <th class="text-end">Dépenses</th>
+                    <th class="text-end">Reste</th>
+                    <th class="text-center pe-4" style="width:80px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse ($previsions as $p)
+                @php
+                    $global = (float) $p->montant_previsionnel;
+                    $depense = (float) $p->montant_depenses;
+                    $reste = $global - $depense;
+                    $taux = $global > 0 ? min(100, round($depense / $global * 100)) : 0;
+                @endphp
+                <tr data-ligne="{{ $p->id }}">
+                    <td class="ps-4">
+                        <div class="fw-semibold">{{ $p->libelle }}</div>
+                        <div class="cell-sub">{{ $p->nb_depenses }} dépense(s) décaissée(s)@if ($p->centre) · <i class="fas fa-sitemap me-1"></i>{{ $p->centre->code }} — {{ $p->centre->libelle }}@endif</div>
+                    </td>
+                    <td class="text-end num">{{ $fmt($global) }} F</td>
+                    <td class="text-end">
+                        <div class="num">{{ $fmt($depense) }} F</div>
+                        @if ((float) $p->montant_en_attente > 0)
+                            <div class="cell-sub" title="Dépenses de la ligne pas encore décaissées : elles ne sont pas imputées">+ {{ $fmt($p->montant_en_attente) }} F en attente de décaissement ({{ $p->nb_en_attente }})</div>
+                        @endif
+                        <div class="jauge @if ($reste < 0) depasse @endif" title="{{ $taux }} % consommé"><span style="width:{{ $taux }}%"></span></div>
+                    </td>
+                    <td class="text-end">
+                        @if ($reste > 0)
+                            <span class="num reste-ok">{{ $fmt($reste) }} F</span>
+                        @elseif ($reste < 0)
+                            <span class="num reste-depasse">Dépassement {{ $fmt(-$reste) }} F</span>
+                        @else
+                            <span class="text-muted">Épuisé</span>
+                        @endif
+                    </td>
+                    <td class="text-center pe-4">
+                        <x-actions>
+                            <li>
+                                <button type="button" class="dropdown-item btn-voir-depenses"
+                                        data-url="{{ route('finances.previsions.depenses', $p->id) }}" data-libelle="{{ $p->libelle }}">
+                                    <i class="fas fa-list"></i> Voir les dépenses
+                                </button>
+                            </li>
+                            @can('previsions.gerer')
+                                <li>
+                                    <button type="button" class="dropdown-item btn-edit-prev"
+                                            data-id="{{ $p->id }}" data-libelle="{{ $p->libelle }}" data-montant="{{ $global }}" data-centre="{{ $p->centre_analytique_id }}"
+                                            data-bs-toggle="modal" data-bs-target="#previsionModal">
+                                        <i class="fas fa-pen"></i> Modifier
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <x-actions.supprimer :action="route('finances.previsions.destroy', $p->id)" />
+                            @endcan
+                        </x-actions>
+                    </td>
+                </tr>
+            @empty
+                <x-vide colspan="5" icone="fas fa-chart-line">Aucune ligne budgétaire pour l'année {{ $annee?->libelle }}.</x-vide>
+            @endforelse
+            </tbody>
+        </x-tableau>
+    </x-carte>
 
-    <div class="mt-4">{{ $previsions->appends(request()->query())->links('vendor.pagination.custom') }}</div>
-
-    @can('previsions.gerer')
-    <div class="modal fade" id="previsionModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content modal-prev">
-                <form id="prev-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="prev-method" value="POST">
-                    <div class="modal-header modal-header-prev">
-                        <h5 class="modal-title" id="prev-title"><i class="fas fa-chart-line me-2"></i>Nouvelle prévision</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section">
-                            <div class="form-section-title"><i class="fas fa-info-circle"></i> Détail de la prévision</div>
-                            <div class="row g-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                    <input type="text" name="libelle" id="prev-libelle" class="form-control" maxlength="150">
-                                    <div class="text-danger text-xs mt-1" id="libelle-error"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Type <span class="text-danger">*</span></label>
-                                    <select name="type" id="prev-type" class="form-select">
-                                        @foreach ($types as $v => $l)
-                                            <option value="{{ $v }}">{{ $l }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Montant prévisionnel <span class="text-danger">*</span></label>
-                                    <input type="number" name="montant_previsionnel" id="prev-montant" step="0.01" min="0.01" class="form-control">
-                                    <div class="text-danger text-xs mt-1" id="montant_previsionnel-error"></div>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label">Centre analytique</label>
-                                    <select name="centre_analytique_id" id="prev-centre" class="form-select">
-                                        <option value="">— Aucun (prévision globale) —</option>
-                                        @foreach ($centres as $c)
-                                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->libelle }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Date de début</label>
-                                    <input type="date" name="date_debut" id="prev-debut" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Date de fin</label>
-                                    <input type="date" name="date_fin" id="prev-fin" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endcan
+    <div class="mt-4"><x-pagination :liste="$previsions" /></div>
 </div>
+
+{{-- Nouvelle ligne / modification : libellé et montant global --}}
+@can('previsions.gerer')
+<x-modale id="previsionModal" data-bs-backdrop="static" aria-hidden="true" form-contenu croix-blanche>
+    <x-slot:formulaire id="prev-form" method="POST" action="{{ route('finances.previsions.store') }}">@csrf
+        <input type="hidden" name="_method" id="prev-method" value="POST"></x-slot:formulaire>
+    <x-slot:titre id="prev-titre"><i class="fas fa-chart-line me-2"></i>Nouvelle ligne budgétaire</x-slot:titre>
+    <div class="mb-3">
+        <x-libelle for="prev-libelle" requis>Libellé</x-libelle>
+        <input type="text" name="libelle" id="prev-libelle" class="form-control" maxlength="150" placeholder="Ex : Fournitures de bureau, Entretien des bâtiments...">
+        <div class="text-danger small mt-1" id="libelle-error"></div>
+    </div>
+    <div class="mb-2">
+        <x-libelle for="prev-montant" requis>Montant global (F)</x-libelle>
+        <input type="number" name="montant_previsionnel" id="prev-montant" class="form-control" min="1" step="1">
+        <div class="text-danger small mt-1" id="montant_previsionnel-error"></div>
+    </div>
+    <div class="mb-2">
+        <x-libelle for="prev-centre">Centre analytique (facultatif)</x-libelle>
+        <select name="centre_analytique_id" id="prev-centre" class="form-select">
+            <option value="">— Aucun —</option>
+            @foreach ($centres as $c)
+                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->libelle }}</option>
+            @endforeach
+        </select>
+        <div class="form-text small">Le montant de la ligne sert alors de budget à ce centre dans le rapport analytique.</div>
+        <div class="text-danger small mt-1" id="centre_analytique_id-error"></div>
+    </div>
+    <div class="cell-sub">Ligne de l'année {{ $annee?->libelle }}. Une dépense « sur ligne budgétaire » lui est imputée une fois décaissée.</div>
+    <x-slot:pied>
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+        <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+    </x-slot:pied>
+</x-modale>
+@endcan
+
+{{-- Dépenses d'une ligne, avec les caisses qui les ont décaissées --}}
+<x-modale id="depensesLigneModal" aria-hidden="true" dialogue="modal-dialog-centered modal-xl" corps-id="depenses-ligne-contenu" croix-blanche>
+    <x-slot:titre><i class="fas fa-list me-2"></i>Dépenses — <span id="depenses-ligne-titre"></span></x-slot:titre>
+    <x-slot:pied>
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Fermer</x-bouton>
+    </x-slot:pied>
+</x-modale>
 @endsection
 
 @push('js')
 <script>
 $(function () {
+    const URL_LIGNES = '{{ url('finances/previsions') }}';
     const $form = $('#prev-form');
-    if (!$form.length) return;
-
-    let currentId = null;
 
     $('#btnNouvellePrevision').on('click', function () {
-        currentId = null;
         $form[0].reset();
+        $form.attr('action', '{{ route('finances.previsions.store') }}');
         $('#prev-method').val('POST');
-        $('#prev-title').html('<i class="fas fa-chart-line me-2"></i>Nouvelle prévision');
-        clearErrors();
+        $('#prev-titre').html('<i class="fas fa-chart-line me-2"></i>Nouvelle ligne budgétaire');
+        $('#libelle-error, #montant_previsionnel-error').text('');
     });
 
     $(document).on('click', '.btn-edit-prev', function () {
-        currentId = $(this).data('id');
-        $('#prev-libelle').val($(this).data('libelle'));
-        $('#prev-type').val($(this).data('type'));
-        $('#prev-montant').val($(this).data('montant'));
-        $('#prev-centre').val($(this).data('centre') ?? '');
-        $('#prev-debut').val($(this).data('debut') ?? '');
-        $('#prev-fin').val($(this).data('fin') ?? '');
+        $form.attr('action', URL_LIGNES + '/' + $(this).data('id'));
         $('#prev-method').val('PUT');
-        $('#prev-title').html('<i class="fas fa-pen me-2"></i>Modifier la prévision');
-        clearErrors();
+        $('#prev-libelle').val($(this).data('libelle'));
+        $('#prev-montant').val($(this).data('montant'));
+        $('#prev-centre').val($(this).data('centre') || '');
+        $('#prev-titre').html('<i class="fas fa-pen me-2"></i>Modifier la ligne budgétaire');
+        $('#libelle-error, #montant_previsionnel-error').text('');
     });
 
     $form.on('submit', function (e) {
         e.preventDefault();
-        clearErrors();
-
-        const url = currentId
-            ? `{{ url('finances/previsions') }}/${currentId}`
-            : `{{ route('finances.previsions.store') }}`;
-
-        $.ajax({
-            url, method: 'POST', data: $form.serialize(),
-            headers: { 'Accept': 'application/json' },
-            success: function (res) {
-                $('#previsionModal').modal('hide');
+        $('#libelle-error, #montant_previsionnel-error').text('');
+        $.ajax({ url: $form.attr('action'), method: 'POST', data: $form.serialize(), headers: { 'Accept': 'application/json' } })
+            .done(res => {
+                bootstrap.Modal.getInstance(document.getElementById('previsionModal'))?.hide();
                 window.showToastThenReload(res.message || 'Enregistré.', 'success');
-            },
-            error: function (xhr) {
-                if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                    Object.keys(xhr.responseJSON.errors).forEach(f => $('#' + f + '-error').text(xhr.responseJSON.errors[f][0]));
-                } else { window.showToast("Une erreur est survenue.", 'error'); }
-            }
-        });
+            })
+            .fail(xhr => {
+                const erreurs = xhr.responseJSON?.errors;
+                if (erreurs) {
+                    Object.keys(erreurs).forEach(champ => $('#' + champ + '-error').text(erreurs[champ][0]));
+                } else {
+                    window.showToast(xhr.responseJSON?.message || 'Une erreur est survenue.', 'error');
+                }
+            });
     });
 
-    function clearErrors() { $form.find('[id$="-error"]').text(''); }
+    $(document).on('click', '.btn-voir-depenses', function () {
+        $('#depenses-ligne-titre').text($(this).data('libelle'));
+        $('#depenses-ligne-contenu').html('<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('depensesLigneModal')).show();
+        $.get($(this).data('url'))
+            .done(html => $('#depenses-ligne-contenu').html(html))
+            .fail(xhr => $('#depenses-ligne-contenu').html('<div class="text-danger">' + (xhr.responseJSON?.message || "Impossible d'afficher les dépenses.") + '</div>'));
+    });
 });
 </script>
 @endpush

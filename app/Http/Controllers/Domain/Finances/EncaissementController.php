@@ -16,14 +16,16 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * 2.3 Encaissements — le caissier constate l'entrée en caisse des paiements
- * saisis par le comptable. Trois onglets : tous les encaissements, les
- * paiements en attente, et ses encaissements du jour.
+ * saisis par le comptable. Quatre onglets : tous les encaissements (filtrables
+ * par caissier), les paiements en attente, mes encaissements (tout caissier),
+ * et les encaissements de ma caisse ouverte (seulement si j'en ai une), d'où
+ * l'on ouvre le journal de la caisse.
  */
 class EncaissementController extends Controller
 {
     use HandlesControllerErrors;
 
-    private const ONGLETS = ['tous', 'attente', 'jour'];
+    private const ONGLETS = ['tous', 'attente', 'mes', 'caisse'];
 
     public function __construct(
         private PaiementRepository  $paiements,
@@ -55,14 +57,37 @@ class EncaissementController extends Controller
         $anneeId = (int) $annee->id;
         $user    = $request->user();
 
-        $filtres = $request->only(['search', 'date_debut', 'date_fin', 'caisse_id']) + ['annee_id' => $anneeId];
-        $recherche = ['search' => $request->input('recherche_attente'), 'annee_id' => $anneeId];
+        $filtres = $request->only(['search', 'date_debut', 'date_fin', 'caisse_id', 'caissier_id']) + ['annee_id' => $anneeId];
 
-        $onglet = in_array($request->input('onglet'), self::ONGLETS, true)
-            ? $request->input('onglet')
-            : ($user->can('encaissements.creer') ? 'jour' : 'tous');
+        // Les paiements en attente couvrent toute la base : l'année choisie dans
+        // l'en-tête n'est que le filtre de départ, « toutes » le lève.
+        $parAnnee     = $this->paiements->paiementsEnAttenteParAnnee();
+        $anneeAttente = $request->input('annee_attente', $anneeId);
+        $anneeAttente = $anneeAttente === 'toutes' ? null : ((int) $anneeAttente ?: $anneeId);
+        $recherche    = ['search' => $request->input('recherche_attente'), 'annee_id' => $anneeAttente];
+        $retenues     = $anneeAttente ? $parAnnee->where('annee_id', $anneeAttente) : $parAnnee;
+
+        $peutEncaisser = $user->can('encaissements.creer');
+        $caisseOuverte = $this->caisses->findOuverteParCaissier((int) $user->id);
+
+        // « Mes encaissements » : tout caissier ; « Caisse ouverte » : seulement s'il en a une
+        $disponibles = array_values(array_filter(self::ONGLETS, fn ($o) => match ($o) {
+            'mes'    => $peutEncaisser,
+            'caisse' => $peutEncaisser && $caisseOuverte,
+            default  => true,
+        }));
+        $demande = $request->input('onglet') === 'jour' ? 'caisse' : $request->input('onglet');   // ancien nom
+        $onglet = in_array($demande, $disponibles, true)
+            ? $demande
+            : ($peutEncaisser ? ($caisseOuverte ? 'caisse' : 'mes') : 'tous');
 
         $duJour = $this->paiements->encaissementsDuJour((int) $user->id);
+
+        // Mes encaissements : ceux du caissier connecté sur l'année, filtrables par dates
+        $filtresMes = ['annee_id' => $anneeId, 'caissier_id' => (int) $user->id]
+            + array_filter(['search' => $request->input('recherche_mes'), 'date_debut' => $request->input('mes_debut'), 'date_fin' => $request->input('mes_fin')]);
+        // Caisse ouverte : tout ce qui y est entré, quelle que soit l'année du paiement
+        $filtresCaisse = $caisseOuverte ? ['caisse_id' => (int) $caisseOuverte->id] : null;
 
         return view('domain.finances.encaissements.index', [
             'onglet'        => $onglet,
@@ -70,11 +95,19 @@ class EncaissementController extends Controller
             'filtres'       => $filtres,
             'recherche'     => $recherche,
             'encaissements' => $this->paiements->encaissementsPagines($filtres),
+            'caissiers'     => $this->paiements->caissiers($anneeId),
+            'mesEncaissements' => $peutEncaisser ? $this->paiements->encaissementsPagines($filtresMes, 20, 'page_mes') : null,
+            'totalMes'      => $peutEncaisser ? $this->paiements->totalEncaissements($filtresMes) : null,
+            'filtresMes'    => $filtresMes,
+            'encaissementsCaisse' => $filtresCaisse ? $this->paiements->encaissementsPagines($filtresCaisse, 50, 'page_caisse') : null,
+            'totalCaisse'   => $filtresCaisse ? $this->paiements->totalEncaissements($filtresCaisse) : null,
             'enAttente'     => $this->paiements->paiementsEnAttentePagines($recherche),
             'duJour'        => $duJour,
             'totalJour'     => round((float) $duJour->sum('montant'), 2),
-            'compteurAttente' => $this->paiements->compterPaiementsEnAttente($anneeId),
-            'caisseOuverte' => $this->caisses->findOuverteParCaissier((int) $user->id),
+            'compteurAttente' => ['nb' => (int) $retenues->sum('nb'), 'montant' => round((float) $retenues->sum('montant'), 2)],
+            'attenteParAnnee' => $parAnnee,
+            'anneeAttente'  => $anneeAttente,
+            'caisseOuverte' => $caisseOuverte,
             'caisses'       => $this->caisses->listePourSelect($anneeId),
         ]);
     }
@@ -103,10 +136,12 @@ class EncaissementController extends Controller
 
         return response()->json(['results' => $paiements->map(function ($p) {
             $eleve = $p->inscription?->eleve;
+            // Niveau et classe (la classe seulement si l'élève en a une)
+            $scolarite = collect([$p->inscription?->niveau?->libelle, $p->inscription?->classe?->libelle])->filter()->implode(' · ');
 
             return [
                 'id'   => $p->id,
-                'text' => trim(($eleve ? "{$eleve->nom} {$eleve->prenom}" : $p->payeur) . ' — ' . $p->reference . ' — '
+                'text' => trim(($eleve ? "{$eleve->nom} {$eleve->prenom}" : $p->payeur) . ($scolarite ? " ({$scolarite})" : '') . ' — ' . $p->reference . ' — '
                     . number_format((float) $p->details->sum('montant'), 0, ',', ' ') . ' F'),
             ];
         })->values()]);
@@ -201,7 +236,7 @@ class EncaissementController extends Controller
             'genereLe'  => now(),
             'generePar' => auth()->user(),
         ])
-        ->setPaper('A5', 'portrait') // A5 = format ticket/reçu
+        ->setPaper('A4', 'portrait') // les deux exemplaires (original, duplicata) sur une feuille
         ->setOptions([
             'defaultFont'          => 'DejaVu Sans',
             'isHtml5ParserEnabled' => true,

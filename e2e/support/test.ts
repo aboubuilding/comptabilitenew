@@ -122,7 +122,7 @@ export async function ouvrirSaisiePaiement(page: Page, recherche: string, result
  * Encaissements › onglet « Paiements en attente » : « Encaisser » sur le
  * paiement voulu, contrôle du détail, saisie du montant réellement reçu
  * (par défaut : le montant à encaisser), validation. On revient sur
- * « Mes encaissements du jour ».
+ * « Caisse ouverte ».
  */
 export async function encaisserPaiement(page: Page, texte: string | RegExp, montantRecu?: number): Promise<void> {
   await page.goto('/finances/encaissements?onglet=attente');
@@ -132,7 +132,7 @@ export async function encaisserPaiement(page: Page, texte: string | RegExp, mont
   await expect(modale.locator('.resume-paiement')).toBeVisible();
   if (montantRecu !== undefined) await modale.locator('#enc-montant-recu').fill(String(montantRecu));
   await modale.locator('#enc-valider').click();
-  await expect(page).toHaveURL(/onglet=jour/);
+  await expect(page).toHaveURL(/onglet=caisse/);
   await attendreToast(page, 'Encaissement effectué');
 }
 
@@ -145,7 +145,7 @@ export async function encaisserTout(page: Page): Promise<void> {
     await page.locator('#table-attente .btn-encaisser-action').first().click();
     await expect(page.locator('#encaisserModal .resume-paiement')).toBeVisible();
     await page.locator('#enc-valider').click();
-    await expect(page).toHaveURL(/onglet=jour/);
+    await expect(page).toHaveURL(/onglet=caisse/);
     await page.goto('/finances/encaissements?onglet=attente');
     await expect(page.locator('#table-attente .btn-encaisser-action')).toHaveCount(restants - 1);
     restants--;

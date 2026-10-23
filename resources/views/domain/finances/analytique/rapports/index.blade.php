@@ -11,40 +11,39 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.analytique.centres.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.analytique.centres.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-sitemap me-1"></i> Centres
-    </a>
-    <a href="{{ route('finances.analytique.rapports.export', request()->query()) }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('finances.analytique.rapports.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Excel
-    </a>
-    <a href="{{ route('finances.analytique.rapports.exportPdf', request()->query()) }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('finances.analytique.rapports.exportPdf', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-pdf me-1"></i> PDF
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .rapport-page { --rp-bg-soft:#faf6ee; --rp-border:#ece4d6; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .rapport-page { --rp-bg-soft:var(--eim-cream); --rp-border:var(--eim-border); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--rp-border) !important; }
     .filtre-input { border-radius:10px; border:1px solid var(--rp-border); padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
     .btn-outline-scolarite { border:1px solid var(--rp-border); color:var(--school-ink); background:#fff; font-size:.82rem; }
     .btn-outline-scolarite:hover { background:var(--rp-bg-soft); border-color:var(--school-red); color:var(--school-red); }
     .table-rapport thead tr { background:var(--rp-bg-soft); }
     .table-rapport thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--rp-border); white-space:nowrap; }
     .table-rapport tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--rp-border); font-size:.9rem; color:var(--school-ink); vertical-align:middle; }
-    .table-rapport tbody tr:hover { background:#fdfaf5; }
+    .table-rapport tbody tr:hover { background:var(--eim-hover); }
     .table-rapport .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-    .table-rapport .num.positif { color:#1c7a4d; }
+    .table-rapport .num.positif { color:var(--eim-success); }
     .table-rapport .num.negatif { color:var(--school-red); }
     .centre-code { font-family:monospace; background:var(--rp-bg-soft); color:var(--school-red); padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700; }
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
     .taux-bar { height:6px; background:#eceff2; border-radius:3px; overflow:hidden; margin-top:4px; }
-    .taux-bar > div { height:100%; background:linear-gradient(90deg,#1c7a4d,#2ecc71); }
-    .taux-bar.warn > div { background:linear-gradient(90deg,#B8860B,#D4A94D); }
+    .taux-bar > div { height:100%; background:linear-gradient(90deg,var(--eim-success),#2ecc71); }
+    .taux-bar.warn > div { background:linear-gradient(90deg,var(--eim-gold-deep),var(--eim-gold)); }
     .taux-bar.bad > div { background:linear-gradient(90deg,var(--school-red-dark),var(--school-red)); }
 </style>
 @endsection
@@ -52,7 +51,7 @@
 @section('contenu')
 <div class="rapport-page">
 
-    <div class="card main-card mb-3">
+    <x-carte class="mb-3">
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
@@ -70,16 +69,15 @@
                     <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filters['date_fin'] ?? '' }}" placeholder="Au">
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                    <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
                 </div>
             </form>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="card main-card">
+    <x-carte>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-rapport align-middle mb-0">
+            <x-tableau class="table-rapport align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Centre analytique</th>
@@ -120,7 +118,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-chart-pie"></i><p>Aucune donnée analytique sur la période.</p></div></td></tr>
+                        <x-vide colspan="7" icone="fas fa-chart-pie">Aucune donnée analytique sur la période.</x-vide>
                     @endforelse
                     </tbody>
                     @if ($lignes->isNotEmpty())
@@ -140,9 +138,8 @@
                             </tr>
                         </tfoot>
                     @endif
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 </div>
 @endsection

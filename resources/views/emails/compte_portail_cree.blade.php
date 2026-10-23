@@ -6,7 +6,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; color:#222; line-height:1.5;">
     <div style="max-width:600px; margin:0 auto; padding:20px;">
-        <h2 style="color:#8B0000;">Bienvenue {{ $parentNom }}</h2>
+        <h2 style="color:#8E1216;">Bienvenue {{ $parentNom }}</h2>
 
         <p>Un compte d'accès au <strong>portail parent</strong> a été créé pour votre famille
            « <strong>{{ $nomFamille }}</strong> ».</p>

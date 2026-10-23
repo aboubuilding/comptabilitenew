@@ -16,9 +16,9 @@
         @if ($anneeCloturee)
             <span class="text-muted small" id="annee-cloturee"><i class="fas fa-lock me-1"></i>Année {{ $annee?->libelle }} clôturée : ouverture de caisse impossible</span>
         @else
-        <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#caisseModal">
+        <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#caisseModal">
             <i class="fas fa-plus-circle me-1"></i> Ouvrir une caisse
-        </button>
+        </x-bouton>
         @endif
     @endcan
 @endsection
@@ -28,8 +28,8 @@
     /* Jetons propres à cette page — school-red / gold / ink / muted / ff
        viennent de layouts/app.blade.php, non redéclarés ici. */
     .caisses-page {
-        --caisses-bg-soft: #faf6ee;
-        --caisses-border: #ece4d6;
+        --caisses-bg-soft: var(--eim-cream);
+        --caisses-border: var(--eim-border);
     }
 
     .text-xs  { font-size: .72rem; }
@@ -45,17 +45,17 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        box-shadow: 0 2px 8px rgba(122,15,28,.04);
+        box-shadow: 0 2px 8px rgba(142,18,22,.04);
         transition: transform .2s ease, box-shadow .2s ease;
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(122,15,28,.08); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(142,18,22,.08); }
     .stat-icon {
         width: 48px; height: 48px; border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.15rem; background: rgba(200,30,58,.08); color: var(--school-red);
+        font-size: 1.15rem; background: rgba(227,30,36,.08); color: var(--school-red);
         flex-shrink: 0;
     }
-    .stat-icon.green { background: rgba(28,122,77,.08); color: #1c7a4d; }
+    .stat-icon.green { background: rgba(28,122,77,.08); color: var(--eim-success); }
     .stat-info .stat-value { font-size: 1.2rem; font-weight: 700; line-height: 1.2; color: var(--school-ink); }
     .stat-info .stat-label { font-size: .78rem; color: var(--school-muted); margin: 0; }
 
@@ -68,24 +68,20 @@
     .btn-outline-scolarite:hover { background: var(--caisses-bg-soft); border-color: var(--school-red); color: var(--school-red); }
 
     /* Card & tableau principal */
-    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background: #fff; overflow: hidden; }
+    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background: #fff; overflow: hidden; }
     .main-card .card-header { border-bottom: 1px solid var(--caisses-border) !important; }
 
     .filtre-input {
         border-radius: 10px; border: 1px solid var(--caisses-border);
         padding: .55rem .9rem; font-size: .88rem;
     }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .search-wrapper { position: relative; }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aa7b2; font-size: .85rem; }
-    .search-input { padding-left: 36px !important; }
 
     .btn-filtrer {
         background: var(--school-red); color: #fff; border: none; border-radius: 10px;
         padding: .55rem 1rem; font-weight: 600; font-size: .88rem; transition: all .2s ease;
     }
-    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.25); }
+    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; box-shadow: 0 4px 12px rgba(227,30,36,.25); }
 
     .compteur-badge {
         display: inline-block; background: var(--caisses-bg-soft); color: var(--school-red);
@@ -96,9 +92,9 @@
     .btn-nouveau {
         background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
         color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
-        box-shadow: 0 4px 14px rgba(200,30,58,.25); transition: all .2s ease;
+        box-shadow: 0 4px 14px rgba(227,30,36,.25); transition: all .2s ease;
     }
-    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); }
+    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(227,30,36,.35); }
 
     /* Tableau */
     .table-caisses thead tr { background: var(--caisses-bg-soft); }
@@ -109,7 +105,7 @@
     }
     .table-caisses thead th i { color: var(--school-gold-dark); }
     .table-caisses tbody td { padding: .9rem 1rem; border-bottom: 1px solid var(--caisses-border); font-size: .9rem; color: var(--school-ink); vertical-align: middle; }
-    .table-caisses tbody tr:hover { background: #fdfaf5; }
+    .table-caisses tbody tr:hover { background: var(--eim-hover); }
     .table-caisses tbody tr:last-child td { border-bottom: none; }
 
     .caisse-libelle { font-weight: 700; color: var(--school-ink); display: block; font-size: .94rem; }
@@ -126,7 +122,7 @@
     }
 
     .solde { font-variant-numeric: tabular-nums; font-weight: 600; }
-    .solde.positif { color: #1c7a4d; }
+    .solde.positif { color: var(--eim-success); }
     .solde.negatif { color: var(--school-red); }
 
     /* Badges statut, alignés sur les couleurs déjà utilisées pour
@@ -135,13 +131,13 @@
         display: inline-flex; align-items: center; gap: 6px; font-size: .75rem;
         font-weight: 600; padding: .4em .85em; border-radius: 999px;
     }
-    .badge-etat-ouverte  { background: #e3f7ec; color: #1c7a4d; }
+    .badge-etat-ouverte  { background: #e3f7ec; color: var(--eim-success); }
     .badge-etat-cloturee { background: var(--caisses-bg-soft); color: var(--school-muted); }
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .badge-etat-ouverte  .badge-dot { background: #1c7a4d; }
+    .badge-etat-ouverte  .badge-dot { background: var(--eim-success); }
     .badge-etat-cloturee .badge-dot { background: var(--school-muted); }
 
-    .empty-state { padding: 3.5rem 1rem; text-align: center; color: #9aa7b2; }
+    .empty-state { padding: 3.5rem 1rem; text-align: center; color: #7A6A6A; }
     .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
     .empty-state p { font-size: .9rem; }
 
@@ -163,72 +159,92 @@
     .form-section .form-select {
         border-radius: 8px; border: 1px solid var(--caisses-border); padding: .55rem .75rem; font-size: .88rem;
     }
-    .form-section .form-control:focus,
-    .form-section .form-select:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .btn-annuler { background: #fff; border: 1px solid var(--caisses-border); color: #5b6b7a; border-radius: 8px; font-weight: 500; padding: .55rem 1.2rem; font-size: .88rem; }
+    .btn-annuler { background: #fff; border: 1px solid var(--caisses-border); color: var(--eim-ink-soft); border-radius: 8px; font-weight: 500; padding: .55rem 1.2rem; font-size: .88rem; }
     .btn-annuler:hover { background: var(--caisses-bg-soft); }
     .btn-enregistrer {
         background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff;
         border: none; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;
     }
-    .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
 </style>
 @endsection
+
+@push('css')
+<style>
+    .onglets-caisses { border-bottom:2px solid var(--caisses-border, var(--eim-border)); gap:.25rem; flex-wrap:nowrap; overflow-x:auto; }
+    .onglets-caisses .nav-link { border:none; border-bottom:3px solid transparent; color:var(--school-muted); font-weight:600; font-size:.9rem; padding:.75rem 1rem; white-space:nowrap; margin-bottom:-2px; background:none; }
+    .onglets-caisses .nav-link.active { color:var(--school-red); border-bottom-color:var(--school-red); }
+    .onglets-caisses .compte { display:inline-block; min-width:22px; padding:0 .45rem; border-radius:999px; background:var(--eim-cream); color:var(--school-red); font-size:.72rem; margin-left:.35rem; border:1px solid var(--eim-border); }
+    .periode-sous { font-size:.72rem; color:var(--school-muted); }
+</style>
+@endpush
 
 @section('contenu')
 <div class="caisses-page">
 
-    {{-- ===== Compteurs de l'année choisie (Administrateur) ===== --}}
-    <div class="row g-3 mb-4">
-        @if ($compteurs)
-            <div class="col-sm-4 col-lg-3">
-                <div class="stat-card" id="compteur-caisses">
-                    <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $compteurs['total'] }}</div>
-                        <div class="stat-label">Caisses créées — {{ $annee?->libelle }}</div>
-                    </div>
-                </div>
+    {{-- ===== Tableau de bord de l'année choisie (Administrateur et Direction) ===== --}}
+    @if ($compteurs)
+        <div class="row g-3 mb-4" id="tableau-de-bord-caisses">
+            <div class="col-sm-6 col-xl-3">
+                <x-stat icone="fas fa-cash-register" id="compteur-caisses">{{ $compteurs['total'] }} caisse(s)
+                    <x-slot:libelle>Année {{ $annee?->libelle }}</x-slot:libelle>
+                    <x-slot:complement><div class="periode-sous" id="compteur-statuts"><i class="fas fa-lock-open me-1"></i>{{ $compteurs['ouvertes'] }} ouverte(s) · <i class="fas fa-lock me-1"></i>{{ $compteurs['fermees'] }} clôturée(s)</div></x-slot:complement>
+                </x-stat>
             </div>
-            <div class="col-sm-4 col-lg-3">
-                <div class="stat-card" id="compteur-ouvertes">
-                    <div class="stat-icon green"><i class="fas fa-lock-open"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $compteurs['ouvertes'] }}</div>
-                        <div class="stat-label">Caisses ouvertes</div>
-                    </div>
+            @foreach (['mois' => ['Ce mois', 'fas fa-calendar-alt', 'blue'], 'semaine' => ['Cette semaine', 'fas fa-calendar-week', 'gold'], 'jour' => ["Aujourd'hui", 'fas fa-calendar-day', 'green']] as $cle => [$libelle, $icone, $couleur])
+                @php $p = $compteurs['periodes'][$cle]; @endphp
+                <div class="col-sm-6 col-xl-3">
+                    <x-stat :icone="$icone" :couleur="$couleur" id="total-{{ $cle }}">{{ $p['ouvertes'] }} ouverte(s) · {{ $p['cloturees'] }} clôturée(s)
+                        <x-slot:libelle>Caisses — {{ $libelle }}</x-slot:libelle>
+                        <x-slot:complement><div class="periode-sous">
+                            @if ($cle === 'jour') {{ $p['debut']->format('d/m/Y') }} @else du {{ $p['debut']->format('d/m') }} au {{ $p['fin']->format('d/m') }} @endif
+                        </div></x-slot:complement>
+                    </x-stat>
                 </div>
-            </div>
-            <div class="col-sm-4 col-lg-3">
-                <div class="stat-card" id="compteur-fermees">
-                    <div class="stat-icon"><i class="fas fa-lock"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $compteurs['fermees'] }}</div>
-                        <div class="stat-label">Caisses fermées</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-        <div class="col d-flex align-items-center justify-content-end gap-2">
-            <a href="{{ route('finances.caisses.exportListe', request()->query()) }}"
-               class="btn btn-outline-scolarite btn-sm rounded-pill px-3"
-               id="btnExportGlobal">
-                <i class="fas fa-file-excel me-1"></i> Exporter
-            </a>
+            @endforeach
         </div>
+    @endif
+
+    {{-- ===== Onglets ===== --}}
+    <div class="d-flex align-items-end justify-content-between gap-2 mb-0">
+        <ul class="nav onglets-caisses flex-grow-1" id="onglets-caisses">
+            @if (in_array('mes', $onglets, true))
+                <li class="nav-item">
+                    <a class="nav-link @if ($onglet === 'mes') active @endif" id="onglet-mes-caisses" href="{{ route('finances.caisses.index', ['onglet' => 'mes']) }}">
+                        <i class="fas fa-user-check me-1"></i> Mes caisses <span class="compte">{{ $nbMesCaisses }}</span>
+                    </a>
+                </li>
+            @endif
+            @if (in_array('toutes', $onglets, true))
+                <li class="nav-item">
+                    <a class="nav-link @if ($onglet === 'toutes') active @endif" id="onglet-toutes-caisses" href="{{ route('finances.caisses.index', ['onglet' => 'toutes']) }}">
+                        <i class="fas fa-cash-register me-1"></i> Toutes les caisses <span class="compte">{{ $compteurs['total'] ?? 0 }}</span>
+                    </a>
+                </li>
+            @endif
+        </ul>
+        @if ($onglets)
+            <x-bouton variante="contour" href="{{ route('finances.caisses.exportListe', ['onglet' => $onglet] + request()->except('onglet')) }}" class="btn-sm rounded-pill px-3 mb-2" id="btnExportGlobal">
+                <i class="fas fa-file-excel me-1"></i> Exporter
+            </x-bouton>
+        @endif
     </div>
 
+    @if (! $onglets)
+        <x-carte class="mt-3">
+            <div class="card-body text-muted small" id="aucun-onglet-caisses">
+                <i class="fas fa-info-circle me-1"></i>La liste des caisses est réservée aux caissiers (leurs caisses), à l'Administrateur et à la Direction (toutes les caisses).
+            </div>
+        </x-carte>
+    @else
+
     {{-- ===== Tableau principal ===== --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
-            <form method="GET" class="row g-3 align-items-center">
+            <form method="GET" class="row g-3 align-items-center" id="filtres-caisses">
+                <input type="hidden" name="onglet" value="{{ $onglet }}">
                 <div class="col-md-4">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Rechercher une caisse..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Rechercher une caisse..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-2">
                     <select name="statut" class="form-select filtre-input">
@@ -240,33 +256,34 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select name="responsable_id" class="form-select filtre-input">
-                        <option value="">— Caissier —</option>
-                        @foreach ($caissiers as $c)
-                            <option value="{{ $c->id }}" @selected(($filters['responsable_id'] ?? '') == $c->id)>
-                                {{ $c->nom }} {{ $c->prenom }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                @if ($onglet === 'toutes')
+                    <div class="col-md-2">
+                        <select name="responsable_id" class="form-select filtre-input" id="filtre-caissier-caisses" title="Caissiers ayant encaissé">
+                            <option value="">— Caissier —</option>
+                            @foreach ($caissiers as $c)
+                                <option value="{{ $c->id }}" @selected(($filters['responsable_id'] ?? '') == $c->id)>
+                                    {{ $c->nom }} {{ $c->prenom }} ({{ $c->nb_caisses }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-2 text-muted small">
                     <i class="fas fa-calendar-alt me-1"></i>Année {{ $annee?->libelle ?? '—' }}
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-filtrer flex-fill">
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill">
                         <i class="fas fa-filter me-1"></i> Filtrer
-                    </button>
-                    <a href="{{ route('finances.caisses.index') }}" class="btn btn-outline-scolarite" title="Réinitialiser">
+                    </x-bouton>
+                    <x-bouton variante="contour" href="{{ route('finances.caisses.index', ['onglet' => $onglet]) }}" title="Réinitialiser">
                         <i class="fas fa-undo"></i>
-                    </a>
+                    </x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-caisses align-middle mb-0">
+            <x-tableau class="table-caisses align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4"><i class="fas fa-tag me-2"></i>Caisse</th>
@@ -332,12 +349,7 @@
                                 @endif
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('finances.caisses.show', $caisse->id) }}">
                                                 <i class="fas fa-book"></i> Consulter le journal
@@ -362,168 +374,128 @@
                                                 </li>
                                             @endcan
                                         @endif
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <i class="fas fa-cash-register"></i>
-                                    <p class="mb-0 fw-medium">Aucune session de caisse enregistrée.</p>
-                                    <small class="text-muted">Commencez par ouvrir une nouvelle caisse.</small>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="5" icone="fas fa-cash-register" :paragraphe="false"><p class="mb-0 fw-medium">Aucune session de caisse enregistrée.</p>
+                                    <small class="text-muted">Commencez par ouvrir une nouvelle caisse.</small></x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
     <div class="mt-4">
-        {{ $caisses->appends(request()->query())->links() }}
+        <x-pagination :liste="$caisses->appends(['onglet' => $onglet] + request()->except('onglet'))" />
     </div>
+    @endif
 
     {{-- ===== Modale Ouverture ===== --}}
     @can('caisses.ouvrir')
-    <div class="modal fade" id="caisseModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-caisses">
-                <form id="caisse-form" method="POST" action="{{ route('finances.caisses.store') }}">
-                    @csrf
-                    <div class="modal-header modal-header-caisses">
-                        <h5 class="modal-title">
-                            <i class="fas fa-cash-register me-2"></i>Ouvrir une nouvelle caisse
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-
-                    <div class="modal-body p-4">
-                        <div class="form-section mb-3">
-                            <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations générales</div>
-                            <div class="mb-3">
-                                <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                <input type="text" name="libelle" class="form-control" maxlength="100"
-                                       placeholder="Ex : Caisse principale, Caisse cantine...">
-                                <div class="text-danger text-xs mt-1" id="libelle-error"></div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-7">
-                                    <label class="form-label">Responsable de la caisse <span class="text-danger">*</span></label>
-                                    @if (auth()->user()->isAdmin())
-                                        {{-- L'Administrateur peut confier la caisse à quelqu'un d'autre, ou la prendre lui-même --}}
-                                        <select name="responsable_id" class="form-select">
-                                            @foreach ($responsables as $r)
-                                                <option value="{{ $r->id }}" @selected($r->id === auth()->id())>
-                                                    {{ $r->nom }} {{ $r->prenom }}@if ($r->id === auth()->id()) (moi)@endif
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    @else
-                                        {{-- Chacun ouvre sa propre caisse --}}
-                                        <div class="form-control bg-light" id="responsable-moi">{{ auth()->user()->nom }} {{ auth()->user()->prenom }} (moi)</div>
-                                    @endif
-                                    <div class="text-danger text-xs mt-1" id="responsable_id-error"></div>
-                                </div>
-                                <div class="col-5">
-                                    <label class="form-label">Solde initial <span class="text-danger">*</span></label>
-                                    <input type="number" name="solde_initial" step="0.01" min="0"
-                                           class="form-control" value="0.00">
-                                    <div class="text-danger text-xs mt-1" id="solde_initial-error"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="alert alert-light border-0 small mb-0"
-                             style="background: var(--caisses-bg-soft); color: var(--school-muted);">
-                            <i class="fas fa-info-circle me-1" style="color: var(--school-gold-dark);"></i>
-                            Cette action démarre une nouvelle <strong>session</strong> (journal de caisse) sur l'année
-                            scolaire active.
-                        </div>
-                    </div>
-
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer">
-                            <i class="fas fa-lock-open me-1"></i> Ouvrir la caisse
-                        </button>
-                    </div>
-                </form>
+    <x-modale id="caisseModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-caisses" entete-class="modal-header-caisses" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="caisse-form" method="POST" action="{{ route('finances.caisses.store') }}">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-cash-register me-2"></i>Ouvrir une nouvelle caisse</x-slot:titre>
+        <x-section titre="Informations générales" icone="fas fa-info-circle" class="mb-3">
+            <div class="mb-3">
+                <x-libelle requis>Libellé</x-libelle>
+                <input type="text" name="libelle" class="form-control" maxlength="100"
+                       placeholder="Ex : Caisse principale, Caisse cantine...">
+                <div class="text-danger text-xs mt-1" id="libelle-error"></div>
             </div>
+
+            <div class="row g-3">
+                <div class="col-7">
+                    <x-libelle requis>Responsable de la caisse</x-libelle>
+                    @if (auth()->user()->isAdmin())
+                        {{-- L'Administrateur peut confier la caisse à quelqu'un d'autre, ou la prendre lui-même --}}
+                        <select name="responsable_id" class="form-select">
+                            @foreach ($responsables as $r)
+                                <option value="{{ $r->id }}" @selected($r->id === auth()->id())>
+                                    {{ $r->nom }} {{ $r->prenom }}@if ($r->id === auth()->id()) (moi)@endif
+                                </option>
+                            @endforeach
+                        </select>
+                    @else
+                        {{-- Chacun ouvre sa propre caisse --}}
+                        <div class="form-control bg-light" id="responsable-moi">{{ auth()->user()->nom }} {{ auth()->user()->prenom }} (moi)</div>
+                    @endif
+                    <div class="text-danger text-xs mt-1" id="responsable_id-error"></div>
+                </div>
+                <div class="col-5">
+                    <x-libelle requis>Solde initial</x-libelle>
+                    <input type="number" name="solde_initial" step="0.01" min="0"
+                           class="form-control" value="0.00">
+                    <div class="text-danger text-xs mt-1" id="solde_initial-error"></div>
+                </div>
+            </div>
+        </x-section>
+
+        <div class="alert alert-light border-0 small mb-0"
+             style="background: var(--caisses-bg-soft); color: var(--school-muted);">
+            <i class="fas fa-info-circle me-1" style="color: var(--school-gold-dark);"></i>
+            Cette action démarre une nouvelle <strong>session</strong> (journal de caisse) sur l'année
+            scolaire active.
         </div>
-    </div>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit">
+                <i class="fas fa-lock-open me-1"></i> Ouvrir la caisse
+            </x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
     {{-- ===== Modale Clôture (une seule, réutilisée) ===== --}}
     @can('caisses.cloturer')
-    <div class="modal fade" id="clotureModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-caisses">
-                <form id="cloture-form" method="POST" action="">
-                    @csrf
-                    <div class="modal-header"
-                         style="background: linear-gradient(135deg, var(--school-red-deep), var(--school-red-dark)); color:#fff; border-radius: 16px 16px 0 0;">
-                        <h5 class="modal-title">
-                            <i class="fas fa-lock me-2"></i>Clôturer la caisse
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
+    <x-modale id="clotureModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-caisses" entete-style="background: linear-gradient(135deg, var(--school-red-deep), var(--school-red-dark)); color:#fff; border-radius: 16px 16px 0 0;" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="cloture-form" method="POST" action="">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-lock me-2"></i>Clôturer la caisse</x-slot:titre>
+        <div class="alert alert-warning py-2 small mb-3">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            La clôture est <strong>définitive</strong> : le journal sera figé et aucune écriture ne
+            pourra plus y être ajoutée.
+        </div>
 
-                    <div class="modal-body p-4">
-                        <div class="alert alert-warning py-2 small mb-3">
-                            <i class="fas fa-exclamation-triangle me-1"></i>
-                            La clôture est <strong>définitive</strong> : le journal sera figé et aucune écriture ne
-                            pourra plus y être ajoutée.
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3"
-                             style="background: var(--caisses-bg-soft); border-radius: 10px;">
-                            <div>
-                                <div class="text-muted text-xs">Caisse</div>
-                                <div class="fw-semibold" id="cloture-libelle">—</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="text-muted text-xs">Solde théorique</div>
-                                <div class="fw-bold fs-5" id="cloture-solde">—</div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Solde compté (espèces physiquement en caisse) <span class="text-danger">*</span></label>
-                                <input type="number" name="solde_compte" step="0.01" min="0"
-                                       class="form-control" id="cloture-solde-compte">
-                                <div class="text-danger text-xs mt-1" id="solde_compte-error"></div>
-                            </div>
-
-                            <div id="ecart-bloc" class="d-none">
-                                <div class="d-flex justify-content-between align-items-center p-2 rounded mb-2"
-                                     style="background:#fdf2f2; border-left:3px solid var(--school-red);">
-                                    <span class="fw-semibold" style="color: var(--school-red);">Écart constaté</span>
-                                    <span class="fw-bold" style="color: var(--school-red);" id="ecart-valeur">0,00</span>
-                                </div>
-                                <label class="form-label">Motif de l'écart <span class="text-danger">*</span></label>
-                                <textarea name="motif_ecart" rows="2" class="form-control" id="motif_ecart"></textarea>
-                                <div class="text-danger text-xs mt-1" id="motif_ecart-error"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn"
-                                style="background: var(--school-red-dark); color: #fff; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;">
-                            <i class="fas fa-check me-1"></i> Clôturer définitivement
-                        </button>
-                    </div>
-                </form>
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3"
+             style="background: var(--caisses-bg-soft); border-radius: 10px;">
+            <div>
+                <div class="text-muted text-xs">Caisse</div>
+                <div class="fw-semibold" id="cloture-libelle">—</div>
+            </div>
+            <div class="text-end">
+                <div class="text-muted text-xs">Solde théorique</div>
+                <div class="fw-bold fs-5" id="cloture-solde">—</div>
             </div>
         </div>
-    </div>
+
+        <x-section>
+            <div class="mb-3">
+                <x-libelle requis>Solde compté (espèces physiquement en caisse)</x-libelle>
+                <input type="number" name="solde_compte" step="0.01" min="0"
+                       class="form-control" id="cloture-solde-compte">
+                <div class="text-danger text-xs mt-1" id="solde_compte-error"></div>
+            </div>
+
+            <div id="ecart-bloc" class="d-none">
+                <div class="d-flex justify-content-between align-items-center p-2 rounded mb-2"
+                     style="background:#fdf2f2; border-left:3px solid var(--school-red);">
+                    <span class="fw-semibold" style="color: var(--school-red);">Écart constaté</span>
+                    <span class="fw-bold" style="color: var(--school-red);" id="ecart-valeur">0,00</span>
+                </div>
+                <x-libelle requis>Motif de l'écart</x-libelle>
+                <textarea name="motif_ecart" rows="2" class="form-control" id="motif_ecart"></textarea>
+                <div class="text-danger text-xs mt-1" id="motif_ecart-error"></div>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <button type="submit" class="btn"
+                    style="background: var(--school-red-dark); color: #fff; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;">
+                <i class="fas fa-check me-1"></i> Clôturer définitivement
+            </button>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
 </div>

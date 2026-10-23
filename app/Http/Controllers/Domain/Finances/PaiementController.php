@@ -37,24 +37,73 @@ class PaiementController extends Controller
         $this->middleware('permission:paiements.annuler')->only(['annuler']);
     }
 
-    /** Liste globale des paiements. */
+    /**
+     * Onglet de liste demandé, borné aux droits : « Tous les paiements »
+     * (Administrateur et Direction) ou « Mes paiements » (ce que l'utilisateur
+     * a saisi). Le Comptable ne voit que ses propres saisies.
+     */
+    private function ongletListe(Request $request, ?string $demande): string
+    {
+        $voitTous = $request->user()->can('tous-paiements.consulter');
+
+        return match (true) {
+            $demande === 'mes'                           => 'mes',
+            $demande === 'tous' && $voitTous             => 'tous',
+            default                                      => $voitTous ? 'tous' : 'mes',
+        };
+    }
+
+    /** Filtres de la liste : année de l'en-tête, et l'utilisateur imposé dans « Mes paiements ». */
+    private function filtresListe(Request $request, string $onglet, ?Annee $annee): array
+    {
+        $filters = $request->only(['statut_paiement', 'mode_paiement', 'search', 'date_debut', 'date_fin', 'saisi_par']);
+        $filters['annee_id'] = $annee?->id;
+        $filters['utilisateur_id'] = $onglet === 'mes'
+            ? (int) $request->user()->id
+            : (($filters['saisi_par'] ?? null) ? (int) $filters['saisi_par'] : null);
+
+        return $filters;
+    }
+
+    /** Liste des paiements : « Mes paiements », « Tous les paiements », détails, totaux par type. */
     public function index(Request $request)
     {
-        $filters = $request->only([
-            'annee_id', 'statut_paiement', 'mode_paiement',
-            'search', 'date_debut', 'date_fin',
-        ]);
-
         // Cloisonnement par année scolaire : la liste est celle de l'année de travail
         $annee = $this->anneeDeTravail();
-        $filters['annee_id'] ??= $annee?->id;
+        $voitTotaux = $request->user()->can('totaux-encaisses.consulter');
+        $voitTous = $request->user()->can('tous-paiements.consulter');
+        // « Détails des paiements » : Administrateur seulement ; totaux : Administrateur et Direction
+        $voitDetails = $request->user()->can('details-paiements.consulter');
+        $onglet = match ($request->input('onglet')) {
+            'details' => $voitDetails ? 'details' : $this->ongletListe($request, null),
+            'totaux'  => $voitTotaux ? 'totaux' : $this->ongletListe($request, null),
+            default   => $this->ongletListe($request, $request->input('onglet')),
+        };
+        $ongletListe = in_array($onglet, ['mes', 'tous'], true) ? $onglet : $this->ongletListe($request, null);
+        $filters = $this->filtresListe($request, $ongletListe, $annee);
+
+        // Lignes de paiement : année de l'en-tête et filtres de l'onglet
+        $filtresDetails = $request->only(['type_paiement', 'statut_ligne', 'mode_paiement', 'search', 'date_debut', 'date_fin'])
+            + ['annee_id' => $annee?->id];
 
         return view('domain.finances.paiements.index', [
+            'onglet'    => $onglet,
+            'voitTotaux' => $voitTotaux,
+            'voitTous'  => $voitTous,
+            // « Mes paiements » : pour qui saisit des paiements (la Direction n'en saisit pas)
+            'voitMes'   => $request->user()->can('paiements.creer') || ! $voitTous,
+            'saisisseurs' => $onglet === 'tous' ? $this->paiements->saisisseurs($annee?->id) : collect(),
+            'voitDetails' => $voitDetails,
+            'parType'   => $onglet === 'totaux' ? $this->paiements->totauxParType($annee?->id) : null,
+            'details'   => $onglet === 'details' ? $this->paiements->detailsPagines($filtresDetails) : null,
+            'totauxDetails' => $onglet === 'details' ? $this->paiements->totauxDetails($filtresDetails) : null,
+            'filtresDetails' => $filtresDetails,
+            'types'     => \App\Domain\Finances\Types\TypeDetail::options(),
             'paiements' => $this->paiements->listePaginee($filters),
             'filters'   => $filters,
             'statuts'   => PaiementStatut::options(),
             'modes'     => ModePaiement::options(),
-            'compteurs' => $this->paiements->compterParStatut($annee?->id),
+            'compteurs' => $this->paiements->compterParStatut($annee?->id, $filters['utilisateur_id']),
             'annee'     => $annee,
             // Totaux encaissés : réservés à l'Administrateur et à la Direction
             'totaux'    => $request->user()->can('totaux-encaisses.consulter')
@@ -147,6 +196,8 @@ class PaiementController extends Controller
                 'reste'      => round($lignes->sum('reste'), 2),
             ],
             'manquants'    => $this->engagementsManquants($lignes),
+            // Année clôturée : plus de souscription (cantine, transport, activités, événements)
+            'anneeCloturee' => (bool) Annee::find($inscription->annee_id)?->isCloturee(),
             'historique'   => $this->paiements->historiqueEleve((int) $inscription->eleve_id, $annee?->id),
             'modes'        => ModePaiement::disponibles(),
             'banques'      => \App\Domain\Finances\Models\Banque::where('etat', 1)->orderBy('nom')->get(['id', 'nom']),
@@ -174,6 +225,15 @@ class PaiementController extends Controller
             ])
             ->where('etat', 1)
             ->findOrFail($paiement);
+
+        // Le Comptable ne consulte que les paiements qu'il a saisis
+        $utilisateur = request()->user();
+        abort_if(
+            ! $utilisateur->can('tous-paiements.consulter') && $utilisateur->can('paiements.creer')
+                && (int) $paiement->utilisateur_id !== (int) $utilisateur->id,
+            403,
+            "Ce paiement a été saisi par un autre utilisateur."
+        );
 
         $details = $paiement->details;
         $encaisse = PaiementStatut::ENCAISSE;
@@ -225,17 +285,17 @@ class PaiementController extends Controller
             ->orderBy('libelle')
             ->get(['id', 'libelle', 'montant']);
 
-        // Durée proposée par défaut pour un abonnement : de la rentrée à la fin de l'année
+        // Durée d'un abonnement : de la date de début (aujourd'hui par défaut) à la fin de
+        // l'année scolaire choisie dans l'en-tête ; le formulaire la recalcule si la date change
         $annee = Annee::find($anneeId);
-        $mois = $annee && $annee->date_rentree && $annee->date_fin
-            ? (int) round(\Illuminate\Support\Carbon::parse($annee->date_rentree)->floatDiffInMonths(\Illuminate\Support\Carbon::parse($annee->date_fin)))
-            : 9;
+        $fin = $annee?->date_fin ? \Illuminate\Support\Carbon::parse($annee->date_fin) : null;
 
         return [
-            'mois'          => max(1, min(12, $mois)),
+            'mois'          => $fin ? self::moisJusquA(\Illuminate\Support\Carbon::today(), $fin) : 9,
+            'fin_annee'     => $fin?->toDateString(),
             'frais_cantine' => $tarifs(\App\Domain\Finances\Types\TypeDetail::CANTINE),
-            'zones'         => \App\Domain\ServicesEleves\Models\Zone::where('etat', 1)->orderBy('libelle')->get(['id', 'libelle', 'tarif_base']),
-            'lignes'        => \App\Domain\ServicesEleves\Models\Ligne::where('etat', 1)->orderBy('libelle')->get(['id', 'libelle', 'prix_minimal', 'prix_plafond']),
+            // Transport : on choisit la zone (son tarif est indicatif) ; la ligne en découle
+            'zones'         => app(\App\Domain\ServicesEleves\Repositories\ZoneRepository::class)->listePourSelect($anneeId),
             'sens'          => \App\Domain\ServicesEleves\Types\SensTrajet::options(),
             'activites'     => \App\Domain\ServicesEleves\Models\Activite::query()
                 ->where('etat', 1)
@@ -294,6 +354,17 @@ class PaiementController extends Controller
         }, 'Paiement enregistré. En attente d\'encaissement.');
     }
 
+    /**
+     * Nombre de mois entamés entre une date de début et la fin de l'année
+     * scolaire (1 à 12). Ex. : du 14/10/2026 au 01/07/2027 → 9 mois
+     * (octobre à juin) ; du 01/09/2026 au 01/07/2027 → 10 mois.
+     * Le formulaire applique la même règle en JavaScript (moisJusquA).
+     */
+    public static function moisJusquA(\Illuminate\Support\Carbon $debut, \Illuminate\Support\Carbon $fin): int
+    {
+        return Annee::moisEntre($debut, $fin);
+    }
+
     private function anneeDeTravail(): ?Annee
     {
         $id = app(AnneeScolaireContext::class)->id();
@@ -318,7 +389,8 @@ class PaiementController extends Controller
     private function engagementsManquants(\Illuminate\Support\Collection $lignes): array
     {
         $liens = [
-            NatureCreance::SCOLARITE->value => ['Écolage', route('finances.souscriptions.index')],
+            // La scolarité (montant et remises) est portée par l'inscription
+            NatureCreance::SCOLARITE->value => ['Écolage', route('scolarite.inscriptions.index')],
             NatureCreance::CANTINE->value   => ['Cantine', url('/services-eleves/cantine/inscriptions')],
             NatureCreance::BUS->value       => ['Transport scolaire', url('/services-eleves/transport/abonnements')],
             NatureCreance::ACTIVITE->value  => ['Activités', url('/services-eleves/activites-evenements/activites')],
@@ -372,10 +444,9 @@ class PaiementController extends Controller
     /** Export CSV de la liste des paiements. */
     public function export(Request $request): StreamedResponse
     {
-        $filters  = $request->only([
-            'annee_id', 'statut_paiement', 'mode_paiement',
-            'search', 'date_debut', 'date_fin',
-        ]);
+        // Même périmètre que l'onglet affiché : le Comptable n'exporte que ses saisies
+        $onglet = $this->ongletListe($request, $request->input('onglet'));
+        $filters = $this->filtresListe($request, $onglet, $this->anneeDeTravail());
         $paiements = $this->paiements->listePaginee($filters, perPage: 10000);
 
         $filename = 'paiements_' . now()->format('Ymd_His') . '.csv';

@@ -11,47 +11,34 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('logistique.ventes.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('logistique.ventes.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
-    <a href="{{ route('logistique.clients.index') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('logistique.clients.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-user-friends me-1"></i> Clients
-    </a>
+    </x-bouton>
     @can('ventes.creer')
-        <button type="button" class="btn btn-nouveau" id="btnNouvelleVente"
-                data-bs-toggle="modal" data-bs-target="#venteModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouvelleVente" data-bs-toggle="modal" data-bs-target="#venteModal">
             <i class="fas fa-plus-circle me-1"></i> Nouvelle vente
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .ventes-page { --vt-bg-soft:#faf6ee; --vt-border:#ece4d6; }
+    .ventes-page { --vt-bg-soft:var(--eim-cream); --vt-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--vt-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition:transform .2s; }
-    .stat-card:hover { transform:translateY(-2px); }
-    .stat-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.blue  { background:rgba(37,99,235,.10);  color:#2563eb; }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
+    .stat-card { background:#fff; border:1px solid var(--vt-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition:transform .2s; }
     .stat-info .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--vt-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--vt-border); padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-filtrer:hover { background:var(--school-red-dark); color:#fff; }
     .compteur-badge { display:inline-block; background:var(--vt-bg-soft); color:var(--school-red); font-weight:600; font-size:.85rem; padding:.45rem .9rem; border-radius:999px; border:1px solid var(--vt-border); }
 
     .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
@@ -62,29 +49,22 @@
     .table-ventes thead tr { background:var(--vt-bg-soft); }
     .table-ventes thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--vt-border); white-space:nowrap; }
     .table-ventes tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--vt-border); font-size:.9rem; color:var(--school-ink); vertical-align:middle; }
-    .table-ventes tbody tr:hover { background:#fdfaf5; }
+    .table-ventes tbody tr:hover { background:var(--eim-hover); }
 
     .reference { font-family:monospace; font-size:.8rem; background:var(--vt-bg-soft); color:var(--school-red); padding:2px 8px; border-radius:6px; font-weight:700; }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .num.grand { color:var(--school-red-dark); }
 
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-statut.impaye { background:#fdecea; color:var(--school-red); }
-    .badge-statut.paye   { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.annule { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .modal-vente { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
     .modal-header-vente { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-bottom:none; padding:1.15rem 1.5rem; }
     .form-section { background:var(--vt-bg-soft); border:1px solid var(--vt-border); border-radius:12px; padding:1.1rem; }
-    .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; color:var(--school-red); margin-bottom:.75rem; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
     .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid var(--vt-border); padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus, .form-section .form-select:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .btn-annuler { background:#fff; border:1px solid var(--vt-border); color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--vt-border); color:var(--eim-ink-soft); border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-enregistrer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
 
     .ligne-form { display:flex; gap:.5rem; align-items:center; background:#fff; border:1px dashed var(--vt-border); border-radius:10px; padding:.6rem .75rem; margin-bottom:.5rem; }
@@ -99,53 +79,25 @@
     {{-- Stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-receipt"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['jour_nb'] }}</div>
-                    <div class="stat-label">Ventes aujourd'hui</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-receipt" couleur="gold" libelle="Ventes aujourd'hui">{{ $stats['jour_nb'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-coins"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($stats['jour_montant'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Montant du jour</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-coins" couleur="green" libelle="Montant du jour">{{ number_format($stats['jour_montant'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['mois_nb'] }}</div>
-                    <div class="stat-label">Ventes ce mois</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-chart-line" couleur="blue" libelle="Ventes ce mois">{{ $stats['mois_nb'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($stats['mois_montant'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Montant du mois</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-money-bill-wave" couleur="green" libelle="Montant du mois">{{ number_format($stats['mois_montant'], 0, ',', ' ') }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Référence, acheteur..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Référence, acheteur..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-2">
                     <select name="magasin_id" class="form-select filtre-input">
@@ -170,15 +122,14 @@
                     <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filters['date_fin'] ?? '' }}">
                 </div>
                 <div class="col-md-1 d-flex gap-1">
-                    <button type="submit" class="btn btn-filtrer flex-fill"><i class="fas fa-filter"></i></button>
-                    <a href="{{ route('logistique.ventes.index') }}" class="btn btn-outline-scolarite"><i class="fas fa-undo"></i></a>
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill"><i class="fas fa-filter"></i></x-bouton>
+                    <x-bouton variante="contour" href="{{ route('logistique.ventes.index') }}"><i class="fas fa-undo"></i></x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-ventes align-middle mb-0">
+            <x-tableau class="table-ventes align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Référence</th>
@@ -210,14 +161,11 @@
                             <td class="text-sm">{{ $vente->type_vente?->label() }}</td>
                             <td class="num grand">{{ number_format((float) $vente->total_ttc, 2, ',', ' ') }}</td>
                             <td>
-                                <span class="badge-statut {{ $vente->statut_paiement?->css() }}">
-                                    <span class="badge-dot"></span>{{ $vente->statut_paiement?->label() }}
-                                </span>
+                                <x-badge class="{{ $vente->statut_paiement?->css() }}" point>{{ $vente->statut_paiement?->label() }}
+                                </x-badge>
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('logistique.ventes.show', $vente) }}">
                                                 <i class="fas fa-eye"></i> Voir détail
@@ -252,148 +200,122 @@
                                                 </li>
                                             @endcan
                                         @endif
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-store"></i><p>Aucune vente enregistrée.</p></div></td></tr>
+                        <x-vide colspan="7" icone="fas fa-store">Aucune vente enregistrée.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $ventes->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$ventes->appends(request()->query())" /></div>
 
     {{-- Modale nouvelle vente --}}
     @can('ventes.creer')
-    <div class="modal fade" id="venteModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content modal-vente">
-                <form id="vente-form">
-                    @csrf
-                    <div class="modal-header modal-header-vente">
-                        <h5 class="modal-title"><i class="fas fa-store me-2"></i>Nouvelle vente</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <x-modale id="venteModal" data-bs-backdrop="static" dialogue="modal-dialog-centered modal-lg" contenu-class="modal-vente" entete-class="modal-header-vente" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="vente-form">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-store me-2"></i>Nouvelle vente</x-slot:titre>
+        <x-section titre="Informations générales" icone="fas fa-info-circle" class="mb-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <x-libelle requis>Date</x-libelle>
+                    <input type="date" name="date_vente" class="form-control" value="{{ now()->toDateString() }}" required>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle requis>Magasin</x-libelle>
+                    <select name="magasin_id" class="form-select" required>
+                        <option value="">— Sélectionner —</option>
+                        @foreach ($magasins as $m)
+                            <option value="{{ $m->id }}">{{ $m->libelle }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle>Type</x-libelle>
+                    <select name="type_vente" class="form-select">
+                        @foreach ($types as $v => $l)
+                            <option value="{{ $v }}">{{ $l }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <x-libelle>Client externe</x-libelle>
+                    <select name="client_id" class="form-select">
+                        <option value="">— Aucun —</option>
+                        @foreach ($clients as $c)
+                            <option value="{{ $c->id }}">{{ $c->nom_raison_sociale }}</option>
+                        @endforeach
+                    </select>
+                    <div class="form-text small">
+                        Ou laissez vide et liez un élève ci-dessous.
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section mb-3">
-                            <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations générales</div>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="date_vente" class="form-control" value="{{ now()->toDateString() }}" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Magasin <span class="text-danger">*</span></label>
-                                    <select name="magasin_id" class="form-select" required>
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach ($magasins as $m)
-                                            <option value="{{ $m->id }}">{{ $m->libelle }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Type</label>
-                                    <select name="type_vente" class="form-select">
-                                        @foreach ($types as $v => $l)
-                                            <option value="{{ $v }}">{{ $l }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Client externe</label>
-                                    <select name="client_id" class="form-select">
-                                        <option value="">— Aucun —</option>
-                                        @foreach ($clients as $c)
-                                            <option value="{{ $c->id }}">{{ $c->nom_raison_sociale }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="form-text small">
-                                        Ou laissez vide et liez un élève ci-dessous.
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Élève</label>
-                                    <select name="inscription_id" class="form-select">
-                            <option value="">— Aucun élève —</option>
-                            @foreach ($inscriptions as $inscription)
-                                <option value="{{ $inscription->id }}">
-                                    {{ $inscription->eleve->nom }} {{ $inscription->eleve->prenom }}
-                                    @if ($inscription->eleve->matricule) ({{ $inscription->eleve->matricule }}) @endif
-                                    — {{ $inscription->classe?->libelle ?? $inscription->niveau?->libelle ?? 'sans classe' }}
-                                </option>
-                            @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-section-title"><i class="fas fa-list"></i> Produits vendus</div>
-                            <div id="lignes-vente"></div>
-                            <button type="button" class="btn btn-outline-scolarite btn-sm mt-2" id="add-ligne-vente">
-                                <i class="fas fa-plus me-1"></i> Ajouter un produit
-                            </button>
-                            <div class="alert alert-light border-0 small mt-3 mb-0" style="background:#fff;">
-                                <div class="d-flex justify-content-between">
-                                    <span><strong>Total HT</strong></span>
-                                    <span id="total-vente" style="color:var(--school-red-dark);font-weight:700;">0,00</span>
-                                </div>
-                                <div class="d-flex justify-content-between mt-1">
-                                    <span class="text-muted">Le stock sera automatiquement décrémenté.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" name="marquer_payee" value="1" id="marquer-payee" checked>
-                            <label class="form-check-label small" for="marquer-payee">
-                                Marquer comme payée immédiatement
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer la vente</button>
-                    </div>
-                </form>
+                </div>
+                <div class="col-md-6">
+                    <x-libelle>Élève</x-libelle>
+                    <select name="inscription_id" class="form-select">
+            <option value="">— Aucun élève —</option>
+            @foreach ($inscriptions as $inscription)
+                <option value="{{ $inscription->id }}">
+                    {{ $inscription->eleve->nom }} {{ $inscription->eleve->prenom }}
+                    @if ($inscription->eleve->matricule) ({{ $inscription->eleve->matricule }}) @endif
+                    — {{ $inscription->classe?->libelle ?? $inscription->niveau?->libelle ?? 'sans classe' }}
+                </option>
+            @endforeach
+                    </select>
+                </div>
             </div>
+        </x-section>
+
+        <x-section titre="Produits vendus" icone="fas fa-list">
+            <div id="lignes-vente"></div>
+            <x-bouton variante="contour" type="button" class="btn-sm mt-2" id="add-ligne-vente">
+                <i class="fas fa-plus me-1"></i> Ajouter un produit
+            </x-bouton>
+            <div class="alert alert-light border-0 small mt-3 mb-0" style="background:#fff;">
+                <div class="d-flex justify-content-between">
+                    <span><strong>Total HT</strong></span>
+                    <span id="total-vente" style="color:var(--school-red-dark);font-weight:700;">0,00</span>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span class="text-muted">Le stock sera automatiquement décrémenté.</span>
+                </div>
+            </div>
+        </x-section>
+
+        <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" name="marquer_payee" value="1" id="marquer-payee" checked>
+            <label class="form-check-label small" for="marquer-payee">
+                Marquer comme payée immédiatement
+            </label>
         </div>
-    </div>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer la vente</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
     {{-- Modale annulation --}}
     @can('ventes.annuler')
-    <div class="modal fade" id="annulerVenteModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-vente">
-                <form id="annuler-vente-form" method="POST" action="">
-                    @csrf
-                    <div class="modal-header" style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;">
-                        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Annuler la vente</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <p>Annuler la vente <strong id="annuler-vente-ref">—</strong> ?</p>
-                        <p class="text-muted small mb-3">
-                            Le stock sera automatiquement réintégré au magasin d'origine.
-                        </p>
-                        <div class="form-section">
-                            <label class="form-label small fw-semibold">Motif <span class="text-danger">*</span></label>
-                            <textarea name="motif" rows="3" class="form-control" required minlength="5"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer l'annulation</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <x-modale id="annulerVenteModal" aria-hidden="true" contenu-class="modal-vente" entete-style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="annuler-vente-form" method="POST" action="">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-exclamation-triangle me-2"></i>Annuler la vente</x-slot:titre>
+        <p>Annuler la vente <strong id="annuler-vente-ref">—</strong> ?</p>
+        <p class="text-muted small mb-3">
+            Le stock sera automatiquement réintégré au magasin d'origine.
+        </p>
+        <x-section>
+            <x-libelle class="small fw-semibold" requis>Motif</x-libelle>
+            <textarea name="motif" rows="3" class="form-control" required minlength="5"></textarea>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer l'annulation</button>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 

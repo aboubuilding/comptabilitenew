@@ -73,7 +73,7 @@ test.describe('2.2 / 2.3 Annulations', () => {
 
     await ouvrirCaisseSiBesoin(page);
     await encaisserPaiement(page, reference);
-    await expect(page.locator('#table-jour tbody')).toContainText(reference);
+    await expect(page.locator('#table-caisse tbody')).toContainText(reference);
 
     // Le produit est sorti du stock
     expect(await stockDe(page)).toBe(stockAvant - 1);
@@ -91,8 +91,8 @@ test.describe('2.2 / 2.3 Annulations', () => {
     const stockAvant = await stockDe(page);
 
     await seConnecter(page, 'caissier');
-    await page.goto('/finances/encaissements?onglet=jour');
-    const encaisse = page.locator('#table-jour tbody tr').filter({ hasText: reference });
+    await page.goto('/finances/encaissements?onglet=caisse');
+    const encaisse = page.locator('#table-caisse tbody tr').filter({ hasText: reference });
     await encaisse.locator('.btn-action').click();
     await encaisse.locator('.btn-annuler-encaissement').click();
     await expect(page.locator('#annuler-reference')).toHaveText(reference);
@@ -108,7 +108,7 @@ test.describe('2.2 / 2.3 Annulations', () => {
     // Le paiement est revenu dans les paiements en attente, et sort de mes encaissements du jour
     await expect(page).toHaveURL(/onglet=attente/);
     await expect(page.locator('#table-attente tbody')).toContainText(reference);
-    await expect(page.locator('#table-jour tbody')).not.toContainText(reference);
+    await expect(page.locator('#table-caisse tbody')).not.toContainText(reference);
 
     // Le produit est revenu en stock, et le paiement est de nouveau en attente
     expect(await stockDe(page)).toBe(stockAvant + 1);

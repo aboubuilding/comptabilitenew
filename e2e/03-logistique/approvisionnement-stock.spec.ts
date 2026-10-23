@@ -303,7 +303,11 @@ test.describe('3.3 Produits & Stock', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Logistique' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord du stock' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord du stock' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord du stock' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
 
     await expect(page.locator('main')).toContainText('Entrepôt central');
     await expect(page.locator('main')).toContainText('Boutique scolaire');

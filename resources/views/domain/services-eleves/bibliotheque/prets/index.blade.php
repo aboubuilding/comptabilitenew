@@ -11,19 +11,18 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.bibliotheque.prets.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.prets.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
-    <a href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-book me-1"></i> Catalogue
-    </a>
+    </x-bouton>
     @can('bibliotheque.gerer')
         <form action="{{ route('services-eleves.bibliotheque.prets.recalculerRetards') }}" method="POST" class="d-inline">
             @csrf
-            <button class="btn btn-outline-scolarite btn-sm rounded-pill px-3" type="submit">
+            <x-bouton variante="contour" class="btn-sm rounded-pill px-3" type="submit">
                 <i class="fas fa-sync-alt me-1"></i> Recalculer retards
-            </button>
+            </x-bouton>
         </form>
     @endcan
 @endsection
@@ -31,12 +30,6 @@
 @section('css')
 <style>
     /* Réutilise les classes biblio-page */
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-statut.encours { background:#e0ecfc; color:#2563eb; }
-    .badge-statut.rendu   { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.retard  { background:#fdecea; color:var(--school-red); font-weight:700; }
-    .badge-statut.perdu   { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     .alerte-retards {
         background:#fdecea; border-left:3px solid var(--school-red);
@@ -54,9 +47,9 @@
             <i class="fas fa-exclamation-triangle me-1"></i>
             <strong>{{ $retards->count() }} prêt(s)</strong> en retard :
             @foreach ($retards->take(5) as $r)
-                <span class="badge-statut retard ms-1" style="background:#fff;border:1px solid var(--school-red);">
+                <x-badge class="retard ms-1" style="background:#fff;border:1px solid var(--school-red);">
                     {{ $r->livre?->titre }} — {{ $r->inscription?->eleve?->nom }} ({{ $r->jours_retard }} j)
-                </span>
+                </x-badge>
             @endforeach
             @if ($retards->count() > 5)
                 <span class="ms-1">+{{ $retards->count() - 5 }} autre(s)</span>
@@ -67,53 +60,25 @@
     {{-- Stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-exchange-alt"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['total'] }}</div>
-                    <div class="stat-label">Prêts au total</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-exchange-alt" couleur="blue" libelle="Prêts au total">{{ $stats['total'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-hand-holding"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['en_cours'] }}</div>
-                    <div class="stat-label">En cours</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-hand-holding" couleur="gold" libelle="En cours">{{ $stats['en_cours'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-clock"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['en_retard'] }}</div>
-                    <div class="stat-label">En retard</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-clock" couleur="red" libelle="En retard">{{ $stats['en_retard'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['rendus'] }}</div>
-                    <div class="stat-label">Rendus</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check" couleur="green" libelle="Rendus">{{ $stats['rendus'] }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Livre, élève, matricule..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Livre, élève, matricule..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-3">
                     <select name="statut_pret" class="form-select filtre-input">
@@ -130,15 +95,14 @@
                     </div>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-filtrer flex-fill"><i class="fas fa-filter me-1"></i> Filtrer</button>
-                    <a href="{{ route('services-eleves.bibliotheque.prets.index') }}" class="btn btn-outline-scolarite"><i class="fas fa-undo"></i></a>
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
+                    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.prets.index') }}"><i class="fas fa-undo"></i></x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-livres align-middle mb-0">
+            <x-tableau class="table-livres align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Livre</th>
@@ -177,14 +141,11 @@
                             </td>
                             <td class="text-sm">{{ optional($pret->date_retour_reel)->format('d/m/Y') ?? '—' }}</td>
                             <td>
-                                <span class="badge-statut {{ $pret->statut_pret?->css() }}">
-                                    <span class="badge-dot"></span>{{ $pret->statut_pret?->label() }}
-                                </span>
+                                <x-badge class="{{ $pret->statut_pret?->css() }}" point>{{ $pret->statut_pret?->label() }}
+                                </x-badge>
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @if ($pret->isEnCours())
                                             @can('bibliotheque.gerer')
                                                 <li>
@@ -211,82 +172,58 @@
                                                 </span>
                                             </li>
                                         @endif
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-exchange-alt"></i><p>Aucun prêt.</p></div></td></tr>
+                        <x-vide colspan="7" icone="fas fa-exchange-alt">Aucun prêt.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $prets->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$prets->appends(request()->query())" /></div>
 
     {{-- Modal retour --}}
     @can('bibliotheque.gerer')
-    <div class="modal fade" id="retourModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-livres">
-                <form id="retour-form" method="POST" action="">
-                    @csrf
-                    <div class="modal-header modal-header-livres">
-                        <h5 class="modal-title"><i class="fas fa-check me-2"></i>Enregistrer le retour</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <p class="mb-2">Retour du livre : <strong id="retour-livre">—</strong></p>
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Date de retour réel</label>
-                                <input type="date" name="date_retour_reel" class="form-control" value="{{ now()->toDateString() }}">
-                            </div>
-                            <div class="mb-0">
-                                <label class="form-label">Observations</label>
-                                <textarea name="observations" rows="2" class="form-control" maxlength="2000"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-check me-1"></i> Confirmer</button>
-                    </div>
-                </form>
+    <x-modale id="retourModal" aria-hidden="true" contenu-class="modal-livres" entete-class="modal-header-livres" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="retour-form" method="POST" action="">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-check me-2"></i>Enregistrer le retour</x-slot:titre>
+        <p class="mb-2">Retour du livre : <strong id="retour-livre">—</strong></p>
+        <x-section>
+            <div class="mb-3">
+                <x-libelle>Date de retour réel</x-libelle>
+                <input type="date" name="date_retour_reel" class="form-control" value="{{ now()->toDateString() }}">
             </div>
-        </div>
-    </div>
+            <div class="mb-0">
+                <x-libelle>Observations</x-libelle>
+                <textarea name="observations" rows="2" class="form-control" maxlength="2000"></textarea>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-check me-1"></i> Confirmer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
     {{-- Modal perdu --}}
     @can('bibliotheque.gerer')
-    <div class="modal fade" id="perduModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-livres">
-                <form id="perdu-form" method="POST" action="">
-                    @csrf
-                    <div class="modal-header" style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;">
-                        <h5 class="modal-title"><i class="fas fa-times me-2"></i>Marquer comme perdu</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <p>Marquer le livre <strong id="perdu-livre">—</strong> comme perdu ?</p>
-                        <p class="text-muted small">L'exemplaire sera définitivement retiré du stock.</p>
-                        <div class="form-section">
-                            <label class="form-label">Motif / observations <span class="text-danger">*</span></label>
-                            <textarea name="observations" rows="3" class="form-control" required minlength="5"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <x-modale id="perduModal" aria-hidden="true" contenu-class="modal-livres" entete-style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="perdu-form" method="POST" action="">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-times me-2"></i>Marquer comme perdu</x-slot:titre>
+        <p>Marquer le livre <strong id="perdu-livre">—</strong> comme perdu ?</p>
+        <p class="text-muted small">L'exemplaire sera définitivement retiré du stock.</p>
+        <x-section>
+            <x-libelle requis>Motif / observations</x-libelle>
+            <textarea name="observations" rows="3" class="form-control" required minlength="5"></textarea>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer</button>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

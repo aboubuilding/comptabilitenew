@@ -8,7 +8,7 @@
         position: fixed;
         inset: 0;
         z-index: 10000;
-        background: rgba(74, 12, 25, 0.85);
+        background: rgba(142,18,22, 0.85);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         display: flex;
@@ -158,7 +158,7 @@
 
     .search-result-sub {
         font-size: 0.8rem;
-        color: #6f7e8c;
+        color: var(--eim-ink-soft);
         margin-top: 2px;
         white-space: nowrap;
         overflow: hidden;
@@ -167,7 +167,7 @@
 
     .search-result-item .badge-category {
         background: var(--school-gold);
-        color: #4A0C19;
+        color: var(--eim-red-deep);
         font-size: 0.6rem;
         font-weight: 700;
         padding: 2px 10px;
@@ -181,7 +181,7 @@
     .search-empty {
         padding: 40px 20px;
         text-align: center;
-        color: #6f7e8c;
+        color: var(--eim-ink-soft);
         font-family: var(--school-ff);
     }
 

@@ -22,8 +22,8 @@
 
 @section('css')
 <style>
-    .ps { --ps-bg-soft:#faf6ee; --ps-border:#ece4d6; }
-    .ps .carte { background:#fff; border:1px solid var(--ps-border); border-radius:14px; box-shadow:0 4px 14px rgba(122,15,28,.05); margin-bottom:1rem; overflow:hidden; }
+    .ps { --ps-bg-soft:var(--eim-cream); --ps-border:var(--eim-border); }
+    .ps .carte { background:#fff; border:1px solid var(--ps-border); border-radius:14px; box-shadow:0 4px 14px rgba(142,18,22,.05); margin-bottom:1rem; overflow:hidden; }
     .ps .carte-titre { padding:.85rem 1.15rem; border-bottom:1px solid var(--ps-border); display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
     .ps .carte-titre h6 { margin:0; font-size:.95rem; font-weight:700; color:var(--school-ink); display:flex; align-items:center; gap:8px; }
     .ps .carte-titre h6 i { color:var(--school-gold-dark); }
@@ -34,7 +34,7 @@
     .ps .recherche-eleve .select2-selection__rendered { line-height:44px; padding-left:14px; font-size:.95rem; }
     .ps .recherche-eleve .select2-selection__arrow { height:44px; }
 
-    .ps .eleve-bandeau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-radius:14px; padding:1.1rem 1.4rem; display:flex; align-items:center; gap:1.1rem; margin-bottom:1rem; box-shadow:0 8px 24px rgba(122,15,28,.18); }
+    .ps .eleve-bandeau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-radius:14px; padding:1.1rem 1.4rem; display:flex; align-items:center; gap:1.1rem; margin-bottom:1rem; box-shadow:0 8px 24px rgba(142,18,22,.18); }
     .ps .eleve-avatar { width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.35); display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; }
     .ps .eleve-nom { font-weight:700; font-size:1.15rem; margin:0; color:#fff; }
     .ps .eleve-meta { font-size:.82rem; opacity:.9; }
@@ -42,7 +42,7 @@
     .ps .chiffre { background:#fff; border:1px solid var(--ps-border); border-radius:12px; padding:.9rem 1rem; height:100%; }
     .ps .chiffre .valeur { font-size:1.25rem; font-weight:800; font-variant-numeric:tabular-nums; color:var(--school-ink); }
     .ps .chiffre .intitule { font-size:.75rem; color:var(--school-muted); text-transform:uppercase; letter-spacing:.03em; }
-    .ps .chiffre.paye .valeur { color:#1c7a4d; }
+    .ps .chiffre.paye .valeur { color:var(--eim-success); }
     .ps .chiffre.attente .valeur { color:var(--school-gold-dark); }
     .ps .chiffre.reste .valeur { color:var(--school-red); }
 
@@ -53,27 +53,27 @@
     .ps .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .ps .nature { display:inline-block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; background:var(--ps-bg-soft); border:1px solid var(--ps-border); color:var(--school-red-dark); border-radius:999px; padding:.1rem .55rem; }
     .ps .barre { height:6px; border-radius:999px; background:#eceff2; overflow:hidden; min-width:70px; }
-    .ps .barre > div { height:100%; background:#1c7a4d; }
+    .ps .barre > div { height:100%; background:var(--eim-success); }
     .ps .etat { display:inline-flex; align-items:center; gap:5px; font-size:.72rem; font-weight:600; border-radius:999px; padding:.2em .7em; }
-    .ps .etat.encaisse { background:#e3f7ec; color:#1c7a4d; }
+    .ps .etat.encaisse { background:#e3f7ec; color:var(--eim-success); }
     .ps .etat.attente { background:#fdf4e0; color:var(--school-gold-dark); }
-    .ps .etat.annule { background:#eceff2; color:#5b6b7a; }
+    .ps .etat.annule { background:#eceff2; color:var(--eim-ink-soft); }
     .ps .historique-zone { max-height:340px; overflow-y:auto; }
 
     .ps .engagement-row { display:flex; align-items:center; gap:.75rem; padding:.7rem .75rem; border-radius:10px; border:1px solid var(--ps-border); margin-bottom:.5rem; background:#fff; }
     .ps .engagement-row.exists { cursor:pointer; background:#f6fdf9; border-color:#cfeedd; }
-    .ps .engagement-row.exists:hover { border-color:#1c7a4d; }
+    .ps .engagement-row.exists:hover { border-color:var(--eim-success); }
     .ps .engagement-row.exists.selectionne { border-color:var(--school-red); background:#fff7f8; }
     .ps .engagement-row.solde, .ps .engagement-row.attente, .ps .engagement-row.missing { background:#fafbfc; }
     .ps .engagement-check { width:20px; height:20px; border-radius:6px; border:2px solid var(--ps-border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.7rem; color:#fff; background:#fff; }
     .ps .engagement-check.checked { background:var(--school-red); border-color:var(--school-red); }
-    .ps .engagement-check.disabled { background:#eceff2; border-color:#eceff2; color:#9aa7b2; }
+    .ps .engagement-check.disabled { background:#eceff2; border-color:#eceff2; color:#7A6A6A; }
     .ps .engagement-label { font-weight:600; font-size:.9rem; color:var(--school-ink); }
     .ps .engagement-sub { font-size:.75rem; color:var(--school-muted); }
     .ps .engagement-montant { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .ps .engagement-montant.du { color:var(--school-red); }
     .ps .engagement-saisie { width:140px; text-align:right; font-weight:700; border-radius:8px; border:1px solid var(--ps-border); padding:.35rem .55rem; }
-    .ps .engagement-saisie:focus { border-color:var(--school-red); outline:none; box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
+    .ps .engagement-saisie:focus { border-color:var(--school-red); outline:none; box-shadow:0 0 0 .2rem rgba(227,30,36,.12); }
     .ps .engagement-link { font-size:.8rem; color:var(--school-red); text-decoration:none; white-space:nowrap; background:none; border:none; padding:0; }
     .ps .engagement-link:hover { text-decoration:underline; }
     .ps .barre-souscrire { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; padding:.65rem 1.15rem; border-bottom:1px solid var(--ps-border); background:#fffdf8; }
@@ -83,14 +83,14 @@
     .ps .engagement-row.nouveau { box-shadow:0 0 0 2px var(--school-gold); animation:clignote 1.2s ease 2; }
     @keyframes clignote { 50% { background:#fff6dd; } }
     .modal-souscription .modal-header { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; }
-    .modal-souscription .modal-title { font-size:1rem; font-weight:700; }
-    .modal-souscription .resume-du { background:#faf6ee; border:1px solid #ece4d6; border-radius:10px; padding:.6rem .9rem; display:flex; justify-content:space-between; align-items:center; font-weight:700; }
+    .modal-souscription .modal-title { font-size:1rem; font-weight:700; color:#fff; }
+    .modal-souscription .resume-du { background:var(--eim-cream); border:1px solid var(--eim-border); border-radius:10px; padding:.6rem .9rem; display:flex; justify-content:space-between; align-items:center; font-weight:700; }
     .modal-souscription .resume-du .montant { color:var(--school-red); font-size:1.1rem; font-variant-numeric:tabular-nums; }
 
     .ps .search-panier { position:relative; }
-    .ps .search-panier > i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
+    .ps .search-panier > i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#7A6A6A; font-size:.85rem; }
     .ps .search-panier input { padding-left:36px; border-radius:10px; border:1px solid var(--ps-border); }
-    .ps .search-results { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--ps-border); border-radius:10px; max-height:300px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(122,15,28,.12); }
+    .ps .search-results { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--ps-border); border-radius:10px; max-height:300px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(142,18,22,.12); }
     .ps .search-results:empty { display:none; }
     .ps .search-result-item { display:flex; align-items:center; gap:.75rem; padding:.6rem 1rem; cursor:pointer; border-bottom:1px solid #f5f1e8; }
     .ps .search-result-item:last-child { border-bottom:none; }
@@ -101,7 +101,7 @@
 
     .ps .panier-qte { width:74px; text-align:center; border-radius:8px; border:1px solid var(--ps-border); padding:.25rem .3rem; }
     .ps .btn-remove { border:none; background:transparent; color:var(--school-red); }
-    .ps .panier-empty { text-align:center; color:#9aa7b2; padding:1.4rem 1rem; font-size:.88rem; }
+    .ps .panier-empty { text-align:center; color:#7A6A6A; padding:1.4rem 1rem; font-size:.88rem; }
     .ps .total-box { background:var(--ps-bg-soft); border:1px solid var(--ps-border); border-radius:14px; padding:1rem 1.15rem; }
     .ps .total-row { display:flex; justify-content:space-between; font-size:.9rem; padding:.15rem 0; }
     .ps .total-row.grand { font-size:1.2rem; font-weight:800; color:var(--school-red-dark); border-top:1px dashed var(--ps-border); margin-top:.4rem; padding-top:.6rem; }
@@ -190,9 +190,9 @@
                                     <span class="ms-1 fw-semibold">{{ $ligne['libelle'] }}</span>
                                 </td>
                                 <td class="num">{{ $fmt($ligne['du']) }}</td>
-                                <td class="num" style="color:#1c7a4d;">{{ $fmt($ligne['paye']) }}</td>
+                                <td class="num" style="color:var(--eim-success);">{{ $fmt($ligne['paye']) }}</td>
                                 <td class="num" style="color:var(--school-gold-dark);">{{ $ligne['en_attente'] > 0 ? $fmt($ligne['en_attente']) : '—' }}</td>
-                                <td class="num fw-bold" style="color:{{ $ligne['reste'] > 0 ? 'var(--school-red)' : '#1c7a4d' }};">
+                                <td class="num fw-bold" style="color:{{ $ligne['reste'] > 0 ? 'var(--school-red)' : '#1F7A4D' }};">
                                     {{ $ligne['reste'] > 0 ? $fmt($ligne['reste']) : 'Soldé' }}
                                 </td>
                                 <td>
@@ -289,7 +289,13 @@
                             <h6><span class="etape">3</span> <i class="fas fa-hand-holding-usd"></i> Nouveau paiement — frais de l'élève</h6>
                             <span class="text-muted small">Cochez un frais pour le solder, ou saisissez le montant versé</span>
                         </div>
+                        @if ($anneeCloturee ?? false)
+                            <div class="barre-souscrire text-muted" id="annee-cloturee-souscription">
+                                <i class="fas fa-lock me-1"></i>Année scolaire clôturée : plus de souscription à la cantine, au transport, aux activités ni aux événements.
+                            </div>
+                        @endif
                         @canany(['cantine.inscrire', 'transport.abonner', 'activites.inscrire'])
+                            @unless ($anneeCloturee ?? false)
                             <div class="barre-souscrire" id="barre-souscrire">
                                 <span class="intitule"><i class="fas fa-plus-circle me-1"></i>Souscrire :</span>
                                 @can('cantine.inscrire')
@@ -303,6 +309,7 @@
                                     <button type="button" class="btn-souscrire" data-bs-toggle="modal" data-bs-target="#modal-evenement"><i class="fas fa-calendar-check me-1"></i>Événement</button>
                                 @endcan
                             </div>
+                            @endunless
                         @endcanany
                         <div class="carte-corps" id="engagements-container">
                             @foreach ($lignes as $ligne)
@@ -360,7 +367,9 @@
                                         <div class="engagement-label text-muted">{{ $manquant['libelle'] }}</div>
                                         <div class="engagement-sub">Aucun engagement souscrit</div>
                                     </div>
-                                    @if ($manquant['fenetre'])
+                                    @if ($anneeCloturee ?? false)
+                                        <span class="engagement-link text-muted"><i class="fas fa-lock me-1"></i>Année clôturée</span>
+                                    @elseif ($manquant['fenetre'])
                                         <button type="button" class="engagement-link" data-bs-toggle="modal" data-bs-target="#modal-{{ $manquant['fenetre'] }}">Souscrire <i class="fas fa-plus ms-1"></i></button>
                                     @else
                                         <a href="{{ $manquant['lien'] }}" class="engagement-link">Souscrire <i class="fas fa-arrow-right ms-1"></i></a>
@@ -406,16 +415,16 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-7">
-                                <label class="form-label small fw-semibold" for="payeur">Payeur <span class="text-danger">*</span></label>
+                                <x-libelle class="small fw-semibold" for="payeur" requis>Payeur</x-libelle>
                                 <input type="text" name="payeur" id="payeur" class="form-control form-control-sm" required maxlength="150"
                                        value="{{ $eleve->nom }} {{ $eleve->prenom }}">
                             </div>
                             <div class="col-md-5">
-                                <label class="form-label small fw-semibold" for="telephone_payeur">Téléphone</label>
+                                <x-libelle class="small fw-semibold" for="telephone_payeur">Téléphone</x-libelle>
                                 <input type="text" name="telephone_payeur" id="telephone_payeur" class="form-control form-control-sm" maxlength="30">
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-semibold" for="mode_paiement">Mode de paiement <span class="text-danger">*</span></label>
+                                <x-libelle class="small fw-semibold" for="mode_paiement" requis>Mode de paiement</x-libelle>
                                 <select name="mode_paiement" id="mode_paiement" class="form-select form-select-sm" required>
                                     @foreach ($modes as $valeur => $libelle)
                                         <option value="{{ $valeur }}">{{ $libelle }}</option>
@@ -431,11 +440,11 @@
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-semibold" for="cheque-numero">Numéro du chèque <span class="text-danger">*</span></label>
+                                    <x-libelle class="small fw-semibold" for="cheque-numero" requis>Numéro du chèque</x-libelle>
                                     <input type="text" id="cheque-numero" class="form-control form-control-sm" maxlength="100">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-semibold" for="cheque-banque">Banque <span class="text-danger">*</span></label>
+                                    <x-libelle class="small fw-semibold" for="cheque-banque" requis>Banque</x-libelle>
                                     <select id="cheque-banque" class="form-select form-select-sm">
                                         <option value="">— Sélectionner —</option>
                                         @foreach ($banques as $banque)
@@ -444,12 +453,12 @@
                                     </select>
                                 </div>
                                 <div class="col-md-7">
-                                    <label class="form-label small fw-semibold" for="cheque-emetteur">Émetteur (titulaire du compte)</label>
+                                    <x-libelle class="small fw-semibold" for="cheque-emetteur">Émetteur (titulaire du compte)</x-libelle>
                                     <input type="text" id="cheque-emetteur" class="form-control form-control-sm" maxlength="150"
                                            placeholder="Par défaut : le payeur">
                                 </div>
                                 <div class="col-md-5">
-                                    <label class="form-label small fw-semibold" for="cheque-date">Date d'émission</label>
+                                    <x-libelle class="small fw-semibold" for="cheque-date">Date d'émission</x-libelle>
                                     <input type="date" id="cheque-date" class="form-control form-control-sm" value="{{ now()->toDateString() }}">
                                 </div>
                             </div>
@@ -840,6 +849,27 @@ $(function () {
         majDu($(this).closest('form'));
     });
 
+    // Nombre de mois entamés de la date de début à la fin de l'année scolaire (même règle que le serveur)
+    function moisJusquA(debut, fin) {
+        if (!(debut instanceof Date) || isNaN(debut) || isNaN(fin) || fin <= debut) return 1;
+        let mois = (fin.getFullYear() - debut.getFullYear()) * 12 + (fin.getMonth() - debut.getMonth())
+            - (fin.getDate() < debut.getDate() ? 1 : 0);
+        const repere = new Date(debut.getFullYear(), debut.getMonth() + mois, Math.min(debut.getDate(), 28));
+        if (debut.getDate() > 28) repere.setDate(Math.min(debut.getDate(), new Date(repere.getFullYear(), repere.getMonth() + 1, 0).getDate()));
+        if (repere < fin) mois++;
+        return Math.max(1, Math.min(12, mois));
+    }
+    function majMois($form) {
+        const $mois = $form.find('[name=nombre_mois][data-fin-annee]');
+        const finAnnee = $mois.data('fin-annee'), debut = $form.find('[name=date_debut]').val();
+        if (!$mois.length || !finAnnee || !debut) return;
+        $mois.val(moisJusquA(new Date(debut + 'T00:00:00'), new Date(finAnnee + 'T00:00:00')));
+        majDu($form);
+    }
+    $(document).on('change input', '.form-souscription [name=date_debut]', function () {
+        majMois($(this).closest('form'));
+    });
+
     // Un tarif (cantine) ou une ligne (bus) choisi propose sa mensualité
     $(document).on('change', '.form-souscription [data-mensualite]', function () {
         const mensualite = $(this).find(':selected').data('montant');
@@ -870,6 +900,7 @@ $(function () {
         $form.find('.is-invalid').removeClass('is-invalid');
         $form.find('[data-mensualite]').trigger('change');
         $form.find('#souscrire-evenement').trigger('change');
+        majMois($form);
         if ($form.find('[name=montant_mensuel]').length) majDu($form);
     });
 

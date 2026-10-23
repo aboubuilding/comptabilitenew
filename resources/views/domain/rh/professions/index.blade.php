@@ -12,27 +12,22 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.employes.index') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.employes.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-users me-1"></i> Employés
-    </a>
+    </x-bouton>
     @can('employes.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouvelleProfession"
-                data-bs-toggle="modal" data-bs-target="#professionModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouvelleProfession" data-bs-toggle="modal" data-bs-target="#professionModal">
             <i class="fas fa-plus-circle me-1"></i> Nouvelle profession
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .prof-page { --p-bg-soft:#faf6ee; --p-border:#ece4d6; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .prof-page { --p-bg-soft:var(--eim-cream); --p-border:var(--eim-border); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--p-border) !important; }
     .filtre-input { border-radius:10px; border:1px solid var(--p-border); padding:.55rem .9rem; font-size:.88rem; }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
     .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
     .btn-outline-scolarite { border:1px solid var(--p-border); color:var(--school-ink); background:#fff; font-size:.82rem; }
@@ -41,13 +36,13 @@
     .table-professions thead tr { background:var(--p-bg-soft); }
     .table-professions thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--p-border); }
     .table-professions tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--p-border); font-size:.9rem; vertical-align:middle; }
-    .table-professions tbody tr:hover { background:#fdfaf5; }
+    .table-professions tbody tr:hover { background:var(--eim-hover); }
 
     .prof-libelle { font-weight:700; color:var(--school-ink); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .num.grand { color:var(--school-red-dark); }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .modal-prof { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
@@ -55,38 +50,32 @@
     .form-section { background:var(--p-bg-soft); border:1px solid var(--p-border); border-radius:12px; padding:1.1rem; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
     .form-section .form-control { border-radius:8px; border:1px solid var(--p-border); padding:.55rem .75rem; font-size:.88rem; }
-    .btn-annuler { background:#fff; border:1px solid var(--p-border); color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--p-border); color:var(--eim-ink-soft); border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-enregistrer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
 </style>
 @endsection
 
 @section('contenu')
 <div class="prof-page">
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-6">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Rechercher une profession..."
-                               value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Rechercher une profession..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-filtrer w-100">
+                    <x-bouton variante="filtrer" type="submit" class="w-100">
                         <i class="fas fa-filter me-1"></i> Filtrer
-                    </button>
+                    </x-bouton>
                 </div>
                 <div class="col-md-3 text-end">
-                    <span class="compteur-badge">{{ $professions->total() }} profession(s)</span>
+                    <x-compteur>{{ $professions->total() }} profession(s)</x-compteur>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-professions align-middle mb-0">
+            <x-tableau class="table-professions align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Profession</th>
@@ -105,12 +94,10 @@
                                 {{ number_format((float) $profession->salaire_base, 0, ',', ' ') }}
                             </td>
                             <td class="text-center">
-                                <span class="compteur-badge">{{ $profession->employes_count ?? 0 }}</span>
+                                <x-compteur>{{ $profession->employes_count ?? 0 }}</x-compteur>
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('employes.gerer')
                                             <li>
                                                 <button class="dropdown-item btn-edit-profession"
@@ -122,61 +109,43 @@
                                                 </button>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form action="{{ route('rh.professions.destroy', $profession) }}" method="POST" class="form-confirm-delete">
-                                                    @csrf @method('DELETE')
-                                                    <button class="dropdown-item text-danger"><i class="fas fa-trash"></i> Désactiver</button>
-                                                </form>
-                                            </li>
+                                            <x-actions.supprimer :action="route('rh.professions.destroy', $profession)" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4"><div class="empty-state"><i class="fas fa-briefcase"></i><p>Aucune profession enregistrée.</p></div></td></tr>
+                        <x-vide colspan="4" icone="fas fa-briefcase">Aucune profession enregistrée.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $professions->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$professions->appends(request()->query())" /></div>
 
     @can('employes.gerer')
-    <div class="modal fade" id="professionModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-prof">
-                <form id="profession-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="prof-method" value="POST">
-                    <div class="modal-header modal-header-prof">
-                        <h5 class="modal-title" id="prof-title"><i class="fas fa-briefcase me-2"></i>Nouvelle profession</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                <input type="text" name="libelle" id="pf-libelle" class="form-control" maxlength="150" required>
-                                <div class="text-danger text-xs mt-1" id="libelle-error"></div>
-                            </div>
-                            <div>
-                                <label class="form-label">Salaire de base <span class="text-danger">*</span></label>
-                                <input type="number" name="salaire_base" id="pf-salaire" step="0.01" min="0" class="form-control" required>
-                                <div class="text-danger text-xs mt-1" id="salaire_base-error"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                    </div>
-                </form>
+    <x-modale id="professionModal" data-bs-backdrop="static" contenu-class="modal-prof" entete-class="modal-header-prof" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="profession-form">@csrf
+                    <input type="hidden" name="_method" id="prof-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="prof-title"><i class="fas fa-briefcase me-2"></i>Nouvelle profession</x-slot:titre>
+        <x-section>
+            <div class="mb-3">
+                <x-libelle requis>Libellé</x-libelle>
+                <input type="text" name="libelle" id="pf-libelle" class="form-control" maxlength="150" required>
+                <div class="text-danger text-xs mt-1" id="libelle-error"></div>
             </div>
-        </div>
-    </div>
+            <div>
+                <x-libelle requis>Salaire de base</x-libelle>
+                <input type="number" name="salaire_base" id="pf-salaire" step="0.01" min="0" class="form-control" required>
+                <div class="text-danger text-xs mt-1" id="salaire_base-error"></div>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

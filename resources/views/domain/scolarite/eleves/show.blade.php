@@ -32,9 +32,9 @@
                 <h5 class="mb-1">{{ $eleve->nom_complet }}</h5>
                 <code>{{ $eleve->matricule }}</code>
                 <div class="mt-3">
-                    <span class="badge-statut bg-{{ $eleve->etat ? 'success' : 'secondary' }}">
+                    <x-badge class="bg-{{ $eleve->etat ? 'success' : 'secondary' }}">
                         {{ $eleve->etat ? 'Actif' : 'Inactif' }}
-                    </span>
+                    </x-badge>
                 </div>
             </div>
         </div>
@@ -49,9 +49,9 @@
                         <div class="col-md-4">
                             <small class="text-muted">Classe</small><br>
                             @if($eleve->inscriptionActive->classe)
-                                <span class="badge-statut bg-primary">{{ $eleve->inscriptionActive->classe->libelle }}</span>
+                                <x-badge class="bg-primary">{{ $eleve->inscriptionActive->classe->libelle }}</x-badge>
                             @else
-                                <span class="badge-statut bg-warning text-dark">Non affecté</span>
+                                <x-badge class="bg-warning text-dark">Non affecté</x-badge>
                             @endif
                         </div>
                         <div class="col-md-4">

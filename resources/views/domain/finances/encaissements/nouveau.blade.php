@@ -7,35 +7,31 @@
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('tableau') }}">Accueil</a></li>
     <li class="breadcrumb-item">Finances &amp; Comptabilité</li>
-    <li class="breadcrumb-item"><a href="{{ route('finances.encaissements.index', ['onglet' => 'jour']) }}">Encaissements</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('finances.encaissements.index', ['onglet' => 'caisse']) }}">Encaissements</a></li>
     <li class="breadcrumb-item active">Nouvel encaissement</li>
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.encaissements.index', ['onglet' => 'jour']) }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
-        <i class="fas fa-arrow-left me-1"></i> Mes encaissements du jour
-    </a>
+    <x-bouton variante="contour" href="{{ route('finances.encaissements.index', ['onglet' => 'caisse']) }}" class="btn-sm rounded-pill px-3">
+        <i class="fas fa-arrow-left me-1"></i> Encaissements de ma caisse
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .ne { --en-soft:#faf6ee; --en-border:#ece4d6; max-width:1000px; }
-    .ne .carte { background:#fff; border:1px solid var(--en-border); border-radius:14px; box-shadow:0 6px 20px rgba(122,15,28,.05); margin-bottom:1.25rem; }
+    .ne { --en-soft:var(--eim-cream); --en-border:var(--eim-border); max-width:1000px; }
+    .ne .carte { background:#fff; border:1px solid var(--en-border); border-radius:14px; box-shadow:0 6px 20px rgba(142,18,22,.05); margin-bottom:1.25rem; }
     .ne .carte-titre { padding:.85rem 1.15rem; border-bottom:1px solid var(--en-border); display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap; }
     .ne .carte-titre h6 { margin:0; font-weight:700; font-size:.92rem; color:var(--school-ink); }
     .ne .carte-titre h6 i { color:var(--school-red); margin-right:.4rem; }
     .ne .carte-corps { padding:1rem 1.15rem; }
     .ne .etape { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--school-red); color:#fff; font-size:.72rem; margin-right:.4rem; }
     .badge-etat { display:inline-flex; align-items:center; gap:6px; border-radius:999px; font-size:.8rem; font-weight:600; padding:.45em .9em; }
-    .badge-etat-ouverte { background:#e3f7ec; color:#1c7a4d; }
+    .badge-etat-ouverte { background:#e3f7ec; color:var(--eim-success); }
     .badge-etat-fermee  { background:#fdecef; color:var(--school-red); }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
     .reference { font-family:monospace; font-size:.8rem; background:var(--en-soft); color:var(--school-red); padding:2px 8px; border-radius:6px; font-weight:700; }
     .nature { display:inline-block; background:var(--en-soft); color:var(--school-red); font-weight:600; font-size:.66rem; padding:.12rem .5rem; border-radius:999px; border:1px solid var(--en-border); }
     .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.3em .8em; border-radius:999px; font-size:.7rem; font-weight:600; }
-    .badge-statut.attente  { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-statut.encaisse { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.annule   { background:#eceff2; color:#5b6b7a; }
     .resume-bloc { background:var(--en-soft); border:1px solid var(--en-border); border-radius:10px; padding:.55rem .8rem; height:100%; }
     .resume-titre { font-size:.68rem; text-transform:uppercase; font-weight:700; color:var(--school-muted); }
     .resume-lignes thead th { font-size:.7rem; text-transform:uppercase; color:var(--school-red); background:var(--en-soft); }
@@ -43,8 +39,8 @@
     .resume-totaux > div { display:flex; gap:1rem; }
     .resume-totaux .a-encaisser strong { color:var(--school-red); font-size:1.05rem; }
     .saisie-montant { background:#f2fbf6; border:1px solid #bfe6d0; border-radius:12px; padding:.9rem 1rem; }
-    .saisie-montant .monnaie { font-weight:700; color:#1c7a4d; }
-    .invite { text-align:center; color:#9aa7b2; padding:2rem 1rem; }
+    .saisie-montant .monnaie { font-weight:700; color:var(--eim-success); }
+    .invite { text-align:center; color:#7A6A6A; padding:2rem 1rem; }
     .invite i { font-size:2rem; display:block; margin-bottom:.5rem; color:#d8c8ae; }
 </style>
 @endsection
@@ -80,8 +76,8 @@
             @include('domain.finances.encaissements.partials.saisie-encaissement')
         </div>
         <div class="carte-titre justify-content-end" style="border-top:1px solid var(--en-border);border-bottom:none;">
-            <a href="{{ route('finances.encaissements.index', ['onglet' => 'jour']) }}" class="btn btn-annuler">Annuler</a>
-            <button type="button" class="btn btn-enregistrer" id="enc-valider" disabled><i class="fas fa-check me-1"></i>Valider l'encaissement</button>
+            <x-bouton variante="annuler" href="{{ route('finances.encaissements.index', ['onglet' => 'caisse']) }}">Annuler</x-bouton>
+            <x-bouton type="button" id="enc-valider" disabled><i class="fas fa-check me-1"></i>Valider l'encaissement</x-bouton>
         </div>
     </div>
 </div>
@@ -95,10 +91,10 @@ $(function () {
     const saisie = window.brancherEncaissement({
         $racine: $('#ecran-encaissement'),
         $valider: $('#enc-valider'),
-        // Succès : retour sur « Mes encaissements du jour », où la notification s'affiche
+        // Succès : retour sur les encaissements de la caisse ouverte, où la notification s'affiche
         onSucces: message => {
             sessionStorage.setItem('pendingToast', JSON.stringify({ type: 'success', message }));
-            window.location.href = '{{ route('finances.encaissements.index', ['onglet' => 'jour']) }}';
+            window.location.href = '{{ route('finances.encaissements.index', ['onglet' => 'caisse']) }}';
         },
     });
 

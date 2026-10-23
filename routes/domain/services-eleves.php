@@ -86,6 +86,8 @@ Route::prefix('services-eleves')->name('services-eleves.')->group(function () {
             Route::post('/',                        [AbonnementBusController::class, 'store'])     ->name('store');
             Route::post('/{abonnement}/abandonner', [AbonnementBusController::class, 'abandonner'])->name('abandonner');
             Route::post('/{abonnement}/assigner',   [AbonnementBusController::class, 'assigner'])  ->name('assigner');
+            Route::post('/{abonnement}/position',   [AbonnementBusController::class, 'positionner'])->name('positionner');
+            Route::post('/convertir-souscriptions', [AbonnementBusController::class, 'convertirSouscriptions'])->name('convertir-souscriptions');
         });
 
         /* ----- Entretiens véhicules ----- */

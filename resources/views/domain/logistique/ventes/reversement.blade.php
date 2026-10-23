@@ -12,20 +12,18 @@
 
 @section('css')
 <style>
-    .rev-page { --r-border:#ece4d6; --r-bg-soft:#faf6ee; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .rev-page { --r-border:var(--eim-border); --r-bg-soft:var(--eim-cream); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--r-border) !important; }
     .form-section { background:var(--r-bg-soft); border:1px solid var(--r-border); border-radius:12px; padding:1.1rem; }
-    .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; color:var(--school-red); margin-bottom:.75rem; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
     .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid var(--r-border); padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
 
     .ligne-form { display:flex; gap:.5rem; align-items:center; background:#fff; border:1px dashed var(--r-border); border-radius:10px; padding:.6rem .75rem; margin-bottom:.5rem; }
     .ligne-form input, .ligne-form select { border-radius:6px; border:1px solid var(--r-border); padding:.4rem .6rem; font-size:.85rem; }
     .ligne-total { font-weight:700; color:var(--school-red-dark); min-width:90px; text-align:right; font-variant-numeric:tabular-nums; }
 
-    .total-box { background:#faf6ee; border-radius:12px; padding:1rem 1.15rem; margin-top:1rem; }
+    .total-box { background:var(--eim-cream); border-radius:12px; padding:1rem 1.15rem; margin-top:1rem; }
     .total-row { display:flex; justify-content:space-between; padding:.35rem 0; font-size:.9rem; }
     .total-row.grand { font-size:1.25rem; font-weight:700; padding-top:.6rem; border-top:1px solid var(--r-border); margin-top:.4rem; color:var(--school-red-dark); }
 
@@ -52,20 +50,19 @@
 
         <div class="row g-3">
             <div class="col-lg-8">
-                <div class="card main-card">
+                <x-carte>
                     <div class="card-header bg-white py-3 px-4">
                         <h6 class="mb-0"><i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i> Informations du reversement</h6>
                     </div>
                     <div class="card-body p-4">
-                        <div class="form-section mb-3">
-                            <div class="form-section-title"><i class="fas fa-store"></i> Contexte</div>
+                        <x-section titre="Contexte" icone="fas fa-store" class="mb-3">
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Date de reversement <span class="text-danger">*</span></label>
+                                    <x-libelle requis>Date de reversement</x-libelle>
                                     <input type="date" name="date_reversement" class="form-control" value="{{ $dateJour }}" required>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Boutique source <span class="text-danger">*</span></label>
+                                    <x-libelle requis>Boutique source</x-libelle>
                                     <select name="magasin_id" class="form-select" required>
                                         <option value="">— Sélectionner —</option>
                                         @foreach ($magasins as $m)
@@ -74,35 +71,34 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Référence carnet</label>
+                                    <x-libelle>Référence carnet</x-libelle>
                                     <input type="text" name="reference_carnet" class="form-control" maxlength="50" placeholder="Ex : Carnet #A-12">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Commentaire</label>
+                                    <x-libelle>Commentaire</x-libelle>
                                     <input type="text" name="commentaire" class="form-control" maxlength="500">
                                 </div>
                             </div>
-                        </div>
+                        </x-section>
 
-                        <div class="form-section">
-                            <div class="form-section-title"><i class="fas fa-list"></i> Ventes du carnet</div>
+                        <x-section titre="Ventes du carnet" icone="fas fa-list">
                             <div id="lignes-rev"></div>
                             <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="add-ligne-rev">
                                 <i class="fas fa-plus me-1"></i> Ajouter un article
                             </button>
-                        </div>
+                        </x-section>
                     </div>
-                </div>
+                </x-carte>
             </div>
 
             <div class="col-lg-4">
-                <div class="card main-card">
+                <x-carte>
                     <div class="card-header bg-white py-3 px-4">
                         <h6 class="mb-0"><i class="fas fa-calculator me-1" style="color:var(--school-gold-dark);"></i> Encaissement au caissier</h6>
                     </div>
                     <div class="card-body p-4">
-                        <div class="form-section mb-3">
-                            <label class="form-label">Caisse de réception <span class="text-danger">*</span></label>
+                        <x-section class="mb-3">
+                            <x-libelle requis>Caisse de réception</x-libelle>
                             <select name="caisse_id" id="caisse-id" class="form-select" required>
                                 <option value="">— Sélectionner —</option>
                                 @foreach ($caisses as $caisse)
@@ -117,7 +113,7 @@
                                     Seules les caisses ouvertes sont proposées.
                                 @endif
                             </div>
-                        </div>
+                        </x-section>
 
                         <div class="total-box">
                             <div class="total-row">
@@ -141,7 +137,7 @@
                             <i class="fas fa-check me-1"></i> Valider le reversement
                         </button>
                     </div>
-                </div>
+                </x-carte>
             </div>
         </div>
     </form>

@@ -90,6 +90,7 @@ class ActiviteService
         }
 
         $anneeId = app(AnneeScolaireContext::class)->id();
+        \App\Domain\Scolarite\Models\Annee::interdireSouscriptionSiCloturee($anneeId);
 
         return DB::transaction(fn () => InscriptionActivite::create([
             'eleve_id'         => $data->eleveId,

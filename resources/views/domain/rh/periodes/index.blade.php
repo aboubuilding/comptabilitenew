@@ -12,16 +12,16 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.paies.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.paies.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-money-check-alt me-1"></i> Bulletins
-    </a>
-    <a href="{{ route('rh.paies.dashboard') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.paies.dashboard') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-chart-pie me-1"></i> Dashboard
-    </a>
+    </x-bouton>
     @can('paie.gerer')
-        <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#periodeModal">
+        <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#periodeModal">
             <i class="fas fa-plus-circle me-1"></i> Nouvelle période
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
@@ -29,28 +29,28 @@
 <style>
     .main-card {
         border:none; border-radius:16px;
-        box-shadow: 0 10px 30px rgba(122,15,28,.06);
+        box-shadow: 0 10px 30px rgba(142,18,22,.06);
         background:#fff; overflow:hidden;
     }
-    .main-card .card-header { border-bottom:1px solid #ece4d6 !important; }
+    .main-card .card-header { border-bottom:1px solid var(--eim-border) !important; }
 
-    .table-periodes thead tr { background:#faf6ee; }
+    .table-periodes thead tr { background:var(--eim-cream); }
     .table-periodes thead th {
         color:var(--school-red); font-size:.76rem; font-weight:700;
         text-transform:uppercase; padding:.9rem 1rem;
-        border-bottom:2px solid #ece4d6; white-space:nowrap;
+        border-bottom:2px solid var(--eim-border); white-space:nowrap;
     }
     .table-periodes thead th i { color:var(--school-gold-dark); }
     .table-periodes tbody td {
-        padding:.9rem 1rem; border-bottom:1px solid #ece4d6;
+        padding:.9rem 1rem; border-bottom:1px solid var(--eim-border);
         font-size:.9rem; vertical-align:middle;
     }
-    .table-periodes tbody tr:hover { background:#fdfaf5; }
+    .table-periodes tbody tr:hover { background:var(--eim-hover); }
 
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .num.grand { color:var(--school-red-dark); }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .btn-filtrer {
@@ -63,15 +63,15 @@
     }
     .btn-nouveau:hover { color:#fff; }
     .filtre-input {
-        border-radius:10px; border:1px solid #ece4d6;
+        border-radius:10px; border:1px solid var(--eim-border);
         padding:.55rem .9rem; font-size:.88rem;
     }
     .btn-outline-scolarite {
-        border:1px solid #ece4d6; color:var(--school-ink);
+        border:1px solid var(--eim-border); color:var(--school-ink);
         background:#fff; font-size:.82rem;
     }
     .btn-outline-scolarite:hover {
-        background:#faf6ee; border-color:var(--school-red); color:var(--school-red);
+        background:var(--eim-cream); border-color:var(--school-red); color:var(--school-red);
     }
 
     /* Boutons d'action par ligne */
@@ -83,7 +83,7 @@
     .btn-action-periode:hover:not(:disabled) { background:#1d4ed8; color:#fff; }
     .btn-action-periode:disabled { opacity:.6; cursor:not-allowed; }
     .btn-action-pdf {
-        background:#C81E3A; color:#fff; border:none; border-radius:8px;
+        background:var(--eim-red); color:#fff; border:none; border-radius:8px;
         font-size:.78rem; padding:.35rem .7rem;
         transition: background .15s;
     }
@@ -91,7 +91,7 @@
 
     /* Badge période vide */
     .badge-vide {
-        background:#eceff2; color:#5b6b7a;
+        background:#eceff2; color:var(--eim-ink-soft);
         padding:.2em .7em; border-radius:999px;
         font-size:.72rem; font-weight:600;
     }
@@ -111,10 +111,9 @@
 
 @section('contenu')
 <div class="container-fluid p-0">
-    <div class="card main-card">
+    <x-carte>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-periodes align-middle mb-0">
+            <x-tableau class="table-periodes align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4"><i class="fas fa-tag me-2"></i>Libellé</th>
@@ -171,76 +170,51 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <p class="mb-0">Aucune période enregistrée.</p>
+                        <x-vide colspan="6" icone="fas fa-calendar-alt" :paragraphe="false"><p class="mb-0">Aucune période enregistrée.</p>
                                     @can('paie.gerer')
                                         <p class="text-muted small mb-0">
                                             Cliquez sur « Nouvelle période » pour en créer une.
                                         </p>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
+                                    @endcan</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 </div>
 
 {{-- Modale création période --}}
 @can('paie.gerer')
-<div class="modal fade" id="periodeModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-            <form method="POST" action="{{ route('rh.periodes.store') }}">
-                @csrf
-                <div class="modal-header"
-                     style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-calendar-plus me-2"></i>Nouvelle période
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">
-                            Libellé <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" name="libelle" class="form-control"
-                               required maxlength="100"
-                               placeholder="Ex : Juin 2026">
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">
-                                Début <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="date_debut" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">
-                                Fin <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="date_fin" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn"
-                            style="background:var(--school-red);color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
-                        <i class="fas fa-save me-1"></i> Enregistrer
-                    </button>
-                </div>
-            </form>
+<x-modale id="periodeModal" data-bs-backdrop="static" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire method="POST" action="{{ route('rh.periodes.store') }}">@csrf</x-slot:formulaire>
+    <x-slot:titre><i class="fas fa-calendar-plus me-2"></i>Nouvelle période</x-slot:titre>
+    <div class="mb-3">
+        <x-libelle class="small fw-semibold" requis>
+            Libellé</x-libelle>
+        <input type="text" name="libelle" class="form-control"
+               required maxlength="100"
+               placeholder="Ex : Juin 2026">
+    </div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <x-libelle class="small fw-semibold" requis>
+                Début</x-libelle>
+            <input type="date" name="date_debut" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <x-libelle class="small fw-semibold" requis>
+                Fin</x-libelle>
+            <input type="date" name="date_fin" class="form-control" required>
         </div>
     </div>
-</div>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" class="btn"
+                style="background:var(--school-red);color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
+            <i class="fas fa-save me-1"></i> Enregistrer
+        </button>
+    </x-slot:pied>
+</x-modale>
 @endcan
 @endsection
 
@@ -282,7 +256,7 @@ $(function () {
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#6f7e8c',
+            cancelButtonColor: '#5A4A4A',
             confirmButtonText: 'Oui, générer',
             cancelButtonText: 'Annuler',
         }).then(function (result) {

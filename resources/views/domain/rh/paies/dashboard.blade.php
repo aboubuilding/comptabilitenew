@@ -12,29 +12,28 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.paies.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.paies.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-money-check-alt me-1"></i> Bulletins
-    </a>
-    <a href="{{ route('rh.periodes.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.periodes.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-calendar-alt me-1"></i> Périodes
-    </a>
+    </x-bouton>
     @can('paie.gerer')
-        <a href="{{ route('rh.periodes.index') }}" class="btn btn-nouveau">
+        <x-bouton variante="nouveau" href="{{ route('rh.periodes.index') }}">
             <i class="fas fa-plus-circle me-1"></i> Nouvelle période
-        </a>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .dash-paie { --d-bg-soft:#faf6ee; --d-border:#ece4d6; }
+    .dash-paie { --d-bg-soft:var(--eim-cream); --d-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
     .filters-card { background:#fff; border:1px solid var(--d-border); border-radius:12px; padding:.85rem 1rem; margin-bottom:1.25rem; }
     .filtre-input { border-radius:8px; border:1px solid var(--d-border); padding:.5rem .75rem; font-size:.85rem; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:8px; padding:.5rem 1.1rem; font-weight:600; font-size:.85rem; }
-    .btn-filtrer:hover { background:var(--school-red-dark); color:#fff; }
     .btn-nouveau {
         background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));
         color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600;
@@ -43,18 +42,12 @@
     .btn-outline-scolarite { border:1px solid var(--d-border); color:var(--school-ink); background:#fff; font-size:.82rem; }
     .btn-outline-scolarite:hover { background:var(--d-bg-soft); border-color:var(--school-red); color:var(--school-red); }
 
-    .stat-card { background:#fff; border:1px solid var(--d-border); border-radius:12px; padding:1.15rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition:transform .2s; }
-    .stat-card:hover { transform:translateY(-2px); }
+    .stat-card { background:#fff; border:1px solid var(--d-border); border-radius:12px; padding:1.15rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition:transform .2s; }
     .stat-icon { width:48px; height:48px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.15rem; }
-    .stat-icon.green { background:rgba(28,122,77,.10); color:#1c7a4d; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.blue  { background:rgba(37,99,235,.10); color:#2563eb; }
-    .stat-icon.red   { background:rgba(200,30,58,.10); color:var(--school-red); }
     .stat-info .stat-value { font-size:1.3rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
-    .stat-info .stat-sub   { font-size:.7rem; color:var(--school-muted); margin-top:2px; }
 
-    .chart-card { background:#fff; border:1px solid var(--d-border); border-radius:16px; overflow:hidden; box-shadow:0 4px 18px rgba(122,15,28,.05); }
+    .chart-card { background:#fff; border:1px solid var(--d-border); border-radius:16px; overflow:hidden; box-shadow:0 4px 18px rgba(142,18,22,.05); }
     .chart-card .card-header { background:#fff; border-bottom:1px solid var(--d-border); padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; }
     .chart-card .card-header h6 { margin:0; font-size:.92rem; font-weight:700; color:var(--school-ink); display:flex; align-items:center; gap:8px; }
     .chart-card .card-header i { color:var(--school-gold-dark); }
@@ -63,7 +56,7 @@
 
     /* Carte billetterie / banque */
     .mode-card { border-radius:12px; padding:1.25rem; color:#fff; }
-    .mode-card.billette { background:linear-gradient(135deg,#B8860B,#D4A94D); }
+    .mode-card.billette { background:linear-gradient(135deg,var(--eim-gold-deep),var(--eim-gold)); }
     .mode-card.banque   { background:linear-gradient(135deg,#2563eb,#3b82f6); }
     .mode-card .label { font-size:.75rem; opacity:.85; text-transform:uppercase; letter-spacing:.5px; }
     .mode-card .value { font-size:1.5rem; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
@@ -74,17 +67,17 @@
     .table-top thead tr { background:var(--d-bg-soft); }
     .table-top thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.65rem .9rem; border-bottom:1px solid var(--d-border); white-space:nowrap; }
     .table-top tbody td { padding:.65rem .9rem; border-bottom:1px solid var(--d-border); font-size:.85rem; vertical-align:middle; }
-    .table-top tbody tr:hover { background:#fdfaf5; }
+    .table-top tbody tr:hover { background:var(--eim-hover); }
     .table-top tfoot td { padding:.75rem .9rem; font-size:.9rem; font-weight:700; border-top:2px solid var(--school-red); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
     .num.grand { color:var(--school-red-dark); font-weight:700; }
 
     .badge-retard { display:inline-flex; align-items:center; padding:.3em .75em; border-radius:999px; font-size:.72rem; font-weight:700; }
-    .badge-retard.ok   { background:#e3f7ec; color:#1c7a4d; }
+    .badge-retard.ok   { background:#e3f7ec; color:var(--eim-success); }
     .badge-retard.warn { background:#fdf4e0; color:var(--school-gold-dark); }
     .badge-retard.bad  { background:#fdecea; color:var(--school-red); }
 
-    .empty-state { padding:3rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:3rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2.5rem; margin-bottom:.65rem; display:block; color:#d8c8ae; }
 
     /* Bloc "aucune période" */
@@ -106,7 +99,7 @@
         <form method="GET" action="{{ route('rh.paies.dashboard') }}" class="filters-card">
             <div class="row g-2 align-items-center">
                 <div class="col-md-6">
-                    <label class="form-label small text-muted mb-1">Période analysée</label>
+                    <x-libelle class="small text-muted mb-1">Période analysée</x-libelle>
                     <select name="periode_id" class="form-select filtre-input" onchange="this.form.submit()">
                         <option value="">— Sélectionner une période —</option>
                         @foreach ($periodes as $p)
@@ -117,9 +110,9 @@
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-filtrer w-100">
+                    <x-bouton variante="filtrer" type="submit" class="w-100">
                         <i class="fas fa-filter me-1"></i> Appliquer
-                    </button>
+                    </x-bouton>
                 </div>
                 <div class="col-md-3 d-flex align-items-end justify-content-md-end">
                     <span class="text-muted small">
@@ -150,46 +143,18 @@
         {{-- Cartes synthèse --}}
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-lg-3">
-                <div class="stat-card">
-                    <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $recap['total'] }}</div>
-                        <div class="stat-label">Bulletins de la période</div>
-                        <div class="stat-sub">{{ $recap['payes'] }} payé(s)</div>
-                    </div>
-                </div>
+                <x-stat icone="fas fa-file-invoice" couleur="blue" libelle="Bulletins de la période">{{ $recap['total'] }}<x-slot:complement><div class="stat-sub">{{ $recap['payes'] }} payé(s)</div></x-slot:complement></x-stat>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <div class="stat-card">
-                    <div class="stat-icon gold"><i class="fas fa-coins"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ number_format($recap['total_brut'], 0, ',', ' ') }}</div>
-                        <div class="stat-label">Masse brute</div>
-                    </div>
-                </div>
+                <x-stat icone="fas fa-coins" couleur="gold" libelle="Masse brute">{{ number_format($recap['total_brut'], 0, ',', ' ') }}</x-stat>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ number_format($recap['total_net'], 0, ',', ' ') }}</div>
-                        <div class="stat-label">Masse nette à payer</div>
-                    </div>
-                </div>
+                <x-stat icone="fas fa-money-bill-wave" couleur="green" libelle="Masse nette à payer">{{ number_format($recap['total_net'], 0, ',', ' ') }}</x-stat>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <div class="stat-card">
-                    <div class="stat-icon red"><i class="fas fa-minus-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">
-                            {{ number_format($recap['total_deductions'] + $recap['total_retenues'], 0, ',', ' ') }}
-                        </div>
-                        <div class="stat-label">Retenues &amp; déductions</div>
-                        <div class="stat-sub">
+                <x-stat icone="fas fa-minus-circle" couleur="red">{{ number_format($recap['total_deductions'] + $recap['total_retenues'], 0, ',', ' ') }}<x-slot:libelle>Retenues &amp; déductions</x-slot:libelle><x-slot:complement><div class="stat-sub">
                             IRPP : {{ number_format($recap['total_retenues'], 0, ',', ' ') }}
-                        </div>
-                    </div>
-                </div>
+                        </div></x-slot:complement></x-stat>
             </div>
         </div>
 
@@ -241,10 +206,7 @@
                     <div class="card-body">
                         @if (empty($chartData['evolution']['labels']))
                             <div class="chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
-                                <div class="empty-state">
-                                    <i class="fas fa-chart-line"></i>
-                                    <p class="mb-0">Aucune donnée sur les 12 derniers mois.</p>
-                                </div>
+                                <x-vide icone="fas fa-chart-line" :paragraphe="false"><p class="mb-0">Aucune donnée sur les 12 derniers mois.</p></x-vide>
                             </div>
                         @else
                             <div class="chart-wrapper">
@@ -262,10 +224,7 @@
                     <div class="card-body">
                         @if (array_sum($chartData['repartition']['values'] ?? []) <= 0)
                             <div class="chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
-                                <div class="empty-state">
-                                    <i class="fas fa-chart-pie"></i>
-                                    <p class="mb-0">Aucune donnée.</p>
-                                </div>
+                                <x-vide icone="fas fa-chart-pie" :paragraphe="false"><p class="mb-0">Aucune donnée.</p></x-vide>
                             </div>
                         @else
                             <div class="chart-wrapper">
@@ -289,13 +248,10 @@
         </div>
         <div class="card-body p-0">
             @if ($enAttente->isEmpty())
-                <div class="empty-state">
-                    <i class="fas fa-check-circle" style="color:#1c7a4d;"></i>
-                    <p class="mb-0">Aucun retrait en attente. Tout le monde a récupéré sa paie.</p>
-                </div>
+                <x-vide :paragraphe="false"><i class="fas fa-check-circle" style="color:var(--eim-success);"></i>
+                    <p class="mb-0">Aucun retrait en attente. Tout le monde a récupéré sa paie.</p></x-vide>
             @else
-                <div class="table-responsive">
-                    <table class="table table-top mb-0">
+                <x-tableau class="table-top mb-0">
                         <thead>
                             <tr>
                                 <th class="ps-4">Employé</th>
@@ -342,7 +298,7 @@
                                               data-confirm-text="L'employé a bien récupéré sa paie à la billetterie.">
                                             @csrf
                                             <button type="submit" class="btn btn-sm"
-                                                    style="background:#1c7a4d;color:#fff;border-radius:8px;font-size:.75rem;">
+                                                    style="background:var(--eim-success);color:#fff;border-radius:8px;font-size:.75rem;">
                                                 <i class="fas fa-hand-holding-usd me-1"></i>Retiré
                                             </button>
                                         </form>
@@ -367,8 +323,7 @@
                                 @endcan
                             </tr>
                         </tfoot>
-                    </table>
-                </div>
+                    </x-tableau>
             @endif
         </div>
     </div>
@@ -380,8 +335,8 @@
 $(function () {
     const chartData = @json($chartData ?? []);
     const COLORS = {
-        green: '#1c7a4d', red: '#C81E3A', gold: '#B8860B',
-        blue: '#2563eb', ink: '#1f2d3a', muted: '#6f7e8c', border: '#ece4d6',
+        green: '#1F7A4D', red: '#E31E24', gold: '#8A6516',
+        blue: '#2563eb', ink: '#2B1E1E', muted: '#5A4A4A', border: '#EADFCB',
     };
     const fmtMoney = (v) => new Intl.NumberFormat('fr-FR', {
         minimumFractionDigits: 0,

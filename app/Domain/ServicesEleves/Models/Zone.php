@@ -6,14 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Zone de ramassage. Elle appartient à une ligne, qui fournit le chauffeur et
+ * le véhicule. Son tarif mensuel est indicatif : l'abonnement peut le dépasser
+ * ou rester en dessous.
+ */
 class Zone extends Model
 {
     protected $table = 'zones';
 
     protected $fillable = [
-        'libelle', 'description', 'chauffeur_id', 'voiture_id',
-        'annee_id', 'etat',
+        'libelle', 'description', 'tarif_base', 'ligne_id', 'chauffeur_id', 'voiture_id',
+        'code', 'ordre', 'couleur', 'annee_id', 'etat',
     ];
+
+    protected $casts = [
+        'tarif_base' => 'float',
+    ];
+
+    public function ligne(): BelongsTo
+    {
+        return $this->belongsTo(Ligne::class, 'ligne_id');
+    }
 
     public function chauffeur(): BelongsTo
     {

@@ -38,7 +38,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-6">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="search" class="form-control filtre-input" value="{{ $recherche }}" placeholder="Libellé...">
             </div>
             <div class="col-md-2">
@@ -48,8 +48,7 @@
     </div>
 
     <div class="main-card" style="overflow:hidden;">
-        <div class="table-responsive">
-            <table class="table table-ref align-middle mb-0">
+        <x-tableau class="table-ref align-middle mb-0">
                 <thead>
                     <tr>
                         <th>Libellé</th>
@@ -65,13 +64,9 @@
                             <td><strong>{{ $nationalite->libelle }}</strong></td>
                             <td class="text-muted">Nationalité</td>
                             <td class="text-center">{{ $nationalite->eleves_count }}</td>
-                            <td><span class="badge-statut bg-success">Actif</span></td>
+                            <td><x-badge class="bg-success">Actif</x-badge></td>
                             <td class="text-center">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-nationalite"
                                                     data-id="{{ $nationalite->id }}" data-libelle="{{ $nationalite->libelle }}"
@@ -79,60 +74,31 @@
                                                 <i class="fas fa-pen"></i> Modifier
                                             </button>
                                         </li>
-                                        <li>
-                                            <form action="{{ route('administration.nationalites.destroy', $nationalite) }}" method="POST" class="form-confirm-delete"
-                                                  data-confirm-title="Désactiver cette nationalité ?"
-                                                  data-confirm-text="Elle ne sera plus proposée dans les fiches.">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fas fa-trash"></i> Désactiver
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
+                                        <x-actions.supprimer :action="route('administration.nationalites.destroy', $nationalite)" data-confirm-title="Désactiver cette nationalité ?" data-confirm-text="Elle ne sera plus proposée dans les fiches." />
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <i class="fas fa-flag"></i>
-                                    <p class="mb-0">Aucune nationalité enregistrée.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="5" icone="fas fa-flag" :paragraphe="false"><p class="mb-0">Aucune nationalité enregistrée.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
     </div>
 
-    <div class="mt-3">{{ $nationalites->links() }}</div>
+    <div class="mt-3"><x-pagination :liste="$nationalites" /></div>
 
-    <div class="modal fade" id="nationaliteModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-                <form id="nationalite-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="nationalite-method" value="POST">
-                    <div class="modal-header modal-header-ref">
-                        <h5 class="modal-title" id="nationalite-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle nationalité</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <label class="form-label" for="nationalite-libelle">Libellé <span class="text-danger">*</span></label>
-                        <input type="text" name="libelle" id="nationalite-libelle" class="form-control" maxlength="150" placeholder="Ex : Togolaise">
-                        <div class="text-danger small mt-1" id="nationalite-libelle-error"></div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn-enregistrer"><i class="fas fa-save"></i> Enregistrer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <x-modale id="nationaliteModal" data-bs-backdrop="static" aria-hidden="true" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-class="modal-header-ref" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="nationalite-form">@csrf
+                    <input type="hidden" name="_method" id="nationalite-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="nationalite-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle nationalité</x-slot:titre>
+        <x-libelle for="nationalite-libelle" requis>Libellé</x-libelle>
+        <input type="text" name="libelle" id="nationalite-libelle" class="form-control" maxlength="150" placeholder="Ex : Togolaise">
+        <div class="text-danger small mt-1" id="nationalite-libelle-error"></div>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <button type="button" class="btn-annuler" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn-enregistrer"><i class="fas fa-save"></i> Enregistrer</button>
+        </x-slot:pied>
+    </x-modale>
 @endsection
 
 @push('js')

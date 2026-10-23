@@ -13,16 +13,15 @@
 
 @section('page_actions')
     @can('analytique.gerer')
-    <button type="button" class="btn btn-nouveau" id="btnNouvelleRegle"
-            data-bs-toggle="modal" data-bs-target="#regleModal">
+    <x-bouton variante="nouveau" type="button" id="btnNouvelleRegle" data-bs-toggle="modal" data-bs-target="#regleModal">
         <i class="fas fa-plus-circle me-1"></i> Nouvelle règle
-    </button>
+    </x-bouton>
     @endcan
 @endsection
 
 @section('contenu')
 <div>
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
@@ -42,18 +41,17 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                    <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
                 </div>
                 <div class="col-md-4 text-end">
-                    <span class="compteur-badge">{{ $regles->total() }} règle(s)</span>
+                    <x-compteur>{{ $regles->total() }} règle(s)</x-compteur>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead style="background:#faf6ee;">
+            <x-tableau class="align-middle mb-0">
+                    <thead style="background:var(--eim-cream);">
                         <tr>
                             <th class="ps-4" style="font-size:.76rem;text-transform:uppercase;color:var(--school-red);">Nature</th>
                             <th style="font-size:.76rem;text-transform:uppercase;color:var(--school-red);">Sens</th>
@@ -71,7 +69,7 @@
                                 <span class="badge-type {{ $regle->sens?->value }}"
                                       style="padding:.3em .8em;border-radius:999px;font-size:.72rem;
                                              background:{{ $regle->sens?->value === 'recette' ? '#e3f7ec' : '#fdecea' }};
-                                             color:{{ $regle->sens?->value === 'recette' ? '#1c7a4d' : 'var(--school-red)' }};">
+                                             color:{{ $regle->sens?->value === 'recette' ? '#1F7A4D' : 'var(--school-red)' }};">
                                     {{ $regle->sens?->label() }}
                                 </span>
                             </td>
@@ -82,9 +80,7 @@
                             <td class="num">{{ number_format($regle->pourcentage, 2, ',', ' ') }} %</td>
                             <td class="num">{{ $regle->priorite }}</td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('analytique.gerer')
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-regle"
@@ -101,84 +97,66 @@
                                         @endcan
                                         <li><hr class="dropdown-divider"></li>
                                         @can('analytique.gerer')
-                                        <li>
-                                            <form action="{{ route('finances.regles.destroy', $regle) }}" method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button class="dropdown-item text-danger"><i class="fas fa-trash"></i> Supprimer</button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('finances.regles.destroy', $regle)">Supprimer</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-project-diagram"></i><p>Aucune règle définie.</p></div></td></tr>
+                        <x-vide colspan="6" icone="fas fa-project-diagram">Aucune règle définie.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $regles->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$regles->appends(request()->query())" /></div>
 
     @can('analytique.gerer')
-    <div class="modal fade" id="regleModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-prev">
-                <form id="regle-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="regle-method" value="POST">
-                    <div class="modal-header modal-header-prev">
-                        <h5 class="modal-title" id="regle-title"><i class="fas fa-project-diagram me-2"></i>Nouvelle règle</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Nature <span class="text-danger">*</span></label>
-                                    <input type="text" name="nature" id="regle-nature" class="form-control"
-                                           placeholder="ex : scolarite, cantine, bus, fournitures...">
-                                    <div class="text-danger text-xs mt-1" id="nature-error"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Sens <span class="text-danger">*</span></label>
-                                    <select name="sens" id="regle-sens" class="form-select">
-                                        @foreach ($sens as $v => $l)
-                                            <option value="{{ $v }}">{{ $l }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label">Centre cible <span class="text-danger">*</span></label>
-                                    <select name="centre_analytique_id" id="regle-centre" class="form-select">
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach ($centres as $c)
-                                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->libelle }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Quote-part (%) <span class="text-danger">*</span></label>
-                                    <input type="number" name="pourcentage" id="regle-pourcentage" step="0.01" min="0.01" max="100" class="form-control">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Priorité</label>
-                                    <input type="number" name="priorite" id="regle-priorite" min="0" value="0" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                    </div>
-                </form>
+    <x-modale id="regleModal" data-bs-backdrop="static" contenu-class="modal-prev" entete-class="modal-header-prev" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="regle-form">@csrf
+                    <input type="hidden" name="_method" id="regle-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="regle-title"><i class="fas fa-project-diagram me-2"></i>Nouvelle règle</x-slot:titre>
+        <x-section>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <x-libelle requis>Nature</x-libelle>
+                    <input type="text" name="nature" id="regle-nature" class="form-control"
+                           placeholder="ex : scolarite, cantine, bus, fournitures...">
+                    <div class="text-danger text-xs mt-1" id="nature-error"></div>
+                </div>
+                <div class="col-md-6">
+                    <x-libelle requis>Sens</x-libelle>
+                    <select name="sens" id="regle-sens" class="form-select">
+                        @foreach ($sens as $v => $l)
+                            <option value="{{ $v }}">{{ $l }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <x-libelle requis>Centre cible</x-libelle>
+                    <select name="centre_analytique_id" id="regle-centre" class="form-select">
+                        <option value="">— Sélectionner —</option>
+                        @foreach ($centres as $c)
+                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->libelle }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle requis>Quote-part (%)</x-libelle>
+                    <input type="number" name="pourcentage" id="regle-pourcentage" step="0.01" min="0.01" max="100" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <x-libelle>Priorité</x-libelle>
+                    <input type="number" name="priorite" id="regle-priorite" min="0" value="0" class="form-control">
+                </div>
             </div>
-        </div>
-    </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

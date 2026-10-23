@@ -8,26 +8,26 @@
            (drop-*, item-*, divider, radius) qui n'existent nulle part
            ailleurs. Ne jamais faire diverger les valeurs communes entre
            les deux fichiers. */
-        --school-red         : #C81E3A;
-        --school-red-dark    : #7A0F22;
-        --school-red-deep    : #4A0C19;
-        --school-gold        : #D4A94D;
-        --school-gold-soft   : #E9CE9B;
-        --school-gold-dark   : #B8860B;
-        --school-ink         : #1f2d3a;
-        --school-ink-deep    : #141d27;
+        --school-red         : var(--eim-red);
+        --school-red-dark    : var(--eim-red-hover);
+        --school-red-deep    : var(--eim-red-deep);
+        --school-gold        : var(--eim-gold);
+        --school-gold-soft   : var(--eim-gold-soft);
+        --school-gold-dark   : var(--eim-gold-deep);
+        --school-ink         : var(--eim-ink);
+        --school-ink-deep    : #1E1414;
         --school-urgent      : #ff7a1a;
         --school-urgent-dark : #cc5500;
         --school-drop-bg     : #fffdf9;
-        --school-drop-shadow : 0 16px 40px rgba(20,29,39,0.22);
-        --school-drop-border : #ece4d6;
-        --school-item-hover  : #fdf3ee;
-        --school-item-txt    : #1a1f2e;
-        --school-item-icon   : #9c1524;
-        --school-divider     : #f0eadf;
+        --school-drop-shadow : 0 16px 40px rgba(43,30,30,0.20);
+        --school-drop-border : var(--eim-border);
+        --school-item-hover  : var(--eim-cream);
+        --school-item-txt    : var(--eim-ink);
+        --school-item-icon   : var(--eim-red-hover);
+        --school-divider     : var(--eim-border);
         --school-radius      : 8px;
-        --school-ff          : 'Kumbh Sans', sans-serif;
-        --school-ff-display  : 'Playfair Display', serif;
+        --school-ff          : var(--eim-ff);
+        --school-ff-display  : var(--eim-ff);
     }
 
     .hbtp-root *, .hbtp-root *::before, .hbtp-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,8 +35,9 @@
 
     /* ===== TOP BAR — identité de l'établissement ===== */
     .hbtp-top {
-        background     : linear-gradient(120deg, var(--school-red-dark), var(--school-red));
-        height         : 56px;
+        background     : linear-gradient(120deg, var(--eim-red-deep), var(--eim-red));
+        border-bottom  : 2px solid var(--eim-gold);
+        height         : 58px;
         display        : flex;
         align-items    : center;
         justify-content: space-between;
@@ -49,20 +50,20 @@
 
     .hbtp-brand { display:flex; align-items:center; gap:11px; text-decoration:none; flex-shrink:0; }
     .hbtp-brand-icon {
-        width:38px; height:38px; border-radius:10px; flex-shrink:0;
-        background: linear-gradient(145deg, var(--school-gold-soft), var(--school-gold));
+        width:40px; height:40px; border-radius:999px; flex-shrink:0;
         display:flex; align-items:center; justify-content:center;
-        font-size:18px; color:var(--school-red-deep); box-shadow: 0 4px 12px rgba(212,169,77,0.35);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
         transition: transform .2s, box-shadow .2s;
     }
+    .hbtp-brand-icon img { width:40px; height:40px; display:block; }
     .hbtp-brand:hover .hbtp-brand-icon { transform: translateY(-1px) scale(1.04); box-shadow: 0 6px 16px rgba(212,169,77,0.45); }
     .hbtp-brand-title {
-        font-size:19px; font-weight:700; color:#fff; letter-spacing:.2px; line-height:1.15; display:block;
-        font-family: var(--school-ff-display);
+        font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.02em; line-height:1.15; display:block;
+        font-family: var(--eim-ff);
     }
     .hbtp-brand-sub {
-        font-size:9.5px; color:rgba(255,255,255,.55); letter-spacing:1.1px; text-transform:uppercase;
-        line-height:1; margin-top:4px; display:block; font-weight:400;
+        font-size:9.5px; color:rgba(255,255,255,.85); letter-spacing:.12em; text-transform:uppercase;
+        line-height:1; margin-top:4px; display:block; font-weight:600;
     }
 
     .hbtp-top-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
@@ -197,7 +198,7 @@
         to   { opacity:1; transform: translateY(0); }
     }
 
-    .hbtp-udrop-header { padding:15px 16px; background:linear-gradient(135deg,#faf6ee,#f4ecdb); border-bottom:1px solid var(--school-divider); }
+    .hbtp-udrop-header { padding:15px 16px; background:linear-gradient(135deg,var(--eim-cream),#f4ecdb); border-bottom:1px solid var(--school-divider); }
     .hbtp-udrop-name   { font-size:13px; font-weight:700; color:var(--school-item-txt); }
     .hbtp-udrop-email  { font-size:11px; color:#96979c; margin-top:2px; }
     .hbtp-udrop-role   {
@@ -215,7 +216,7 @@
 
     /* ===== NAV BAR — encre neutre, le rouge reste à l'identité ===== */
     .hbtp-nav {
-        background  : linear-gradient(90deg, var(--school-ink-deep), var(--school-ink));
+        background  : var(--eim-ink);
         height      : 46px;
         display     : flex;
         align-items : stretch;
@@ -268,10 +269,13 @@
     .hnav-item.open  > .hnav-trigger::after,
     .hnav-item.active > .hnav-trigger::after { transform: scaleX(1); }
 
-    /* Un seul signal pour l'état actif : le soulignement doré ci-dessus + le texte doré. */
-    .hnav-item.active > .hnav-trigger {
-        color: var(--school-gold-soft);
+    /* État actif : fond rouge de la charte + indicateur doré (pas seulement une couleur de texte). */
+    .hnav-item.active > .hnav-trigger,
+    .hnav-item.active:hover > .hnav-trigger {
+        background: var(--eim-red);
+        color: #fff;
     }
+    .hnav-trigger:focus-visible { outline: 2px solid var(--eim-gold) !important; outline-offset: -2px; }
 
     .hnav-badge {
         display:inline-flex; align-items:center; justify-content:center;
@@ -311,7 +315,7 @@
 
     .hnav-drop-title {
         padding:9px 16px 4px; font-size:10px; text-transform:uppercase;
-        color:#a9a49a; letter-spacing:.9px; font-weight:800; font-family:var(--school-ff);
+        color:var(--eim-ink-soft); letter-spacing:.12em; font-weight:700; font-family:var(--school-ff);
         display:flex; align-items:center; gap:6px;
     }
     .hnav-drop-title:first-child { padding-top: 8px; }
@@ -343,7 +347,7 @@
     .hnav-drop-item.urgent-item .hnav-new-tag { margin-left: 8px; }
 
     .hnav-drop-item.active {
-        background: rgba(210, 16, 52, 0.05);
+        background: rgba(227, 30, 36, 0.06);
         border-left-color: var(--school-gold);
         color: var(--school-red-dark);
         font-weight: 600;
@@ -354,11 +358,40 @@
 
     .hnav-drop-div { height:1px; background:var(--school-divider); margin:5px 0; }
 
+    /* ===== Menus longs : sous-menus à deux niveaux ===== */
+    .hnav-drop.hnav-drop-niveaux { overflow: visible; max-height: none; }
+    .hnav-sub { position: relative; }
+    .hnav-sub-trigger {
+        display:flex; align-items:center; gap:10px; padding:11px 16px; font-size:13px; font-weight:600;
+        color:var(--school-item-txt); text-decoration:none; line-height:1.3; font-family:var(--school-ff);
+        white-space:nowrap; border-left:2.5px solid transparent; transition: background .12s, border-color .12s;
+    }
+    .hnav-sub-trigger > i:first-child { font-size:14px; color:var(--school-item-icon); width:16px; flex-shrink:0; text-align:center; }
+    .hnav-sub-trigger > span { flex:1; }
+    .hnav-sub-caret { font-size:10px; color:#a9a49a; transition: transform .16s ease; }
+    .hnav-sub:hover > .hnav-sub-trigger,
+    .hnav-sub.open  > .hnav-sub-trigger { background:var(--school-item-hover); border-left-color: var(--school-gold); color:var(--school-item-txt); }
+    .hnav-sub.active > .hnav-sub-trigger { border-left-color: var(--school-gold); }
+    .hnav-sub.active > .hnav-sub-trigger > span { color: var(--school-red); }
+    .hnav-subdrop {
+        position:absolute; top:-7px; left:100%; min-width:250px; max-height:78vh; overflow-y:auto;
+        background:var(--school-drop-bg); border-radius:0 12px 12px 12px; box-shadow:var(--school-drop-shadow);
+        border:1px solid var(--school-drop-border); border-top:3px solid var(--school-gold);
+        padding:6px 0; z-index:100000;
+        /* Fermé, le second niveau est retiré de la mise en page : laissé en place (même invisible),
+           il dépassait à droite de l'écran et créait un défilement horizontal sur toutes les pages. */
+        display:none;
+    }
+    .hnav-sub.open > .hnav-subdrop { display:block; animation: hnavSubOuvre .14s ease; }
+    @keyframes hnavSubOuvre { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:translateX(0); } }
+    /* Pas assez de place à droite : le second niveau s'ouvre à gauche */
+    .hnav-sub.vers-gauche > .hnav-subdrop { left:auto; right:100%; border-radius:12px 0 12px 12px; }
+
     .hnav-more { position:relative; display:flex; align-items:stretch; flex-shrink:0; margin-left:auto; }
     .hnav-more > .hnav-drop { left:auto; right:0; min-width:264px; }
     .hnav-more-title {
         padding:8px 16px 3px; font-size:10px; text-transform:uppercase;
-        color:#a9a49a; letter-spacing:.8px; font-weight:800; font-family:var(--school-ff);
+        color:var(--eim-ink-soft); letter-spacing:.12em; font-weight:700; font-family:var(--school-ff);
         display:flex; align-items:center; gap:6px;
     }
     .hnav-more-title i { font-size:12px; color:var(--school-gold); }
@@ -385,6 +418,8 @@
             padding:0; transition:height .3s ease; display:flex;
         }
         .hbtp-nav.mobile-open { height:auto; padding:6px 0; overflow:visible; }
+        /* Sur mobile, les menus s'empilent et se déplient l'un sous l'autre */
+        .hbtp-nav-items { flex-direction:column; width:100%; }
         .hnav-item     { flex-direction:column; height:auto; }
         .hnav-trigger  { padding:12px 16px; justify-content:space-between; height:auto; }
         .hnav-trigger::after { display:none; }
@@ -392,13 +427,26 @@
             position:static; box-shadow:none; border:none;
             border-top:2px solid rgba(255,255,255,.15); border-radius:0;
             background:rgba(0,0,0,.18); transform:none !important;
+            display:none; opacity:1; visibility:visible; pointer-events:auto; max-height:none; min-width:0;
         }
+        .hnav-item.open > .hnav-drop { display:block; }
         .hnav-drop-item       { color:rgba(255,255,255,.92); white-space:normal; border-left-color: transparent !important; }
         .hnav-drop-item:hover { background:rgba(0,0,0,.18); padding-left:20px; }
         .hnav-drop-item i     { color:rgba(255,255,255,.72); }
         .hnav-drop-title      { color:rgba(255,255,255,.5); }
         .hnav-drop-title i    { color: var(--school-gold-soft); }
         .hnav-drop-div        { background:rgba(255,255,255,.12); }
+        .hnav-sub-trigger     { color:rgba(255,255,255,.92); white-space:normal; border-left-color: transparent !important; }
+        .hnav-sub-trigger > i:first-child { color:rgba(255,255,255,.72); }
+        .hnav-sub:hover > .hnav-sub-trigger,
+        .hnav-sub.open  > .hnav-sub-trigger { background:rgba(0,0,0,.18); color:#fff; }
+        .hnav-sub.active > .hnav-sub-trigger > span { color:#fff; }
+        .hnav-sub.open > .hnav-sub-trigger .hnav-sub-caret { transform:rotate(90deg); }
+        .hnav-subdrop {
+            position:static; display:none; min-width:0; max-height:none; box-shadow:none; border:none; border-radius:0;
+            background:rgba(0,0,0,.16); padding:0 0 4px 14px;
+        }
+        .hnav-sub.open > .hnav-subdrop { display:block; animation:none; }
         .hbtp-user-drop       { right:-10px; }
         .hnav-more            { display:none !important; }
     }
@@ -416,9 +464,9 @@
     <!-- TOP BAR -->
     <div class="hbtp-top">
         <a href="{{ route('tableau') }}" class="hbtp-brand" title="Accueil École Internationale Mariam">
-            <div class="hbtp-brand-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="hbtp-brand-icon"><x-logo variant="sceau" :size="40" decoratif /></div>
             <div>
-                <span class="hbtp-brand-title">EIM</span>
+                <span class="hbtp-brand-title">EIM Compta</span>
                 <span class="hbtp-brand-sub">École Internationale Mariam</span>
             </div>
         </a>
@@ -538,23 +586,55 @@
 
                 @continue($groupesVisibles->isEmpty())
 
+                @php
+                    // Au-delà de ce nombre d'écrans, le menu passe en sous-menus à deux niveaux
+                    $menuLong = $groupesVisibles->count() > 1 && $groupesVisibles->flatten(1)->count() > 8;
+                @endphp
+
                 <div class="hnav-item {{ $menuActif ? 'active' : '' }}">
                     <a href="#" class="hnav-trigger" aria-haspopup="true" aria-expanded="false">
                         <i class="fas {{ $menu['icone'] }}"></i> {{ $menu['libelle'] }} <i class="fas fa-chevron-down caret"></i>
                     </a>
-                    <div class="hnav-drop" role="menu">
-                        @foreach ($groupesVisibles as $titre => $entrees)
-                            @if (! $loop->first)
-                                <div class="hnav-drop-div"></div>
-                            @endif
-                            <div class="hnav-drop-title">{{ $titre }}</div>
-                            @foreach ($entrees as [$libelle, $icone, $route])
-                                <a href="{{ route($route) }}" class="hnav-drop-item">
-                                    <i class="fas {{ $icone }}"></i> {{ $libelle }}
-                                </a>
+                    @if ($menuLong)
+                        {{-- Menu long : chaque groupe est un sous-menu qui ouvre ses écrans à côté --}}
+                        <div class="hnav-drop hnav-drop-niveaux" role="menu">
+                            @foreach ($groupesVisibles as $titre => $entrees)
+                                @php
+                                    $groupeActif = collect($entrees)->contains(
+                                        fn ($entree) => request()->routeIs(\Illuminate\Support\Str::beforeLast($entree[2], '.') . '.*')
+                                    );
+                                @endphp
+                                <div class="hnav-sub {{ $groupeActif ? 'active' : '' }}">
+                                    <a href="#" class="hnav-sub-trigger" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas {{ $menu['icones'][$titre] ?? $entrees[0][1] }}"></i>
+                                        <span>{{ $titre }}</span>
+                                        <i class="fas fa-chevron-right hnav-sub-caret"></i>
+                                    </a>
+                                    <div class="hnav-subdrop" role="menu" aria-label="{{ $titre }}">
+                                        @foreach ($entrees as [$libelle, $icone, $route])
+                                            <a href="{{ route($route) }}" class="hnav-drop-item" role="menuitem">
+                                                <i class="fas {{ $icone }}"></i> {{ $libelle }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
                             @endforeach
-                        @endforeach
-                    </div>
+                        </div>
+                    @else
+                        <div class="hnav-drop" role="menu">
+                            @foreach ($groupesVisibles as $titre => $entrees)
+                                @if (! $loop->first)
+                                    <div class="hnav-drop-div"></div>
+                                @endif
+                                <div class="hnav-drop-title">{{ $titre }}</div>
+                                @foreach ($entrees as [$libelle, $icone, $route])
+                                    <a href="{{ route($route) }}" class="hnav-drop-item">
+                                        <i class="fas {{ $icone }}"></i> {{ $libelle }}
+                                    </a>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @endforeach
 
@@ -609,8 +689,59 @@
             });
         }
 
+        /* ===== SOUS-MENUS (menus longs) =====
+           Bureau : le survol du groupe ouvre ses écrans à côté. Mobile et
+           clavier : un clic (ou Entrée) déplie le groupe. */
+        function fermerSousMenus(sauf) {
+            document.querySelectorAll('.hnav-sub.open').forEach(function (el) {
+                if (el === sauf) return;
+                el.classList.remove('open');
+                el.querySelector(':scope > .hnav-sub-trigger').setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function ouvrirSousMenu(sub) {
+            fermerSousMenus(sub);
+            sub.classList.add('open');
+            sub.querySelector(':scope > .hnav-sub-trigger').setAttribute('aria-expanded', 'true');
+            if (isMobile()) return;
+            // Bascule à gauche si le second niveau sortirait de l'écran
+            sub.classList.remove('vers-gauche');
+            var panneau = sub.querySelector(':scope > .hnav-subdrop');
+            if (panneau.getBoundingClientRect().right > window.innerWidth - 8) {
+                sub.classList.add('vers-gauche');
+            }
+        }
+
+        function bindSousMenus() {
+            document.querySelectorAll('.hnav-sub').forEach(function (sub) {
+                if (sub._mariam) return;
+                sub._mariam = true;
+                var trigger = sub.querySelector(':scope > .hnav-sub-trigger');
+
+                sub.addEventListener('mouseenter', function () {
+                    if (!isMobile()) ouvrirSousMenu(sub);
+                });
+                sub.addEventListener('mouseleave', function () {
+                    if (isMobile()) return;
+                    sub.classList.remove('open');
+                    trigger.setAttribute('aria-expanded', 'false');
+                });
+                trigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (sub.classList.contains('open') && isMobile()) {
+                        sub.classList.remove('open');
+                        trigger.setAttribute('aria-expanded', 'false');
+                    } else {
+                        ouvrirSousMenu(sub);
+                    }
+                });
+            });
+        }
+
         function bindAll() {
             document.querySelectorAll('#hbtp-nav-items > .hnav-item:not(.hnav-more)').forEach(bindItem);
+            bindSousMenus();
         }
 
         function rebuildMoreMenu() {
@@ -793,6 +924,10 @@
                     var parentItem = el.closest('.hnav-item');
                     if (parentItem) {
                         parentItem.classList.add('active');
+                    }
+                    var parentSub = el.closest('.hnav-sub');
+                    if (parentSub) {
+                        parentSub.classList.add('active');
                     }
                 } else {
                     el.classList.remove('active');

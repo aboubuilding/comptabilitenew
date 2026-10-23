@@ -48,12 +48,16 @@ return [
             'frais.voir',               // 2.1 consultation
             'souscriptions.voir',
             'souscriptions.remise',     // § 5.2 : arbitre les taux de remise
+            'tableau-souscriptions.consulter', // tableau de bord des souscriptions : Direction et Administrateur
             'paiements.voir',           // 2.2 consultation (supervision financière, § 5.2)
+            'tous-paiements.consulter', // onglet « Tous les paiements » : Direction et Administrateur (2026-10-14)
             'totaux-encaisses.consulter', // totaux encaissés (année, mois, semaine, jour) : Direction et Administrateur
             'caisses.voir',             // 2.4 validation des écarts
             'caisses.valider_ecart',
+            'toutes-caisses.consulter', // onglet « Toutes les caisses » et tableau de bord des caisses : Direction et Administrateur (2026-10-14)
             'depenses.voir',            // 2.6 validation
             'depenses.valider',
+            'decaissements.voir',       // suivi des décaissements
             'analytique.voir',          // 2.7 consultation
             'recouvrement.voir',        // 2.8 consultation / escalade
             'recouvrement.gerer',
@@ -78,6 +82,8 @@ return [
             'cheques.*',
             'depenses.voir',            // 2.6 saisie ; la validation revient à la Direction
             'depenses.creer',
+            'decaissements.voir',       // suivi des décaissements des dépenses saisies
+            'depenses.justifier',       // joindre les justificatifs manquants
             'depenses.regler',
             'analytique.voir',          // 2.7 : ventile, ne paramètre pas les centres
             'analytique.ventiler',
@@ -93,6 +99,8 @@ return [
         // § 5.4 — Caissier : sa caisse et les encaissements.
         Role::Caissier->name => [
             'encaissements.*',          // 2.3
+            'decaissements.*',          // décaissements des dépenses validées depuis sa caisse ouverte (2026-10-14)
+            'depenses.justifier',       // joindre le justificatif d'une dépense décaissée
             'caisses.voir',             // 2.4 — tout sauf la validation de ses propres écarts
             'caisses.ouvrir',
             'caisses.cloturer',
@@ -187,5 +195,6 @@ return [
         'modeles.gerer',                              // 6.3 (modèles)
         'journal.voir',                               // 6.4
         'paiements-en-attente.annuler',               // 2.3 : annuler un paiement en attente depuis l'écran Encaissements
+        'details-paiements.consulter',                // 2.2 : onglet « Détails des paiements » (demande de l'utilisateur, 2026-10-14)
     ],
 ];

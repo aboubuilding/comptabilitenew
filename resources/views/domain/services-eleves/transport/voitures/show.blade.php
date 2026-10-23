@@ -11,19 +11,19 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.transport.voitures.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.transport.voitures.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
+    </x-bouton>
     @can('transport.gerer')
-        <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#affecterModal">
+        <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#affecterModal">
             <i class="fas fa-user-plus me-1"></i> Affecter un chauffeur
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .show-page { --sp-bg-soft:#faf6ee; --sp-border:#ece4d6; }
+    .show-page { --sp-bg-soft:var(--eim-cream); --sp-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
@@ -31,7 +31,7 @@
         background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));
         color:#fff; border-radius:16px; padding:1.25rem 1.5rem;
         display:flex; align-items:center; gap:1.25rem;
-        box-shadow: 0 8px 24px rgba(122,15,28,.18);
+        box-shadow: 0 8px 24px rgba(142,18,22,.18);
         margin-bottom:1.25rem;
     }
     .vehicule-icon {
@@ -49,18 +49,13 @@
     .badge-statut.maintenance { background:rgba(255,255,255,.2); color:#fff; }
     .badge-statut.sorti       { background:rgba(255,255,255,.2); color:#fff; }
     .badge-statut.reforme     { background:rgba(255,255,255,.2); color:#fff; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     .stat-card { background:#fff; border:1px solid var(--sp-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; }
     .stat-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.blue  { background:rgba(37,99,235,.10);  color:#2563eb; }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
-    .stat-icon.red   { background:rgba(200,30,58,.10);  color:var(--school-red); }
     .stat-info .stat-value { font-size:1.1rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.72rem; color:var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
     .main-card .card-header { border-bottom:1px solid var(--sp-border) !important; padding:.9rem 1.25rem; }
     .main-card .card-header h6 { margin:0; font-size:.92rem; font-weight:700; color:var(--school-ink); display:flex; align-items:center; gap:8px; }
     .main-card .card-header i { color:var(--school-gold-dark); }
@@ -73,7 +68,7 @@
     .table-detail thead tr { background:var(--sp-bg-soft); }
     .table-detail thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.65rem .9rem; border-bottom:1px solid var(--sp-border); }
     .table-detail tbody td { padding:.65rem .9rem; border-bottom:1px solid var(--sp-border); font-size:.85rem; vertical-align:middle; }
-    .table-detail tbody tr:hover { background:#fdfaf5; }
+    .table-detail tbody tr:hover { background:var(--eim-hover); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
     .num.grand { color:var(--school-red-dark); font-weight:700; }
 
@@ -83,7 +78,7 @@
     .nav-tabs-custom .nav-link:hover { color:var(--school-ink); }
     .nav-tabs-custom .nav-link.active { color:var(--school-red); border-bottom-color:var(--school-red); }
 
-    .empty-state { padding:2rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:2rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2rem; margin-bottom:.5rem; display:block; color:#d8c8ae; }
 </style>
 @endsection
@@ -114,9 +109,8 @@
             </div>
         </div>
         <div class="text-end">
-            <span class="badge-statut {{ $voiture->statut?->css() }}">
-                <span class="badge-dot"></span>{{ $voiture->statut?->label() }}
-            </span>
+            <x-badge class="{{ $voiture->statut?->css() }}" point>{{ $voiture->statut?->label() }}
+            </x-badge>
             <div style="font-size:1.1rem;font-weight:700;margin-top:.4rem;font-variant-numeric:tabular-nums;">
                 {{ number_format((float) $voiture->kilometrage_actuel, 0, ',', ' ') }} km
             </div>
@@ -126,57 +120,27 @@
     {{-- Stats --}}
     <div class="row g-3 mb-3">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-gas-pump"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($totalCarburant, 0, ',', ' ') }}</div>
-                    <div class="stat-label">Coût carburant total</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-gas-pump" couleur="gold" libelle="Coût carburant total">{{ number_format($totalCarburant, 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-tools"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($totalEntretien, 0, ',', ' ') }}</div>
-                    <div class="stat-label">Coût entretien total</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-tools" couleur="blue" libelle="Coût entretien total">{{ number_format($totalEntretien, 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon {{ $assuranceActive ? 'green' : 'red' }}">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value">
-                        @if ($assuranceActive)
+            <x-stat icone="fas fa-shield-alt" couleur="{{ $assuranceActive ? 'green' : 'red' }}" libelle="Assurance">@if ($assuranceActive)
                             {{ $assuranceActive->date_fin->format('d/m/Y') }}
                         @else
                             Expirée
-                        @endif
-                    </div>
-                    <div class="stat-label">Assurance</div>
-                </div>
-            </div>
+                        @endif</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon {{ $chauffeur ? 'green' : 'red' }}">
-                    <i class="fas fa-user-tie"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $chauffeur?->nom_complet ?? 'Aucun' }}</div>
-                    <div class="stat-label">Chauffeur actuel</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-user-tie" couleur="{{ $chauffeur ? 'green' : 'red' }}" libelle="Chauffeur actuel">{{ $chauffeur?->nom_complet ?? 'Aucun' }}</x-stat>
         </div>
     </div>
 
     <div class="row g-3">
         {{-- Infos générales --}}
         <div class="col-lg-4">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header">
                     <h6><i class="fas fa-info-circle"></i> Informations générales</h6>
                 </div>
@@ -214,12 +178,12 @@
                         <span class="info-value">{{ $voiture->fournisseur ?? '—' }}</span>
                     </div>
                 </div>
-            </div>
+            </x-carte>
         </div>
 
         {{-- Détails tabulés --}}
         <div class="col-lg-8">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header p-0 border-bottom-0">
                     <ul class="nav nav-tabs nav-tabs-custom px-3" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -250,10 +214,9 @@
                         {{-- Carburant --}}
                         <div class="tab-pane fade show active" id="tab-carburant">
                             @if ($voiture->carburants->isEmpty())
-                                <div class="empty-state"><i class="fas fa-gas-pump"></i><p>Aucun plein enregistré.</p></div>
+                                <x-vide icone="fas fa-gas-pump">Aucun plein enregistré.</x-vide>
                             @else
-                                <div class="table-responsive">
-                                    <table class="table table-detail mb-0">
+                                <x-tableau class="table-detail mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="ps-4">Date</th>
@@ -276,18 +239,16 @@
                                             </tr>
                                         @endforeach
                                         </tbody>
-                                    </table>
-                                </div>
+                                    </x-tableau>
                             @endif
                         </div>
 
                         {{-- Entretiens --}}
                         <div class="tab-pane fade" id="tab-entretien">
                             @if ($voiture->entretiens->isEmpty())
-                                <div class="empty-state"><i class="fas fa-tools"></i><p>Aucun entretien enregistré.</p></div>
+                                <x-vide icone="fas fa-tools">Aucun entretien enregistré.</x-vide>
                             @else
-                                <div class="table-responsive">
-                                    <table class="table table-detail mb-0">
+                                <x-tableau class="table-detail mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="ps-4">Date</th>
@@ -308,18 +269,16 @@
                                             </tr>
                                         @endforeach
                                         </tbody>
-                                    </table>
-                                </div>
+                                    </x-tableau>
                             @endif
                         </div>
 
                         {{-- Assurances --}}
                         <div class="tab-pane fade" id="tab-assurances">
                             @if ($voiture->assurances->isEmpty())
-                                <div class="empty-state"><i class="fas fa-shield-alt"></i><p>Aucune assurance enregistrée.</p></div>
+                                <x-vide icone="fas fa-shield-alt">Aucune assurance enregistrée.</x-vide>
                             @else
-                                <div class="table-responsive">
-                                    <table class="table table-detail mb-0">
+                                <x-tableau class="table-detail mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="ps-4">Compagnie</th>
@@ -338,25 +297,23 @@
                                                 <td class="text-sm">
                                                     {{ $a->date_debut->format('d/m/Y') }} → {{ $a->date_fin->format('d/m/Y') }}
                                                     @if ($a->isActive())
-                                                        <span class="badge-statut activ" style="background:#e3f7ec;color:#1c7a4d;font-size:.65rem;padding:.15em .5em;">Active</span>
+                                                        <x-badge class="activ" style="background:#e3f7ec;color:var(--eim-success);font-size:.65rem;padding:.15em .5em;">Active</x-badge>
                                                     @endif
                                                 </td>
                                                 <td class="num grand">{{ number_format((float) $a->prime, 2, ',', ' ') }}</td>
                                             </tr>
                                         @endforeach
                                         </tbody>
-                                    </table>
-                                </div>
+                                    </x-tableau>
                             @endif
                         </div>
 
                         {{-- Affectations --}}
                         <div class="tab-pane fade" id="tab-affectations">
                             @if ($voiture->affectations->isEmpty())
-                                <div class="empty-state"><i class="fas fa-user-tie"></i><p>Aucune affectation.</p></div>
+                                <x-vide icone="fas fa-user-tie">Aucune affectation.</x-vide>
                             @else
-                                <div class="table-responsive">
-                                    <table class="table table-detail mb-0">
+                                <x-tableau class="table-detail mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="ps-4">Chauffeur</th>
@@ -372,7 +329,7 @@
                                                 <td class="text-sm">
                                                     {{ optional($aff->date_debut)->format('d/m/Y') }}
                                                     @if ($aff->date_fin) → {{ $aff->date_fin->format('d/m/Y') }}
-                                                    @else → <span style="color:#1c7a4d;font-weight:600;">en cours</span>
+                                                    @else → <span style="color:var(--eim-success);font-weight:600;">en cours</span>
                                                     @endif
                                                 </td>
                                                 <td class="text-sm">{{ $aff->type_affectation?->label() }}</td>
@@ -380,68 +337,56 @@
                                             </tr>
                                         @endforeach
                                         </tbody>
-                                    </table>
-                                </div>
+                                    </x-tableau>
                             @endif
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-carte>
         </div>
     </div>
 </div>
 
 @can('transport.gerer')
-<div class="modal fade" id="affecterModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-            <form method="POST" action="{{ route('services-eleves.transport.voitures.affecter', $voiture) }}">
-                @csrf
-                <div class="modal-header" style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;">
-                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Affecter un chauffeur</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Chauffeur <span class="text-danger">*</span></label>
-                        <select name="chauffeur_id" class="form-select" required>
-                            <option value="">— Sélectionner —</option>
-                            @foreach ($chauffeurs as $c)
-                                <option value="{{ $c->id }}">{{ $c->nom_complet }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Date début <span class="text-danger">*</span></label>
-                            <input type="date" name="date_debut" class="form-control" value="{{ now()->toDateString() }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Date fin</label>
-                            <input type="date" name="date_fin" class="form-control">
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <label class="form-label small fw-semibold">Type</label>
-                        <select name="type_affectation" class="form-select">
-                            <option value="1">Permanente</option>
-                            <option value="2">Temporaire</option>
-                        </select>
-                    </div>
-                    <div class="mt-3">
-                        <label class="form-label small fw-semibold">Motif</label>
-                        <textarea name="motif" rows="2" class="form-control" maxlength="500"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn" style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
-                        <i class="fas fa-save me-1"></i> Enregistrer
-                    </button>
-                </div>
-            </form>
+<x-modale id="affecterModal" data-bs-backdrop="static" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire method="POST" action="{{ route('services-eleves.transport.voitures.affecter', $voiture) }}">@csrf</x-slot:formulaire>
+    <x-slot:titre><i class="fas fa-user-plus me-2"></i>Affecter un chauffeur</x-slot:titre>
+    <div class="mb-3">
+        <x-libelle class="small fw-semibold" requis>Chauffeur</x-libelle>
+        <select name="chauffeur_id" class="form-select" required>
+            <option value="">— Sélectionner —</option>
+            @foreach ($chauffeurs as $c)
+                <option value="{{ $c->id }}">{{ $c->nom_complet }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <x-libelle class="small fw-semibold" requis>Date début</x-libelle>
+            <input type="date" name="date_debut" class="form-control" value="{{ now()->toDateString() }}" required>
+        </div>
+        <div class="col-md-6">
+            <x-libelle class="small fw-semibold">Date fin</x-libelle>
+            <input type="date" name="date_fin" class="form-control">
         </div>
     </div>
-</div>
+    <div class="mt-3">
+        <x-libelle class="small fw-semibold">Type</x-libelle>
+        <select name="type_affectation" class="form-select">
+            <option value="1">Permanente</option>
+            <option value="2">Temporaire</option>
+        </select>
+    </div>
+    <div class="mt-3">
+        <x-libelle class="small fw-semibold">Motif</x-libelle>
+        <textarea name="motif" rows="2" class="form-control" maxlength="500"></textarea>
+    </div>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" class="btn" style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
+            <i class="fas fa-save me-1"></i> Enregistrer
+        </button>
+    </x-slot:pied>
+</x-modale>
 @endcan
 @endsection

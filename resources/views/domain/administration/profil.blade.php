@@ -11,7 +11,7 @@
 
 @section('css')
 <style>
-    .profil-card { border: none; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(122,15,28,.06); padding: 1.5rem; height: 100%; }
+    .profil-card { border: none; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(142,18,22,.06); padding: 1.5rem; height: 100%; }
     .profil-card h6 { font-weight: 700; color: var(--school-ink); margin-bottom: 1rem; }
     .profil-card h6 i { color: var(--school-red); margin-right: .4rem; }
     .profil-ligne { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--school-paper-line); font-size: .9rem; }
@@ -52,20 +52,20 @@
                 <form method="POST" action="{{ route('profil.mot-de-passe') }}" id="form-mot-de-passe" autocomplete="off">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label" for="mot_passe_actuel">Mot de passe actuel <span class="text-danger">*</span></label>
+                        <x-libelle for="mot_passe_actuel" requis>Mot de passe actuel</x-libelle>
                         <input type="password" name="mot_passe_actuel" id="mot_passe_actuel" required
                                class="form-control @error('mot_passe_actuel') is-invalid @enderror" autocomplete="current-password">
                         @error('mot_passe_actuel') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="mot_passe">Nouveau mot de passe <span class="text-danger">*</span></label>
+                        <x-libelle for="mot_passe" requis>Nouveau mot de passe</x-libelle>
                         <input type="password" name="mot_passe" id="mot_passe" required minlength="8"
                                class="form-control @error('mot_passe') is-invalid @enderror" autocomplete="new-password">
                         @error('mot_passe') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         <div class="form-text">Au moins 8 caractères, avec des lettres et des chiffres.</div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label" for="mot_passe_confirmation">Confirmer le nouveau mot de passe <span class="text-danger">*</span></label>
+                        <x-libelle for="mot_passe_confirmation" requis>Confirmer le nouveau mot de passe</x-libelle>
                         <input type="password" name="mot_passe_confirmation" id="mot_passe_confirmation" required
                                class="form-control" autocomplete="new-password">
                     </div>

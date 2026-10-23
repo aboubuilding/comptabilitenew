@@ -1,6 +1,6 @@
 @charset "UTF-8";
 /****** Utils ******/
-@import url("https://fonts.googleapis.com/css2?family=Kumbh Sans:wght@300;400;500;600;700&amp;display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&amp;display=swap");
 .search-dropdown .search-info .customers li a img {
   -webkit-transition: all 0.5s;
@@ -11,7 +11,7 @@
 
 /******* Base *******/
 body {
-  font-family: "Kumbh Sans", sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 16px;
   color: #646B72;
   line-height: 1.5;
@@ -76,7 +76,7 @@ strong {
 
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   color: #212B36;
-  font-family: "Kumbh Sans", sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-weight: 700;
   margin-bottom: 0;
 }
@@ -3540,7 +3540,7 @@ button:focus {
   color: #ffffff;
 }
 .dropdown .dropdown-menu {
-  font-family: "Kumbh Sans", sans-serif;
+  font-family: 'Manrope', sans-serif;
 }
 
 .dropdown-menu {
@@ -4290,7 +4290,7 @@ h6,
 .h5,
 .h6 {
   color: #212B36;
-  font-family: "Kumbh Sans", sans-serif;
+  font-family: 'Manrope', sans-serif;
   margin-bottom: 0;
 }
 

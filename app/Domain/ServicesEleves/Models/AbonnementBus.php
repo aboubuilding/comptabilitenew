@@ -14,7 +14,7 @@ class AbonnementBus extends Model
 
     protected $fillable = [
         'inscription_id', 'zone_id', 'voiture_id', 'ligne_id',
-        'sens', 'point_arret',
+        'sens', 'point_arret', 'latitude', 'longitude', 'origine',
         'date_debut', 'date_fin',
         'montant_mensuel', 'nombre_mois', 'montant_total_du',
         'statut', 'date_abandon', 'motif_abandon', 'abandonne_par',
@@ -28,6 +28,8 @@ class AbonnementBus extends Model
         'date_abandon'     => 'date',
         'montant_mensuel'  => 'float',
         'montant_total_du' => 'float',
+        'latitude'         => 'float',
+        'longitude'        => 'float',
     ];
 
     public function inscription(): BelongsTo
@@ -53,6 +55,17 @@ class AbonnementBus extends Model
     public function abandonnePar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'abandonne_par');
+    }
+
+    public function aUnePosition(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    /** Lien vers la carte (position GPS du domicile de l'élève). */
+    public function lienCarte(): ?string
+    {
+        return $this->aUnePosition() ? "https://www.google.com/maps?q={$this->latitude},{$this->longitude}" : null;
     }
 
     public function isActif(): bool

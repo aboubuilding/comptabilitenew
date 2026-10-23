@@ -5,8 +5,8 @@
     <title>Certificat de scolarité — {{ $eleve->matricule }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 13px; color: #222; margin: 40px 50px; }
-        .entete { text-align: center; border-bottom: 2px solid #8B0000; padding-bottom: 10px; margin-bottom: 40px; }
-        .entete h1 { color: #8B0000; margin: 0 0 4px; font-size: 22px; }
+        .entete { text-align: center; border-bottom: 2px solid #D4A94D; padding-bottom: 10px; margin-bottom: 40px; }
+        .entete h1 { color: #8E1216; margin: 0 0 4px; font-size: 22px; }
         .entete p { margin: 0; color: #666; font-size: 11px; }
         h2 { text-align: center; letter-spacing: 2px; margin: 0 0 6px; font-size: 20px; }
         .annee { text-align: center; color: #666; margin-bottom: 40px; }
@@ -23,6 +23,7 @@
 </head>
 <body>
     <div class="entete">
+        <div style="text-align: center; margin-bottom: 4px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '20mm'])</div>
         <h1>École Internationale Mariam</h1>
         <p>Établissement d'enseignement</p>
     </div>

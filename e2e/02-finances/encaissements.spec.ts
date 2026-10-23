@@ -4,7 +4,7 @@ import { attendreToast, expect, ouvrirSaisiePaiement, seConnecter, test } from '
 /**
  * Menu 2 › 2.3 Encaissements — l'écran à onglets du caissier.
  *
- *  - « Mes encaissements du jour » : « Nouvel encaissement » ouvre une fenêtre où
+ *  - « Caisse ouverte » : « Nouvel encaissement » ouvre une fenêtre où
  *    l'on choisit le paiement en attente par le nom de l'élève ; son détail
  *    s'affiche, le caissier saisit le montant réellement reçu et valide. Le reçu
  *    s'imprime ensuite à tout moment.
@@ -52,10 +52,12 @@ test.describe('2.3 Encaissements — écran à onglets', () => {
     await ouvrirCaisseSiBesoin(page);
     await page.goto('/finances/encaissements');
 
-    // Trois onglets ; le caissier arrive sur ses encaissements du jour
+    // Quatre onglets ; le caissier arrive sur les encaissements de sa caisse ouverte, d'où s'ouvre son journal
     await expect(page.locator('#onglet-tous')).toContainText('Tous les encaissements');
     await expect(page.locator('#onglet-attente')).toContainText('Paiements en attente');
-    await expect(page.locator('#onglet-jour')).toHaveClass(/active/);
+    await expect(page.locator('#onglet-mes')).toContainText('Mes encaissements');
+    await expect(page.locator('#onglet-caisse')).toHaveClass(/active/);
+    await expect(page.locator('#btn-journal-caisse')).toHaveAttribute('href', /\/finances\/caisses\/\d+$/);
     await expect(page.getByRole('link', { name: /Ouvrir une caisse/ })).toHaveCount(0);
 
     // « Nouvel encaissement » ouvre un écran dédié
@@ -83,12 +85,12 @@ test.describe('2.3 Encaissements — écran à onglets', () => {
     await expect(modale.locator('#enc-ecart')).toContainText('Montant exact');
     await page.locator('#enc-valider').click();
 
-    // Succès : notification et retour sur « Mes encaissements du jour »
-    await expect(page).toHaveURL(/\/finances\/encaissements\?onglet=jour$/);
+    // Succès : notification et retour sur « Caisse ouverte »
+    await expect(page).toHaveURL(/\/finances\/encaissements\?onglet=caisse$/);
     await attendreToast(page, 'Encaissement effectué');
-    await expect(page.locator('#onglet-jour')).toHaveClass(/active/);
+    await expect(page.locator('#onglet-caisse')).toHaveClass(/active/);
 
-    const ligne = page.locator('#table-jour tbody tr').filter({ hasText: ELEVE });
+    const ligne = page.locator('#table-caisse tbody tr').filter({ hasText: ELEVE });
     await expect(ligne).toHaveCount(1);
     await expect(ligne).toContainText(/20\s000/);
     await expect(ligne).toContainText('E2E Caissier');

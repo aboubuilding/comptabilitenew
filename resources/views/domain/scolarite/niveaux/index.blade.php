@@ -24,29 +24,25 @@
     /* Jetons propres à cette page uniquement — school-red, gold, ff...
        viennent déjà de layouts/app.blade.php, non redéclarés ici. */
     .niveaux-page {
-        --niveaux-bg-soft: #faf6ee;
-        --niveaux-border: #ece4d6;
+        --niveaux-bg-soft: var(--eim-cream);
+        --niveaux-border: var(--eim-border);
     }
 
     .niveaux-card { border: none; border-radius: 16px; overflow: hidden; }
     .niveaux-card .card-header-niveaux { border-bottom: 1px solid var(--niveaux-border); }
 
     .filtre-label {
-        font-size: .8rem; font-weight: 600; color: #5b6b7a;
+        font-size: .8rem; font-weight: 600; color: var(--eim-ink-soft);
         text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px;
     }
     .filtre-label i { color: var(--school-red); margin-right: 4px; }
     .filtre-input { border-radius: 10px; border: 1px solid var(--niveaux-border); padding: .55rem .9rem; }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position: relative; }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aa7b2; font-size: .85rem; }
     .search-input { padding-left: 34px !important; }
 
     .btn-filtrer {
         background: var(--school-red); color: #fff; border: none; border-radius: 10px;
         padding: .55rem 1rem; font-weight: 600; transition: all .2s ease;
     }
-    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; }
 
     .compteur-badge {
         display: inline-block; background: var(--niveaux-bg-soft); color: var(--school-red);
@@ -57,9 +53,9 @@
     .btn-nouveau {
         background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
         color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
-        box-shadow: 0 4px 14px rgba(200,30,58,.25); transition: all .2s ease;
+        box-shadow: 0 4px 14px rgba(227,30,36,.25); transition: all .2s ease;
     }
-    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); }
+    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(227,30,36,.35); }
 
     .table-niveaux thead tr { background: var(--niveaux-bg-soft); }
     .table-niveaux thead th {
@@ -68,11 +64,9 @@
     }
     .table-niveaux thead th i { margin-right: 6px; color: var(--school-gold-dark); }
     .table-niveaux tbody td { padding: .85rem 1rem; border-bottom: 1px solid var(--niveaux-border); font-size: .92rem; }
-    .table-niveaux tbody tr:hover { background: #fdfaf5; }
+    .table-niveaux tbody tr:hover { background: var(--eim-hover); }
     .table-niveaux tbody tr:last-child td { border-bottom: none; }
 
-    .empty-state { padding: 3rem 1rem; text-align: center; color: #9aa7b2; }
-    .empty-state i { font-size: 2.2rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
 
     /* .btn-action / .dropdown-menu-actions : définies globalement dans
        layouts/app.blade.php — rien à redéclarer ici. */
@@ -87,16 +81,11 @@
     .form-section { background: var(--niveaux-bg-soft); border: 1px solid var(--niveaux-border); border-radius: 12px; padding: 1rem 1.1rem; }
     .form-section .form-control, .form-section .form-select { border-radius: 8px; border: 1px solid var(--niveaux-border); }
     .form-section .form-control:focus, .form-section .form-select:focus {
-        border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.1);
+        border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(227,30,36,.1);
     }
 
-    .btn-annuler { background: #fff; border: 1px solid var(--niveaux-border); color: #5b6b7a; border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
+    .btn-annuler { background: #fff; border: 1px solid var(--niveaux-border); color: var(--eim-ink-soft); border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
     .btn-annuler:hover { background: var(--niveaux-bg-soft); }
-    .btn-enregistrer {
-        background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff;
-        border: none; border-radius: 8px; font-weight: 600; padding: .5rem 1.3rem;
-    }
-    .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
 </style>
 @endsection
 
@@ -107,7 +96,7 @@
                 {{-- Filtres GET classiques : recharge la page avec ?cycle_id=&search= --}}
                 <form method="GET" class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label filtre-label"><i class="fas fa-layer-group"></i>Cycle</label>
+                        <x-libelle class="filtre-label"><i class="fas fa-layer-group"></i>Cycle</x-libelle>
                         <select name="cycle_id" class="form-select filtre-input">
                             <option value="">Tous les cycles</option>
                             @foreach ($cyclesOptions as $cycle)
@@ -118,24 +107,19 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label filtre-label"><i class="fas fa-search"></i>Recherche</label>
-                        <div class="search-wrapper">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" name="search" class="form-control filtre-input search-input"
-                                   placeholder="Libellé..." value="{{ request('search') }}">
-                        </div>
+                        <x-libelle class="filtre-label"><i class="fas fa-search"></i>Recherche</x-libelle>
+                        <x-recherche name="search" placeholder="Libellé..." value="{{ request('search') }}" />
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter"></i> Filtrer</button>
+                        <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter"></i> Filtrer</x-bouton>
                     </div>
                     <div class="col-md-3 text-end">
-                        <span class="compteur-badge">{{ $niveaux->total() }} niveau(x)</span>
+                        <x-compteur>{{ $niveaux->total() }} niveau(x)</x-compteur>
                     </div>
                 </form>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-niveaux table-hover align-middle mb-0">
+                <x-tableau class="table-niveaux table-hover align-middle mb-0">
                         <thead>
                             <tr>
                                 <th><i class="fas fa-sort-numeric-down"></i>Ordre</th>
@@ -151,12 +135,7 @@
                                     <td>{{ $niveau->libelle }}</td>
                                     <td>{{ $niveau->cycle?->libelle }}</td>
                                     <td class="text-center">
-                                        <div class="dropdown">
-                                            <button class="btn-action dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                        <x-actions>
                                                 @can('structure.gerer')
                                                 <li>
                                                     <button type="button" class="dropdown-item btn-edit-niveau"
@@ -168,94 +147,63 @@
                                                 @endcan
                                                 <li><hr class="dropdown-divider"></li>
                                                 @can('structure.gerer')
-                                                <li>
-                                                    <form action="{{ route('scolarite.niveaux.destroy', $niveau) }}"
-                                                          method="POST" class="form-confirm-delete"
-                                                          data-confirm-title="Supprimer ce niveau ?"
-                                                          data-confirm-text="Il n'apparaîtra plus dans la liste.">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash"></i> Supprimer
-                                                        </button>
-                                                    </form>
-                                                </li>
+                                                <x-actions.supprimer :action="route('scolarite.niveaux.destroy', $niveau)" data-confirm-title="Supprimer ce niveau ?" data-confirm-text="Il n'apparaîtra plus dans la liste.">Supprimer</x-actions.supprimer>
                                                 @endcan
-                                            </ul>
-                                        </div>
+                                            </x-actions>
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="empty-state">
-                                            <i class="fas fa-flag"></i>
-                                            <p class="mb-0">Aucun niveau ne correspond à ces critères.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <x-vide colspan="4" icone="fas fa-flag" :paragraphe="false"><p class="mb-0">Aucun niveau ne correspond à ces critères.</p></x-vide>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
         </div>
         <div class="mt-3">
-            {{ $niveaux->appends(request()->query())->links() }}
+            <x-pagination :liste="$niveaux->appends(request()->query())" />
         </div>
 
         {{-- Modale unique, réutilisée pour l'ajout ET la modification --}}
         @can('structure.gerer')
-        <div class="modal fade" id="niveauModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content modal-niveaux">
-                    <form id="niveau-form">
-                        @csrf
-                        <input type="hidden" name="_method" id="niveau-method" value="POST">
-                        <div class="modal-header modal-header-niveaux">
-                            <h5 class="modal-title" id="niveau-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouveau niveau</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="form-section">
-                                <div class="mb-3">
-                                    <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                    <input type="text" name="libelle" id="niveau-libelle" class="form-control"
-                                           placeholder="Ex : 6ème, CP...">
-                                    <div class="text-danger small mt-1" id="niveau-libelle-error"></div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Cycle <span class="text-danger">*</span></label>
-                                    <select name="cycle_id" id="niveau-cycle" class="form-select">
-                                        <option value="">-- Choisir --</option>
-                                        @foreach ($cyclesOptions as $cycle)
-                                            <option value="{{ $cycle->id }}">{{ $cycle->libelle }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="text-danger small mt-1" id="niveau-cycle-error"></div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Ordre</label>
-                                    <input type="number" name="numero_ordre" id="niveau-ordre" class="form-control" min="0">
-                                    <div class="text-danger small mt-1" id="niveau-ordre-error"></div>
-                                </div>
-
-                                <div class="mb-0">
-                                    <label class="form-label">Description</label>
-                                    <textarea name="description" id="niveau-description" class="form-control" rows="2"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i>Enregistrer</button>
-                        </div>
-                    </form>
+        <x-modale id="niveauModal" data-bs-backdrop="static" aria-hidden="true" dialogue="" contenu-class="modal-niveaux" entete-class="modal-header-niveaux" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="niveau-form">@csrf
+                        <input type="hidden" name="_method" id="niveau-method" value="POST"></x-slot:formulaire>
+            <x-slot:titre id="niveau-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouveau niveau</x-slot:titre>
+            <x-section>
+                <div class="mb-3">
+                    <x-libelle requis>Libellé</x-libelle>
+                    <input type="text" name="libelle" id="niveau-libelle" class="form-control"
+                           placeholder="Ex : 6ème, CP...">
+                    <div class="text-danger small mt-1" id="niveau-libelle-error"></div>
                 </div>
-            </div>
-        </div>
+
+                <div class="mb-3">
+                    <x-libelle requis>Cycle</x-libelle>
+                    <select name="cycle_id" id="niveau-cycle" class="form-select">
+                        <option value="">-- Choisir --</option>
+                        @foreach ($cyclesOptions as $cycle)
+                            <option value="{{ $cycle->id }}">{{ $cycle->libelle }}</option>
+                        @endforeach
+                    </select>
+                    <div class="text-danger small mt-1" id="niveau-cycle-error"></div>
+                </div>
+
+                <div class="mb-3">
+                    <x-libelle>Ordre</x-libelle>
+                    <input type="number" name="numero_ordre" id="niveau-ordre" class="form-control" min="0">
+                    <div class="text-danger small mt-1" id="niveau-ordre-error"></div>
+                </div>
+
+                <div class="mb-0">
+                    <x-libelle>Description</x-libelle>
+                    <textarea name="description" id="niveau-description" class="form-control" rows="2"></textarea>
+                </div>
+            </x-section>
+            <x-slot:pied>
+                <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+                <x-bouton type="submit"><i class="fas fa-save me-1"></i>Enregistrer</x-bouton>
+            </x-slot:pied>
+        </x-modale>
         @endcan
     </div>
 @endsection

@@ -21,12 +21,13 @@ class BanqueController extends Controller
     ) {
         $this->middleware('permission:banques.voir')->only(['index']);
         $this->middleware('permission:banques.gerer')->only(['store', 'update', 'destroy']);
-        $this->middleware('permission:banques.voir')->only(['show', 'exportPdf']);
+        $this->middleware('permission:banques.voir')->only(['show', 'exportPdf', 'paiement']);
     }
 
     public function index(Request $request)
     {
-        $filters = $request->only(['search']);
+        // Les chèques comptés sont ceux de l'année de l'en-tête
+        $filters = $request->only(['search']) + ['annee_id' => app(\App\Support\AnneeScolaireContext::class)->id()];
 
         return view('domain.finances.banques.index', [
             'banques' => $this->banques->listePaginee($filters),
@@ -52,30 +53,55 @@ class BanqueController extends Controller
 
 
 
-public function show(int $banque)
-{
-    $banque = $this->banques->findAvecCheques($banque);
+    /**
+     * Fragment HTML (fenêtre de la fiche banque) : contenu d'un paiement réglé
+     * par un chèque de cette banque — ses lignes, ses totaux, son chèque.
+     * Seuls les paiements adossés à un chèque de la banque sont consultables ici.
+     */
+    public function paiement(int $banque, int $paiement)
+    {
+        $cheque = \App\Domain\Finances\Models\Cheque::query()
+            ->where('banque_id', $banque)->where('etat', 1)
+            ->where(fn ($q) => $q->where('paiement_id', $paiement)
+                ->orWhereIn('id', \App\Domain\Finances\Models\Paiement::whereKey($paiement)->select('cheque_id')))
+            ->first();
+        abort_unless($cheque, 404, "Ce paiement n'est pas réglé par un chèque de cette banque.");
 
-    // Compteurs + montants pour les cartes statistiques de la vue.
-    $compteurs = [
-        'emis'     => $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::EMIS)->count(),
-        'encaisse' => $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::ENCAISSE)->count(),
-        'rejete'   => $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::REJETE)->count(),
+        return view('domain.finances.banques.partials.paiement',
+            app(\App\Domain\Finances\Repositories\ChequeRepository::class)->contenuPaiement($cheque, $paiement));
+    }
+
+    /** Onglets de la fiche banque : statut de chèque correspondant. */
+    private const ONGLETS = [
+        'attente'  => \App\Domain\Finances\Types\ChequeStatut::EMIS,
+        'encaisse' => \App\Domain\Finances\Types\ChequeStatut::ENCAISSE,
+        'rejete'   => \App\Domain\Finances\Types\ChequeStatut::REJETE,
+        'tous'     => null,
     ];
 
-    $montants = [
-        'emis'     => round((float) $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::EMIS)->sum('montant'), 2),
-        'encaisse' => round((float) $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::ENCAISSE)->sum('montant'), 2),
-        'rejete'   => round((float) $banque->cheques->where('statut', \App\Domain\Finances\Types\ChequeStatut::REJETE)->sum('montant'), 2),
-    ];
+    /**
+     * Fiche d'une banque : les paiements réglés par chèque sur cette banque,
+     * chacun avec son chèque adossé, par onglet (en attente par défaut), et ce
+     * qui a été réellement perçu / ce qui reste, sur l'année de l'en-tête.
+     */
+    public function show(Request $request, int $banque)
+    {
+        $banque = $this->banques->findOrFail($banque);
+        $anneeId = app(\App\Support\AnneeScolaireContext::class)->id();
+        $onglet = array_key_exists((string) $request->input('onglet'), self::ONGLETS) ? $request->input('onglet') : 'attente';
 
-    return view('domain.finances.banques.show', [
-        'banque'    => $banque,
-        'cheques'   => $banque->cheques,
-        'compteurs' => $compteurs,
-        'montants'  => $montants,
-    ]);
-}
+        return view('domain.finances.banques.show', [
+            'banque'    => $banque,
+            'onglet'    => $onglet,
+            'annee'     => \App\Domain\Scolarite\Models\Annee::find($anneeId),
+            'situation' => $this->banques->situationCheques($banque->id, $anneeId),
+            'filters'   => $request->only(['search']),
+            'lignes'    => $this->banques->chequesEtPaiements($banque->id, $anneeId, [
+                'statut' => self::ONGLETS[$onglet]?->value,
+                'search' => $request->input('search'),
+            ]),
+        ]);
+    }
 
     public function destroy(int $banque)
     {

@@ -30,8 +30,7 @@
     </div>
 
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Code</th>
@@ -49,11 +48,7 @@
                             <td>{{ $m->sujet }}</td>
                             <td>{{ $m->type ?? '—' }}</td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('modeles.gerer')
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-modele"
@@ -63,34 +58,20 @@
                                         </li>
                                         @endcan
                                         @can('modeles.gerer')
-                                        <li>
-                                            <form action="{{ route('administration.modeles.destroy', $m) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Supprimer
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('administration.modeles.destroy', $m)" icone="fa fa-trash">Supprimer</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5"><div class="empty-state text-center py-4">Aucun modèle.</div></td></tr>
+                        <x-vide colspan="5" :paragraphe="false" class="text-center py-4">Aucun modèle.</x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
-        <div class="p-3">{{ $modeles->links('vendor.pagination.custom') }}</div>
+            </x-tableau>
+        <div class="p-3"><x-pagination :liste="$modeles" /></div>
     </div>
 
-    <div class="modal fade" id="modalModele" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalModeleContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalModele" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalModeleContent" />
 @endsection
 
 @push('js')

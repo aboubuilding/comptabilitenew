@@ -48,7 +48,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('administration.messages.index') }}" class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label small">Statut</label>
+                <x-libelle class="small">Statut</x-libelle>
                 <select name="statut" class="form-select filtre-input">
                     <option value="">Tous</option>
                     @foreach(['brouillon','en_cours','envoye','partiel','echec'] as $s)
@@ -57,17 +57,17 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}" placeholder="Sujet ou corps...">
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Du</label>
+                <x-libelle class="small">Du</x-libelle>
                 <input type="date" name="date_debut" class="form-control filtre-input"
                        value="{{ $filtres['date_debut'] ?? '' }}">
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Au</label>
+                <x-libelle class="small">Au</x-libelle>
                 <input type="date" name="date_fin" class="form-control filtre-input"
                        value="{{ $filtres['date_fin'] ?? '' }}">
             </div>
@@ -81,8 +81,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Sujet</th>
@@ -110,9 +109,9 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge-statut bg-{{ $m->statut?->couleur() ?? 'secondary' }}">
+                                <x-badge class="bg-{{ $m->statut?->couleur() ?? 'secondary' }}">
                                     {{ $m->statut?->libelle() ?? '—' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td>
                                 @if($m->date_envoi)
@@ -122,11 +121,7 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('administration.messages.show', $m) }}">
                                                 <i class="fa fa-eye"></i> Consulter
@@ -154,44 +149,23 @@
                                             @endcan
                                         @endif
                                         @can('communications.envoyer')
-                                        <li>
-                                            <form action="{{ route('administration.messages.destroy', $m) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Supprimer
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('administration.messages.destroy', $m)" icone="fa fa-trash">Supprimer</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-envelope fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucun message.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="7" icone="fa fa-envelope fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucun message.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $messages->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$messages" />
         </div>
     </div>
 
     {{-- Modale --}}
-    <div class="modal fade" id="modalMessage" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content" id="modalMessageContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalMessage" aria-hidden="true" dialogue="modal-xl modal-dialog-centered" contenu-id="modalMessageContent" />
 
 @endsection
 

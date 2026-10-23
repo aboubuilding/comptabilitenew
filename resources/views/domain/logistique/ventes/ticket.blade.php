@@ -6,30 +6,30 @@
     <title>Ticket — {{ $vente->reference }}</title>
     <style>
         @page { margin: 8mm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #1f2d3a; margin: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #2B1E1E; margin: 0; }
 
         /* ============ EN-TÊTE ============ */
         .header {
             text-align: center;
-            border-bottom: 2px solid #C81E3A;
+            border-bottom: 2px solid #D4A94D;
             padding-bottom: 6px;
             margin-bottom: 10px;
         }
         .header h1 {
             font-size: 14px;
-            color: #C81E3A;
+            color: #E31E24;
             margin: 0;
             letter-spacing: 1px;
         }
         .header .sub {
             font-size: 8px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin-top: 2px;
         }
 
         /* ============ TITRE ============ */
         .doc-title {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #fff;
             padding: 6px 10px;
             border-radius: 4px;
@@ -50,8 +50,8 @@
 
         /* ============ INFOS ============ */
         .info-block {
-            background: #faf6ee;
-            border: 1px solid #ece4d6;
+            background: #FBF4E6;
+            border: 1px solid #EADFCB;
             border-radius: 6px;
             padding: 7px 10px;
             margin-bottom: 8px;
@@ -62,8 +62,8 @@
             padding: 2px 0;
             font-size: 9px;
         }
-        .info-row .label { color: #6f7e8c; }
-        .info-row .value { font-weight: 600; color: #1f2d3a; text-align: right; }
+        .info-row .label { color: #5A4A4A; }
+        .info-row .value { font-weight: 600; color: #2B1E1E; text-align: right; }
 
         /* ============ LIGNES ============ */
         table.lignes {
@@ -72,7 +72,7 @@
             margin-bottom: 8px;
         }
         table.lignes thead th {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #fff;
             font-size: 7.5px;
             text-transform: uppercase;
@@ -85,13 +85,13 @@
         table.lignes thead th.center { text-align: center; }
         table.lignes tbody td {
             padding: 5px 6px;
-            border-bottom: 1px solid #ece4d6;
+            border-bottom: 1px solid #EADFCB;
             font-size: 9px;
             vertical-align: top;
         }
         table.lignes tbody td.right { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
         table.lignes tbody td.center { text-align: center; }
-        table.lignes tbody td .sub { font-size: 7.5px; color: #6f7e8c; display: block; margin-top: 1px; }
+        table.lignes tbody td .sub { font-size: 7.5px; color: #5A4A4A; display: block; margin-top: 1px; }
 
         /* ============ TOTAUX ============ */
         .total-table {
@@ -100,7 +100,7 @@
             margin-top: 4px;
         }
         .total-table td { padding: 3px 6px; font-size: 9.5px; }
-        .total-table td.label { text-align: right; color: #6f7e8c; }
+        .total-table td.label { text-align: right; color: #5A4A4A; }
         .total-table td.value {
             text-align: right;
             font-weight: 700;
@@ -108,10 +108,10 @@
             font-variant-numeric: tabular-nums;
         }
         .total-table tr.final td {
-            border-top: 2px solid #C81E3A;
+            border-top: 2px solid #E31E24;
             padding-top: 6px;
             font-size: 13px;
-            color: #7A0F22;
+            color: #B3171C;
         }
 
         /* ============ STATUT ============ */
@@ -122,18 +122,18 @@
             font-size: 8px;
             font-weight: bold;
         }
-        .statut.paye   { background: #e3f7ec; color: #1c7a4d; }
-        .statut.impaye { background: #fdecea; color: #C81E3A; }
-        .statut.annule { background: #eceff2; color: #5b6b7a; }
+        .statut.paye   { background: #e3f7ec; color: #1F7A4D; }
+        .statut.impaye { background: #fdecea; color: #E31E24; }
+        .statut.annule { background: #eceff2; color: #5A4A4A; }
 
         /* ============ PIED ============ */
         .footer {
             margin-top: 12px;
             padding-top: 6px;
-            border-top: 1px dashed #ece4d6;
+            border-top: 1px dashed #EADFCB;
             text-align: center;
             font-size: 7.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             line-height: 1.5;
         }
     </style>
@@ -142,6 +142,7 @@
 
 {{-- EN-TÊTE --}}
 <div class="header">
+    <div style="text-align: center; margin-bottom: 4px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '14mm'])</div>
     <h1>ÉCOLE INTERNATIONALE MARIAM</h1>
     <div class="sub">Plateforme de gestion scolaire et budgétaire</div>
 </div>

@@ -6,25 +6,25 @@
     <title>Rapport analytique</title>
     <style>
         @page { margin: 12mm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #1f2d3a; margin: 0; }
-        .header { border-bottom: 3px solid #C81E3A; padding-bottom: 8px; margin-bottom: 12px; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #2B1E1E; margin: 0; }
+        .header { border-bottom: 2px solid #D4A94D; padding-bottom: 8px; margin-bottom: 12px; }
         .header-table { width: 100%; }
-        .header-brand { font-size: 15px; font-weight: bold; color: #C81E3A; }
-        .header-sub { font-size: 8.5px; color: #6f7e8c; margin-top: 2px; }
-        .header-meta { text-align: right; font-size: 8px; color: #6f7e8c; line-height: 1.5; }
+        .header-brand { font-size: 15px; font-weight: bold; color: #E31E24; }
+        .header-sub { font-size: 8.5px; color: #5A4A4A; margin-top: 2px; }
+        .header-meta { text-align: right; font-size: 8px; color: #5A4A4A; line-height: 1.5; }
         .doc-title { font-size: 13px; font-weight: bold; margin: 0 0 3px; }
-        .doc-subtitle { font-size: 9px; color: #6f7e8c; margin-bottom: 10px; }
+        .doc-subtitle { font-size: 9px; color: #5A4A4A; margin-bottom: 10px; }
         table.journal { width: 100%; border-collapse: collapse; font-size: 8.5px; }
-        table.journal thead th { background: #1f2d3a; color: #fff; font-size: 7.5px; text-transform: uppercase; padding: 6px; text-align: left; font-weight: normal; }
+        table.journal thead th { background: #2B1E1E; color: #fff; font-size: 7.5px; text-transform: uppercase; padding: 6px; text-align: left; font-weight: normal; }
         table.journal thead th.right { text-align: right; }
-        table.journal tbody td { padding: 5px 6px; border-bottom: 1px solid #ece4d6; vertical-align: top; }
+        table.journal tbody td { padding: 5px 6px; border-bottom: 1px solid #EADFCB; vertical-align: top; }
         table.journal tbody tr:nth-child(even) { background: #fafaf7; }
         table.journal tbody td.right { text-align: right; font-variant-numeric: tabular-nums; }
-        table.journal tfoot td { padding: 6px; font-weight: bold; background: #faf6ee; border-top: 2px solid #C81E3A; font-size: 9px; }
-        .centre-code { font-family: monospace; background: #faf6ee; color: #C81E3A; padding: 1px 6px; border-radius: 4px; font-weight: bold; }
-        .positif { color: #1c7a4d; }
-        .negatif { color: #C81E3A; }
-        .footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid #ece4d6; font-size: 7.5px; color: #6f7e8c; text-align: center; }
+        table.journal tfoot td { padding: 6px; font-weight: bold; background: #FBF4E6; border-top: 2px solid #E31E24; font-size: 9px; }
+        .centre-code { font-family: monospace; background: #FBF4E6; color: #E31E24; padding: 1px 6px; border-radius: 4px; font-weight: bold; }
+        .positif { color: #1F7A4D; }
+        .negatif { color: #E31E24; }
+        .footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid #EADFCB; font-size: 7.5px; color: #5A4A4A; text-align: center; }
     </style>
 </head>
 <body>
@@ -32,6 +32,7 @@
 <div class="header">
     <table class="header-table">
         <tr>
+            <td style="width: 19mm; padding-right: 8px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '17mm'])</td>
             <td>
                 <div class="header-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                 <div class="header-sub">Plateforme de gestion scolaire et budgétaire</div>

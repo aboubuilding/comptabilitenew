@@ -13,6 +13,48 @@ class ChequeRepository extends BaseRepository
         parent::__construct($model);
     }
 
+    /**
+     * Paiement qui a abouti au chèque : porté par le chèque (paiement_id) ou,
+     * à défaut, par le paiement (cheque_id).
+     */
+    public function paiementLie(Cheque $cheque): ?int
+    {
+        return $cheque->paiement_id
+            ? (int) $cheque->paiement_id
+            : (\App\Domain\Finances\Models\Paiement::where('cheque_id', $cheque->id)->where('etat', 1)->value('id') ?: null);
+    }
+
+    /**
+     * Données de la fenêtre « contenu du paiement » d'un chèque : le paiement,
+     * ses lignes, ses totaux et le chèque adossé.
+     */
+    public function contenuPaiement(Cheque $cheque, int $paiementId): array
+    {
+        $paiement = \App\Domain\Finances\Models\Paiement::query()
+            ->with([
+                'details' => fn ($q) => $q->where('etat', 1)->orderBy('id'),
+                'details.caissier:id,nom,prenom',
+                'comptable:id,nom,prenom',
+                'inscription:id,eleve_id,classe_id,niveau_id',
+                'inscription.eleve:id,nom,prenom,matricule',
+                'inscription.classe:id,libelle',
+                'inscription.niveau:id,libelle',
+            ])
+            ->findOrFail($paiementId);
+        $details = $paiement->details;
+        $statut = fn (\App\Domain\Finances\Types\PaiementStatut $s) => round((float) $details->filter(fn ($d) => $d->statut_paiement === $s)->sum('montant'), 2);
+
+        return [
+            'paiement' => $paiement,
+            'cheque'   => $cheque->loadMissing('banque:id,nom'),
+            'totaux'   => [
+                'total'      => round((float) $details->sum('montant'), 2),
+                'encaisse'   => $statut(\App\Domain\Finances\Types\PaiementStatut::ENCAISSE),
+                'en_attente' => $statut(\App\Domain\Finances\Types\PaiementStatut::EN_ATTENTE),
+            ],
+        ];
+    }
+
     public function listePaginee(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         return $this->activeQuery()
@@ -20,6 +62,9 @@ class ChequeRepository extends BaseRepository
                 'banque:id,nom',
                 'rapprocheur:id,name',
             ])
+            // Paiement qui a abouti au chèque (action « Voir le paiement »)
+            ->addSelect(['paiement_lie' => \App\Domain\Finances\Models\Paiement::query()->select('id')
+                ->whereColumn('paiements.cheque_id', 'cheques.id')->where('paiements.etat', 1)->limit(1)])
             ->when($filters['annee_id'] ?? null, fn ($q, $v) => $q->where('annee_id', $v))
             ->when(
                 isset($filters['statut']) && $filters['statut'] !== '',

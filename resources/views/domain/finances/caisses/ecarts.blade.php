@@ -12,8 +12,8 @@
 
 @section('css')
 <style>
-    .ecarts-page { --ec-bg-soft:#faf6ee; --ec-border:#ece4d6; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .ecarts-page { --ec-bg-soft:var(--eim-cream); --ec-border:var(--eim-border); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--ec-border) !important; }
     .filtre-input { border-radius:10px; border:1px solid var(--ec-border); padding:.55rem .9rem; font-size:.88rem; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
@@ -29,20 +29,20 @@
     .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .ecart-montant { font-weight:700; }
     .ecart-montant.manquant { color:#b13b3b; }
-    .ecart-montant.excedent { color:#1c7a4d; }
-    .motif { max-width:260px; color:#5b6b7a; font-size:.84rem; }
+    .ecart-montant.excedent { color:var(--eim-success); }
+    .motif { max-width:260px; color:var(--eim-ink-soft); font-size:.84rem; }
 
     .badge-ecart { display:inline-flex; align-items:center; font-size:.72rem; font-weight:600; padding:.35em .75em; border-radius:999px; white-space:nowrap; }
     .badge-ecart-attente { background:#fdf3e2; color:#b8720b; }
     .badge-ecart-enquete { background:#e0ecfc; color:#2563eb; }
-    .badge-ecart-valide  { background:#e3f7ec; color:#1c7a4d; }
+    .badge-ecart-valide  { background:#e3f7ec; color:var(--eim-success); }
     .badge-ecart-refuse  { background:#fbeaea; color:#b13b3b; }
 
     .btn-statuer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; font-size:.8rem; padding:.4rem .9rem; white-space:nowrap; }
     .btn-statuer:hover { color:#fff; }
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
-    .btn-annuler { background:#fff; border:1px solid var(--ec-border); color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--ec-border); color:var(--eim-ink-soft); border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
     .resume-ecart { background:var(--ec-bg-soft); border:1px solid var(--ec-border); border-radius:12px; padding:.9rem 1rem; font-size:.88rem; }
 </style>
 @endsection
@@ -78,7 +78,7 @@
         </div>
         <div class="col-6 col-md-3">
             <div class="stat-box">
-                <div class="stat-value" style="color:#1c7a4d;">{{ $compteurs['valide'] }}</div>
+                <div class="stat-value" style="color:var(--eim-success);">{{ $compteurs['valide'] }}</div>
                 <div class="stat-label">Validés</div>
             </div>
         </div>
@@ -90,7 +90,7 @@
         </div>
     </div>
 
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
@@ -113,15 +113,14 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-filtrer flex-fill"><i class="fas fa-filter me-1"></i> Filtrer</button>
-                    <a href="{{ route('finances.caisses.ecarts.index') }}" class="btn btn-outline-scolarite"><i class="fas fa-undo"></i></a>
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
+                    <x-bouton variante="contour" href="{{ route('finances.caisses.ecarts.index') }}"><i class="fas fa-undo"></i></x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-ecarts align-middle mb-0">
+            <x-tableau class="table-ecarts align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Caisse</th>
@@ -189,82 +188,63 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="9">
-                                <div class="empty-state">
-                                    <i class="fas fa-check-circle"></i>
-                                    Aucun écart de caisse à traiter.
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="9" icone="fas fa-check-circle" :paragraphe="false">Aucun écart de caisse à traiter.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $ecarts->links() }}</div>
+    <div class="mt-4"><x-pagination :liste="$ecarts" /></div>
 
     {{-- Modale de décision (une seule, réutilisée) --}}
     @can('caisses.valider_ecart')
-    <div class="modal fade" id="statuerModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-                <form method="POST" action="" id="statuer-form">
-                    @csrf
-                    <div class="modal-header" style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;border-bottom:none;">
-                        <h5 class="modal-title"><i class="fas fa-gavel me-2"></i>Statuer sur l'écart</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="resume-ecart mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><strong id="statuer-libelle">—</strong><br><span class="text-muted" id="statuer-caissier">—</span></span>
-                                <span class="text-end"><span class="text-muted small">Écart</span><br><strong id="statuer-ecart">—</strong></span>
-                            </div>
-                            <div class="mt-2 text-muted small"><i class="fas fa-quote-left me-1"></i><span id="statuer-motif">—</span></div>
-                        </div>
-
-                        <label class="form-label fw-semibold">Décision <span class="text-danger">*</span></label>
-                        @foreach ($decisions as $decision)
-                            <div class="form-check mb-1">
-                                <input class="form-check-input decision-radio" type="radio" name="decision" required
-                                       id="decision-{{ $decision->value }}" value="{{ $decision->value }}"
-                                       @checked($loop->first)>
-                                <label class="form-check-label" for="decision-{{ $decision->value }}">
-                                    @switch($decision)
-                                        @case(\App\Domain\Finances\Types\StatutEcartCaisse::VALIDE)
-                                            <strong>Valider</strong> — la justification du caissier est acceptée
-                                            @break
-                                        @case(\App\Domain\Finances\Types\StatutEcartCaisse::REFUSE)
-                                            <strong>Refuser</strong> — la justification n'est pas acceptée
-                                            @break
-                                        @default
-                                            <strong>Demander une vérification</strong> — l'écart reste en instance
-                                    @endswitch
-                                </label>
-                            </div>
-                        @endforeach
-
-                        <div class="mt-3">
-                            <label class="form-label fw-semibold">
-                                Commentaire <span class="text-danger d-none" id="commentaire-requis">*</span>
-                            </label>
-                            <textarea name="commentaire" id="statuer-commentaire" rows="3" maxlength="1000" class="form-control"
-                                      placeholder="Obligatoire pour un refus ou une demande de vérification."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-statuer" style="padding:.55rem 1.4rem;font-size:.88rem;">
-                            <i class="fas fa-check me-1"></i> Enregistrer la décision
-                        </button>
-                    </div>
-                </form>
+    <x-modale id="statuerModal" data-bs-backdrop="static" aria-hidden="true" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-style="background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));color:#fff;border-bottom:none;" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire method="POST" action="" id="statuer-form">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-gavel me-2"></i>Statuer sur l'écart</x-slot:titre>
+        <div class="resume-ecart mb-3">
+            <div class="d-flex justify-content-between">
+                <span><strong id="statuer-libelle">—</strong><br><span class="text-muted" id="statuer-caissier">—</span></span>
+                <span class="text-end"><span class="text-muted small">Écart</span><br><strong id="statuer-ecart">—</strong></span>
             </div>
+            <div class="mt-2 text-muted small"><i class="fas fa-quote-left me-1"></i><span id="statuer-motif">—</span></div>
         </div>
-    </div>
+
+        <x-libelle class="fw-semibold" requis>Décision</x-libelle>
+        @foreach ($decisions as $decision)
+            <div class="form-check mb-1">
+                <input class="form-check-input decision-radio" type="radio" name="decision" required
+                       id="decision-{{ $decision->value }}" value="{{ $decision->value }}"
+                       @checked($loop->first)>
+                <label class="form-check-label" for="decision-{{ $decision->value }}">
+                    @switch($decision)
+                        @case(\App\Domain\Finances\Types\StatutEcartCaisse::VALIDE)
+                            <strong>Valider</strong> — la justification du caissier est acceptée
+                            @break
+                        @case(\App\Domain\Finances\Types\StatutEcartCaisse::REFUSE)
+                            <strong>Refuser</strong> — la justification n'est pas acceptée
+                            @break
+                        @default
+                            <strong>Demander une vérification</strong> — l'écart reste en instance
+                    @endswitch
+                </label>
+            </div>
+        @endforeach
+
+        <div class="mt-3">
+            <x-libelle class="fw-semibold">
+                Commentaire <span class="text-danger d-none" id="commentaire-requis">*</span>
+            </x-libelle>
+            <textarea name="commentaire" id="statuer-commentaire" rows="3" maxlength="1000" class="form-control"
+                      placeholder="Obligatoire pour un refus ou une demande de vérification."></textarea>
+        </div>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <button type="submit" class="btn btn-statuer" style="padding:.55rem 1.4rem;font-size:.88rem;">
+                <i class="fas fa-check me-1"></i> Enregistrer la décision
+            </button>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

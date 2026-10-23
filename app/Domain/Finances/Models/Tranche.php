@@ -11,6 +11,8 @@ class Tranche extends Model
 
     protected $fillable = [
         'libelle', 'date_butoire', 'frais_ecole_id', 'type_frais', 'taux', 'etat',
+        // Échéance créée lors de la conversion vers les plans d'échéancier
+        'plan_echeancier_ligne_id',
     ];
 
     protected $casts = [

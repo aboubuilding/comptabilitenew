@@ -6,7 +6,12 @@ use App\Domain\Finances\Types\TypePrevision;
 use App\Domain\Administration\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Ligne budgétaire : un libellé et un montant global sur l'année ; les dépenses
+ * qui lui sont imputées consomment ce montant.
+ */
 class Prevision extends Model
 {
     protected $table = 'previsions';
@@ -33,6 +38,12 @@ class Prevision extends Model
     public function auteur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cree_par');
+    }
+
+    /** Dépenses imputées à la ligne. */
+    public function depenses(): HasMany
+    {
+        return $this->hasMany(Depense::class, 'ligne_budgetaire_id');
     }
 
     public function ecart(): float

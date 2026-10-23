@@ -2,48 +2,131 @@
 
 namespace App\Http\Controllers\Domain\Finances;
 
-use App\Domain\Scolarite\Models\Annee;
 use App\Domain\Finances\DTO\SouscriptionData;
+use App\Domain\Finances\Exports\SouscriptionsExport;
 use App\Domain\Finances\Repositories\FraisEcoleRepository;
 use App\Domain\Finances\Repositories\SouscriptionRepository;
+use App\Domain\Finances\Services\SouscriptionChargementService;
 use App\Domain\Finances\Services\SouscriptionService;
+use App\Domain\Scolarite\Models\Annee;
+use App\Domain\Scolarite\Models\Classe;
+use App\Domain\Scolarite\Models\Niveau;
+use App\Domain\Scolarite\Repositories\InscriptionRepository;
 use App\Http\Controllers\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Domain\Finances\StoreSouscriptionRequest;
-use App\Domain\Scolarite\Models\Inscription;
-use App\Domain\Scolarite\Repositories\InscriptionRepository;
 use App\Support\AnneeScolaireContext;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Souscriptions aux services : cantine, transport, activités extrascolaires
+ * et événements.
+ *
+ * Tout l'écran — les deux onglets, les indicateurs, les exports et la
+ * synchronisation — porte sur l'année scolaire choisie dans l'en-tête
+ * (AnneeScolaireContext) ; il n'y a pas d'autre sélecteur d'année.
+ * Les indicateurs financiers sont réservés à la Direction et à l'Administrateur.
+ */
 class SouscriptionController extends Controller
 {
     use HandlesControllerErrors;
 
+    public const ONGLETS = ['non-a-jour' => 'Élèves non à jour', 'toutes' => 'Toutes les souscriptions'];
+
+    private const FILTRES = ['search', 'niveau_id', 'classe_id', 'type', 'paiement', 'frais_ecole_id', 'inscription_id'];
+
     public function __construct(
-        private SouscriptionRepository $souscriptions,
-        private FraisEcoleRepository   $frais,
-        private SouscriptionService    $service,
-        private InscriptionRepository  $inscriptions,
+        private SouscriptionRepository        $souscriptions,
+        private FraisEcoleRepository          $frais,
+        private SouscriptionService           $service,
+        private InscriptionRepository         $inscriptions,
+        private SouscriptionChargementService $chargement,
+        private AnneeScolaireContext          $contexte,
     ) {
-        $this->middleware('permission:souscriptions.voir')->only(['index', 'export']);
-        $this->middleware('permission:souscriptions.gerer')->only(['store', 'destroy']);
+        $this->middleware('permission:souscriptions.voir')->only(['index', 'export', 'exportPdf', 'paiements']);
+        $this->middleware('permission:souscriptions.gerer')->only(['store', 'destroy', 'synchroniser']);
         // Cahier des charges § 5.2 : la Direction arbitre aussi les taux de remise.
         $this->middleware('permission:souscriptions.remise')->only(['update']);
     }
 
+    private function anneeId(): int
+    {
+        return (int) $this->contexte->id();
+    }
+
+    private function onglet(Request $request): string
+    {
+        return array_key_exists((string) $request->input('onglet'), self::ONGLETS) ? $request->input('onglet') : 'non-a-jour';
+    }
+
+    /** Filtres de l'écran, toujours bornés à l'année de l'en-tête. */
+    private function filtres(Request $request, string $onglet): array
+    {
+        $filters = array_filter($request->only(self::FILTRES), fn ($v) => $v !== null && $v !== '');
+        $filters['annee_id'] = $this->anneeId();
+
+        if ($onglet === 'non-a-jour') {
+            $filters['non_a_jour'] = true;
+            // Dans cet onglet le statut ne peut être que « partiel » ou « impayé »
+            if (($filters['paiement'] ?? null) === 'solde') {
+                unset($filters['paiement']);
+            }
+        }
+
+        return $filters;
+    }
+
     public function index(Request $request)
     {
-        $filters = $request->only(['annee_id', 'frais_ecole_id', 'inscription_id', 'search']);
+        $anneeId = $this->anneeId();
+        // Les abonnements pris dans les modules de services apparaissent ici sans ressaisie
+        $this->chargement->synchroniserModules($anneeId);
+
+        $onglet = $this->onglet($request);
+        $filters = $this->filtres($request, $onglet);
+        $voitIndicateurs = $request->user()->can('tableau-souscriptions.consulter');
 
         return view('domain.finances.souscriptions.index', [
-            'souscriptions' => $this->souscriptions->listePaginee($filters),
-            'filters'       => $filters,
-            'frais'         => $this->frais->listePourSelect(),
-            'annees'        => Annee::orderByDesc('libelle')->get(['id', 'libelle']),
-            'inscriptions'  => $this->inscriptions->listePourSelect(app(AnneeScolaireContext::class)->id()),
+            'onglet'         => $onglet,
+            'onglets'        => self::ONGLETS,
+            'annee'          => Annee::find($anneeId),
+            'souscriptions'  => $this->souscriptions->listePaginee($filters),
+            'filters'        => $filters,
+            'types'          => SouscriptionRepository::SERVICES,
+            'niveaux'        => Niveau::orderBy('libelle')->get(['id', 'libelle']),
+            'classes'        => Classe::where('annee_id', $anneeId)->orderBy('libelle')->get(['id', 'libelle']),
+            // Seuls les frais de service de l'année se souscrivent (la scolarité relève de l'inscription)
+            'frais'          => $this->frais->listePourSelect($anneeId)
+                ->filter(fn ($f) => in_array($f->type_paiement, SouscriptionRepository::SERVICES, true))->values(),
+            'inscriptions'   => $this->inscriptions->listePourSelect($anneeId),
+            'compteNonAJour' => $this->souscriptions->compter(['annee_id' => $anneeId, 'non_a_jour' => true]),
+            'compteToutes'   => $this->souscriptions->compter(['annee_id' => $anneeId]),
+            'statistiques'   => $voitIndicateurs ? $this->souscriptions->statistiques($filters) : null,
+            'tableauDeBord'  => $voitIndicateurs ? $this->souscriptions->tableauDeBord($anneeId) : null,
         ]);
+    }
+
+    /** Fragment HTML : paiements liés à une souscription et état du règlement. */
+    public function paiements(int $souscription)
+    {
+        $souscription = $this->souscriptions->avecPaiement($souscription);
+
+        return view('domain.finances.souscriptions.partials.paiements', [
+            'souscription' => $souscription,
+            'paiements'    => $this->souscriptions->paiementsDe($souscription),
+        ]);
+    }
+
+    /** Crée les souscriptions manquantes de l'année de l'en-tête (rien n'est supprimé). */
+    public function synchroniser()
+    {
+        return $this->runAjax(
+            fn () => ['bilan' => $this->chargement->synchroniser($this->anneeId())],
+            'Synchronisation terminée.'
+        );
     }
 
     public function store(StoreSouscriptionRequest $request)
@@ -76,38 +159,34 @@ class SouscriptionController extends Controller
         }, 'Souscription désactivée.');
     }
 
-    public function export(Request $request): StreamedResponse
+    /** Export Excel de l'onglet affiché : année de l'en-tête et filtres en cours. */
+    public function export(Request $request)
     {
-        $filters = $request->only(['annee_id', 'frais_ecole_id', 'inscription_id', 'search']);
-        $souscriptions = $this->souscriptions->listePaginee($filters, perPage: 10000);
+        $onglet = $this->onglet($request);
+        $lignes = $this->souscriptions->listePourExport($this->filtres($request, $onglet));
 
-        $filename = 'souscriptions_' . now()->format('Ymd_His') . '.csv';
+        return Excel::download(
+            new SouscriptionsExport($lignes, self::ONGLETS[$onglet]),
+            'souscriptions_' . $onglet . '_' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
 
-        return response()->streamDownload(function () use ($souscriptions) {
-            $out = fopen('php://output', 'w');
-            fputs($out, "\xEF\xBB\xBF");
+    /** Export PDF de l'onglet affiché : année de l'en-tête et filtres en cours. */
+    public function exportPdf(Request $request)
+    {
+        $onglet = $this->onglet($request);
+        $filters = $this->filtres($request, $onglet);
 
-            fputcsv($out, [
-                'Date', 'Élève', 'Matricule', 'Frais',
-                'Montant annuel', 'Remise (%)', 'Montant remise',
-                'Montant net', 'Souscrit par',
-            ], ';');
-
-            foreach ($souscriptions as $s) {
-                fputcsv($out, [
-                    optional($s->date_souscription)->format('d/m/Y'),
-                    trim(($s->inscription?->eleve?->nom ?? '') . ' ' . ($s->inscription?->eleve?->prenom ?? '')),
-                    $s->inscription?->eleve?->matricule,
-                    $s->fraisEcole?->libelle,
-                    number_format((float) $s->montant_annuel_prevu, 2, ',', ' '),
-                    number_format((float) $s->taux_remise, 2, ',', ' '),
-                    number_format($s->montant_remise, 2, ',', ' '),
-                    number_format($s->montant_net, 2, ',', ' '),
-                    $s->auteur?->name,
-                ], ';');
-            }
-
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return Pdf::loadView('domain.finances.souscriptions.print', [
+            'titre'         => self::ONGLETS[$onglet],
+            'annee'         => Annee::find($this->anneeId()),
+            'souscriptions' => $this->souscriptions->listePourExport($filters),
+            // Indicateurs financiers : Direction et Administrateur seulement
+            'statistiques'  => $request->user()->can('tableau-souscriptions.consulter') ? $this->souscriptions->statistiques($filters) : null,
+            'genereLe'      => now(),
+            'generePar'     => $request->user(),
+        ])->setPaper('A4', 'landscape')
+            ->setOptions(['defaultFont' => 'DejaVu Sans', 'isHtml5ParserEnabled' => true, 'dpi' => 110])
+            ->download('souscriptions_' . $onglet . '_' . now()->format('Ymd_His') . '.pdf');
     }
 }

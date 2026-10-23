@@ -12,22 +12,22 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.paiements.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.paiements.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour à la liste
-    </a>
+    </x-bouton>
     @if ($eleve)
         @can('paiements.creer')
-            <a href="{{ route('finances.paiements.show', $eleve->id) }}" class="btn btn-nouveau" id="btn-situation-eleve">
+            <x-bouton variante="nouveau" href="{{ route('finances.paiements.show', $eleve->id) }}" id="btn-situation-eleve">
                 <i class="fas fa-user-graduate me-1"></i> Situation de l'élève
-            </a>
+            </x-bouton>
         @endcan
     @endif
 @endsection
 
 @section('css')
 <style>
-    .pd { --pd-soft:#faf6ee; --pd-border:#ece4d6; }
-    .pd .carte { background:#fff; border:1px solid var(--pd-border); border-radius:14px; box-shadow:0 6px 20px rgba(122,15,28,.05); margin-bottom:1.25rem; overflow:hidden; }
+    .pd { --pd-soft:var(--eim-cream); --pd-border:var(--eim-border); }
+    .pd .carte { background:#fff; border:1px solid var(--pd-border); border-radius:14px; box-shadow:0 6px 20px rgba(142,18,22,.05); margin-bottom:1.25rem; overflow:hidden; }
     .pd .carte-titre { padding:.85rem 1.15rem; border-bottom:1px solid var(--pd-border); display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap; }
     .pd .carte-titre h6 { margin:0; font-weight:700; color:var(--school-ink); font-size:.92rem; }
     .pd .carte-titre h6 i { color:var(--school-red); margin-right:.4rem; }
@@ -46,16 +46,12 @@
     .pd .tableau { width:100%; margin:0; }
     .pd .tableau thead th { background:var(--pd-soft); color:var(--school-red); font-size:.72rem; text-transform:uppercase; font-weight:700; padding:.7rem .9rem; border-bottom:2px solid var(--pd-border); }
     .pd .tableau tbody td, .pd .tableau tfoot td { padding:.7rem .9rem; border-bottom:1px solid var(--pd-border); font-size:.86rem; vertical-align:middle; }
-    .pd .tableau tfoot td { font-weight:700; background:#fdfaf5; }
+    .pd .tableau tfoot td { font-weight:700; background:var(--eim-hover); }
     .pd .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .pd .nature { display:inline-block; background:var(--pd-soft); color:var(--school-red); font-weight:600; font-size:.68rem; padding:.18rem .55rem; border-radius:999px; border:1px solid var(--pd-border); }
     .pd .sub { font-size:.74rem; color:var(--school-muted); }
 
     .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.74rem; font-weight:600; }
-    .badge-statut.attente  { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-statut.encaisse { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.annule   { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     .pd .chiffre { border:1px solid var(--pd-border); border-radius:10px; padding:.7rem .9rem; background:#fff; height:100%; }
     .pd .chiffre .v { font-size:1.1rem; font-weight:700; font-variant-numeric:tabular-nums; }
@@ -66,8 +62,8 @@
     .pd .chrono li::before { content:''; position:absolute; left:4px; top:5px; width:9px; height:9px; border-radius:50%; background:var(--school-red); }
     .pd .chrono li::after { content:''; position:absolute; left:8px; top:16px; bottom:0; width:1px; background:var(--pd-border); }
     .pd .chrono li:last-child::after { display:none; }
-    .pd .chrono li.ok::before { background:#1c7a4d; }
-    .pd .chrono li.annule::before { background:#5b6b7a; }
+    .pd .chrono li.ok::before { background:var(--eim-success); }
+    .pd .chrono li.annule::before { background:var(--eim-ink-soft); }
 </style>
 @endsection
 
@@ -84,7 +80,7 @@
         <div class="entete">
             <div>
                 <span class="reference">{{ $paiement->reference }}</span>
-                <span class="badge-statut {{ $statut?->css() }} ms-2" id="detail-statut"><span class="badge-dot"></span>{{ $statut?->label() }}</span>
+                <x-badge class="{{ $statut?->css() }} ms-2" id="detail-statut" point>{{ $statut?->label() }}</x-badge>
                 <div class="sub mt-2">
                     <i class="far fa-calendar me-1"></i>Saisi le {{ optional($paiement->date_paiement)->format('d/m/Y') ?? '—' }}
                     par {{ $paiement->comptable?->nom_complet ?: '—' }}
@@ -133,7 +129,7 @@
                     @endif
                     <div class="row g-2 mt-2">
                         <div class="col-4"><div class="chiffre"><div class="v">{{ $fmt($totaux['total'], 0) }}</div><div class="l">Total</div></div></div>
-                        <div class="col-4"><div class="chiffre"><div class="v" style="color:#1c7a4d;" id="detail-encaisse">{{ $fmt($totaux['encaisse'], 0) }}</div><div class="l">Encaissé</div></div></div>
+                        <div class="col-4"><div class="chiffre"><div class="v" style="color:var(--eim-success);" id="detail-encaisse">{{ $fmt($totaux['encaisse'], 0) }}</div><div class="l">Encaissé</div></div></div>
                         <div class="col-4"><div class="chiffre"><div class="v" style="color:var(--school-gold-dark);" id="detail-attente">{{ $fmt($totaux['en_attente'], 0) }}</div><div class="l">En attente</div></div></div>
                     </div>
                 </div>
@@ -169,7 +165,7 @@
                                 @endif
                             </td>
                             <td class="num fw-semibold">{{ $fmt($d->montant) }}</td>
-                            <td><span class="badge-statut {{ $d->statut_paiement?->css() }}"><span class="badge-dot"></span>{{ $d->statut_paiement?->label() }}</span></td>
+                            <td><x-badge class="{{ $d->statut_paiement?->css() }}" point>{{ $d->statut_paiement?->label() }}</x-badge></td>
                             <td class="sub">
                                 @if ($d->date_encaissement)
                                     Le {{ $d->date_encaissement->format('d/m/Y') }}

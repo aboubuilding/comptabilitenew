@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Support\AnneeScolaireContext;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use App\Domain\Finances\Models\Banque;
 use App\Domain\Finances\Models\Cheque;
@@ -45,5 +46,9 @@ protected $policies = [
         // modules — rien à changer dans les vues qui l'utilisent déjà.
         Paginator::defaultView('vendor.pagination.custom');
         Paginator::defaultSimpleView('vendor.pagination.custom');
+
+        // Composants d'interface communs à tous les écrans : <x-carte>, <x-tableau>,
+        // <x-modale>, <x-bouton>... (un fichier par composant, documenté en tête).
+        Blade::anonymousComponentPath(resource_path('views/admin/layouts/components'));
     }
 }

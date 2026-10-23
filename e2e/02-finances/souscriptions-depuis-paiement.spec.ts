@@ -69,13 +69,13 @@ test.describe('2.2 Nouveau paiement — souscriptions depuis l\'écran', () => {
     // Je règle une partie de la cantine
     await ligneCantine.locator('.engagement-saisie').fill('45000');
 
-    /* ---- Transport : la zone propose son tarif ---- */
+    /* ---- Transport : la zone propose son tarif (indicatif) ; plus de ligne ni de point d'arrêt à saisir ---- */
     await barre.getByRole('button', { name: 'Transport' }).click();
     const transport = page.locator('#modal-transport');
     await choisir(transport.locator('[name=zone_id]'), 'Zone Kégué');
     await expect(transport.locator('[name=montant_mensuel]')).toHaveValue('12000');
     await transport.locator('[name=nombre_mois]').fill('10');
-    await transport.locator('[name=point_arret]').fill('Carrefour Bè-Château');
+    await expect(transport.locator('[name=point_arret], [name=ligne_id]')).toHaveCount(0);
     await expect(transport.locator('.du-calcule')).toHaveText(/120\s000/);
     await soumettreFenetre(page, '#modal-transport', 'Abonnement bus');
 
@@ -97,6 +97,8 @@ test.describe('2.2 Nouveau paiement — souscriptions depuis l\'écran', () => {
     // Le Taekwondo souscrit n'est plus proposé
     await barre.getByRole('button', { name: 'Activité' }).click();
     await expect(activite.locator('[name=activite_id] option', { hasText: 'Taekwondo' })).toHaveCount(0);
+    // Bootstrap ignore une fermeture demandée pendant le fondu d'ouverture
+    await expect(activite).toHaveCSS('opacity', '1');
     await activite.getByRole('button', { name: 'Annuler' }).click();
     await expect(activite).toBeHidden();
 

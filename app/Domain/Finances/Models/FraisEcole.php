@@ -17,6 +17,8 @@ class FraisEcole extends Model
     protected $fillable = [
         'libelle', 'montant', 'type_paiement', 'modalite_paiement', 'type_forfait',
         'niveau_id', 'annee_id', 'plan_echeancier_id', 'etat',
+        // Fiche alimentée par ce frais (synchronisation des catalogues)
+        'produit_id', 'activite_id', 'evenement_id',
     ];
 
     protected $casts = [

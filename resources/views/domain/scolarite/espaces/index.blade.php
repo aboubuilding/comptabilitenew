@@ -47,13 +47,13 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('scolarite.espaces.index') }}" class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}"
                        placeholder="Nom famille, parent, téléphone, email...">
             </div>
             <div class="col-md-3">
-                <label class="form-label small">Compte portail</label>
+                <x-libelle class="small">Compte portail</x-libelle>
                 <select name="avec_compte" class="form-select filtre-input">
                     <option value="">Tous</option>
                     <option value="1" @selected(($filtres['avec_compte'] ?? '') === '1')>Avec compte actif</option>
@@ -71,8 +71,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Famille</th>
@@ -135,25 +134,21 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <span class="badge-statut bg-info">
+                                <x-badge class="bg-info">
                                     {{ $espace->eleves_count }} élève{{ $espace->eleves_count > 1 ? 's' : '' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td>
                                 @if($compte)
-                                    <span class="badge-statut bg-{{ $compte->etat ? 'success' : 'secondary' }}">
+                                    <x-badge class="bg-{{ $compte->etat ? 'success' : 'secondary' }}">
                                         {{ $compte->etat ? 'Actif' : 'Inactif' }}
-                                    </span>
+                                    </x-badge>
                                 @else
-                                    <span class="badge-statut bg-warning text-dark">Aucun</span>
+                                    <x-badge class="bg-warning text-dark">Aucun</x-badge>
                                 @endif
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('scolarite.espaces.show', $espace) }}">
                                                 <i class="fa fa-eye"></i> Consulter
@@ -167,51 +162,26 @@
                                             </button>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <form action="{{ route('scolarite.espaces.destroy', $espace) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Supprimer
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('scolarite.espaces.destroy', $espace)" icone="fa fa-trash">Supprimer</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-people-roof fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucun espace familial pour l'année active.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="7" icone="fa fa-people-roof fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucun espace familial pour l'année active.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $espaces->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$espaces" />
         </div>
     </div>
 
     {{-- Modale espace --}}
-    <div class="modal fade" id="modalEspace" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalEspaceContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalEspace" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalEspaceContent" />
 
     {{-- Modale regroupement --}}
-    <div class="modal fade" id="modalRegrouper" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content" id="modalRegrouperContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalRegrouper" aria-hidden="true" dialogue="modal-xl modal-dialog-centered" contenu-id="modalRegrouperContent" />
 
 @endsection
 

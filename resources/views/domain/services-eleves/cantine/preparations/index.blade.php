@@ -11,15 +11,13 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.cantine.preparations.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.preparations.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
+    </x-bouton>
     @can('cantine.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouvellePrep"
-                data-bs-toggle="modal" data-bs-target="#preparationModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouvellePrep" data-bs-toggle="modal" data-bs-target="#preparationModal">
             <i class="fas fa-plus-circle me-1"></i> Nouvelle préparation
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
@@ -28,28 +26,20 @@
 
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-fire"></i></div>
-                <div class="stat-info"><div class="stat-value">{{ $stats['nb'] }}</div>
-                <div class="stat-label">Préparations</div></div></div>
+            <x-stat icone="fas fa-fire" couleur="blue" libelle="Préparations">{{ $stats['nb'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-utensils"></i></div>
-                <div class="stat-info"><div class="stat-value">{{ $stats['parts'] }}</div>
-                <div class="stat-label">Parts servies</div></div></div>
+            <x-stat icone="fas fa-utensils" couleur="green" libelle="Parts servies">{{ $stats['parts'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card"><div class="stat-icon gold"><i class="fas fa-coins"></i></div>
-                <div class="stat-info"><div class="stat-value">{{ number_format($stats['cout_total'], 0, ',', ' ') }}</div>
-                <div class="stat-label">Coût total</div></div></div>
+            <x-stat icone="fas fa-coins" couleur="gold" libelle="Coût total">{{ number_format($stats['cout_total'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card"><div class="stat-icon red"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-info"><div class="stat-value">{{ number_format($stats['cout_moyen_par_part'], 0, ',', ' ') }}</div>
-                <div class="stat-label">Coût moyen / part</div></div></div>
+            <x-stat icone="fas fa-chart-line" couleur="red" libelle="Coût moyen / part">{{ number_format($stats['cout_moyen_par_part'], 0, ',', ' ') }}</x-stat>
         </div>
     </div>
 
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
@@ -69,14 +59,13 @@
                     <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filters['date_fin'] ?? '' }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                    <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-insc align-middle mb-0">
+            <x-tableau class="table-insc align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Date</th>
@@ -106,85 +95,73 @@
                             <td class="text-sm text-muted">{{ $p->responsable?->name ?? '—' }}</td>
                             <td>
                                 @if ($p->stock_decremente)
-                                    <span class="badge-statut actif" style="background:#e3f7ec;color:#1c7a4d;"><span class="badge-dot"></span>Déduit</span>
+                                    <x-badge class="actif" style="background:#e3f7ec;color:var(--eim-success);" point>Déduit</x-badge>
                                 @else
-                                    <span class="badge-statut abandonne"><span class="badge-dot"></span>Non déduit</span>
+                                    <x-badge class="abandonne" point>Non déduit</x-badge>
                                 @endif
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-fire"></i><p>Aucune préparation enregistrée.</p></div></td></tr>
+                        <x-vide colspan="8" icone="fas fa-fire">Aucune préparation enregistrée.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $preparations->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$preparations->appends(request()->query())" /></div>
 
     @can('cantine.gerer')
-    <div class="modal fade" id="preparationModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-cantine">
-                <form id="preparation-form">
-                    @csrf
-                    <div class="modal-header modal-header-cantine">
-                        <h5 class="modal-title"><i class="fas fa-fire me-2"></i>Nouvelle préparation</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="alert alert-light border-0 small mb-3" style="background:#f0f6ff;color:#1e3a8a;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Le stock sera automatiquement décrémenté selon les produits du menu et le nombre de parts servies.
-                        </div>
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Menu <span class="text-danger">*</span></label>
-                                <select name="menu_id" class="form-select" required>
-                                    <option value="">— Sélectionner —</option>
-                                    @foreach ($menus as $m)
-                                        <option value="{{ $m->id }}">{{ $m->libelle }} ({{ optional($m->date_service)->format('d/m/Y') }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Magasin source <span class="text-danger">*</span></label>
-                                <select name="magasin_id" class="form-select" required>
-                                    <option value="">— Sélectionner —</option>
-                                    @foreach ($magasins as $m)
-                                        <option value="{{ $m->id }}">{{ $m->libelle }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="date_preparation" class="form-control" value="{{ now()->toDateString() }}" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Nombre de parts <span class="text-danger">*</span></label>
-                                    <input type="number" name="nombre_parts" min="1" class="form-control" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Coût réel (laisser vide = calcul auto)</label>
-                                    <input type="number" name="cout_reel" step="0.01" min="0" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Observations</label>
-                                    <input type="text" name="observations" class="form-control" maxlength="2000">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                    </div>
-                </form>
-            </div>
+    <x-modale id="preparationModal" data-bs-backdrop="static" contenu-class="modal-cantine" entete-class="modal-header-cantine" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="preparation-form">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-fire me-2"></i>Nouvelle préparation</x-slot:titre>
+        <div class="alert alert-light border-0 small mb-3" style="background:#f0f6ff;color:#1e3a8a;">
+            <i class="fas fa-info-circle me-1"></i>
+            Le stock sera automatiquement décrémenté selon les produits du menu et le nombre de parts servies.
         </div>
-    </div>
+        <x-section>
+            <div class="mb-3">
+                <x-libelle requis>Menu</x-libelle>
+                <select name="menu_id" class="form-select" required>
+                    <option value="">— Sélectionner —</option>
+                    @foreach ($menus as $m)
+                        <option value="{{ $m->id }}">{{ $m->libelle }} ({{ optional($m->date_service)->format('d/m/Y') }})</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-3">
+                <x-libelle requis>Magasin source</x-libelle>
+                <select name="magasin_id" class="form-select" required>
+                    <option value="">— Sélectionner —</option>
+                    @foreach ($magasins as $m)
+                        <option value="{{ $m->id }}">{{ $m->libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <x-libelle requis>Date</x-libelle>
+                    <input type="date" name="date_preparation" class="form-control" value="{{ now()->toDateString() }}" required>
+                </div>
+                <div class="col-md-6">
+                    <x-libelle requis>Nombre de parts</x-libelle>
+                    <input type="number" name="nombre_parts" min="1" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <x-libelle>Coût réel (laisser vide = calcul auto)</x-libelle>
+                    <input type="number" name="cout_reel" step="0.01" min="0" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <x-libelle>Observations</x-libelle>
+                    <input type="text" name="observations" class="form-control" maxlength="2000">
+                </div>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

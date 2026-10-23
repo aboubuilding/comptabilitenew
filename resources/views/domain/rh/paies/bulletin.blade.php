@@ -6,24 +6,24 @@
     <title>Bulletin de paie — {{ $paie->reference ?? $paie->id }}</title>
     <style>
         @page { size: A4; margin: 12mm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #1f2d3a; margin: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #2B1E1E; margin: 0; }
 
         /* ============ EN-TÊTE ============ */
         .header {
-            border-bottom: 3px solid #C81E3A;
+            border-bottom: 2px solid #D4A94D;
             padding-bottom: 8px;
             margin-bottom: 12px;
         }
         .header-table { width: 100%; }
         .header-table td { vertical-align: top; }
         .header-table td.meta { text-align: right; }
-        .header-brand { font-size: 15px; font-weight: bold; color: #C81E3A; letter-spacing: .5px; }
-        .header-sub { font-size: 8.5px; color: #6f7e8c; margin-top: 2px; }
-        .header-meta { text-align: right; font-size: 8px; color: #6f7e8c; line-height: 1.5; }
+        .header-brand { font-size: 15px; font-weight: bold; color: #E31E24; letter-spacing: .5px; }
+        .header-sub { font-size: 8.5px; color: #5A4A4A; margin-top: 2px; }
+        .header-meta { text-align: right; font-size: 8px; color: #5A4A4A; line-height: 1.5; }
 
         /* ============ TITRE ============ */
         .doc-title {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #fff;
             padding: 8px 12px;
             border-radius: 4px;
@@ -55,15 +55,15 @@
             padding: 0 6px;
         }
         .info-block {
-            background: #faf6ee;
-            border: 1px solid #ece4d6;
+            background: #FBF4E6;
+            border: 1px solid #EADFCB;
             border-radius: 6px;
             padding: 8px 10px;
         }
         .info-block h3 {
             font-size: 8px;
             text-transform: uppercase;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin: 0 0 5px;
             letter-spacing: .6px;
             font-weight: 600;
@@ -74,8 +74,8 @@
             padding: 2px 0;
             font-size: 9px;
         }
-        .info-row .label { color: #6f7e8c; }
-        .info-row .value { font-weight: 600; color: #1f2d3a; text-align: right; }
+        .info-row .label { color: #5A4A4A; }
+        .info-row .value { font-weight: 600; color: #2B1E1E; text-align: right; }
 
         /* ============ TABLEAU ÉLÉMENTS ============ */
         table.bulletin {
@@ -84,7 +84,7 @@
             margin-bottom: 8px;
         }
         table.bulletin thead th {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #ffffff;
             font-size: 8px;
             text-transform: uppercase;
@@ -96,7 +96,7 @@
         table.bulletin thead th.right { text-align: right; }
         table.bulletin tbody td {
             padding: 6px 8px;
-            border-bottom: 1px solid #ece4d6;
+            border-bottom: 1px solid #EADFCB;
             font-size: 9.5px;
             vertical-align: top;
         }
@@ -106,9 +106,9 @@
             font-weight: 600;
         }
         table.bulletin tbody tr.section-row td {
-            background: #faf6ee;
+            background: #FBF4E6;
             font-weight: bold;
-            color: #7A0F22;
+            color: #B3171C;
             font-size: 9px;
             text-transform: uppercase;
             letter-spacing: .4px;
@@ -123,7 +123,7 @@
             margin-top: 4px;
         }
         .total-table td { padding: 4px 8px; font-size: 10px; }
-        .total-table td.label { text-align: right; color: #6f7e8c; }
+        .total-table td.label { text-align: right; color: #5A4A4A; }
         .total-table td.value {
             text-align: right;
             font-weight: 700;
@@ -131,10 +131,10 @@
             font-variant-numeric: tabular-nums;
         }
         .total-table tr.final td {
-            border-top: 2px solid #C81E3A;
+            border-top: 2px solid #E31E24;
             padding-top: 8px;
             font-size: 14px;
-            color: #7A0F22;
+            color: #B3171C;
         }
 
         /* ============ MODE PAIEMENT ============ */
@@ -152,19 +152,19 @@
         .signatures {
             width: 100%;
             margin-top: 20px;
-            border-top: 1px dashed #ece4d6;
+            border-top: 1px dashed #EADFCB;
             padding-top: 10px;
         }
         .signatures td {
             width: 50%;
             text-align: center;
             font-size: 8.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             padding-top: 30px;
             vertical-align: bottom;
         }
         .signatures td .line {
-            border-top: 1px solid #1f2d3a;
+            border-top: 1px solid #2B1E1E;
             width: 70%;
             margin: 0 auto 4px;
             padding-top: 2px;
@@ -174,10 +174,10 @@
         .footer {
             margin-top: 14px;
             padding-top: 6px;
-            border-top: 1px solid #ece4d6;
+            border-top: 1px solid #EADFCB;
             text-align: center;
             font-size: 7.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             line-height: 1.5;
         }
     </style>
@@ -188,6 +188,7 @@
 <div class="header">
     <table class="header-table">
         <tr>
+            <td style="width: 19mm; padding-right: 8px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '17mm'])</td>
             <td>
                 <div class="header-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                 <div class="header-sub">Plateforme de gestion scolaire et budgétaire</div>
@@ -321,7 +322,7 @@
             </tr>
             <tr>
                 <td>CNSS, charges familiales, forfait professionnel</td>
-                <td class="right" style="color: #C81E3A;">
+                <td class="right" style="color: #E31E24;">
                     − {{ number_format((float) $paie->total_deductions, 2, ',', ' ') }}
                 </td>
             </tr>
@@ -335,12 +336,12 @@
                 <td>
                     IRPP
                     @if($paie->employe?->irpp_mode === 'auto')
-                        <span style="font-size:8px;color:#6f7e8c;"> (calculé par barème)</span>
+                        <span style="font-size:8px;color:#5A4A4A;"> (calculé par barème)</span>
                     @elseif($paie->employe?->irpp_mode === 'manuel')
-                        <span style="font-size:8px;color:#6f7e8c;"> (montant fixe)</span>
+                        <span style="font-size:8px;color:#5A4A4A;"> (montant fixe)</span>
                     @endif
                 </td>
-                <td class="right" style="color: #C81E3A;">
+                <td class="right" style="color: #E31E24;">
                     − {{ number_format((float) $paie->total_retenues, 2, ',', ' ') }}
                 </td>
             </tr>
@@ -360,7 +361,7 @@
     @if($paie->total_deductions > 0)
         <tr>
             <td class="label">Total déductions</td>
-            <td class="value" style="color: #C81E3A;">
+            <td class="value" style="color: #E31E24;">
                 − {{ number_format((float) $paie->total_deductions, 2, ',', ' ') }}
             </td>
         </tr>
@@ -368,7 +369,7 @@
     @if($paie->total_retenues > 0)
         <tr>
             <td class="label">Total retenues</td>
-            <td class="value" style="color: #C81E3A;">
+            <td class="value" style="color: #E31E24;">
                 − {{ number_format((float) $paie->total_retenues, 2, ',', ' ') }}
             </td>
         </tr>

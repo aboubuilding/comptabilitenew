@@ -2,6 +2,7 @@
 
 namespace App\Domain\Finances\Services;
 
+use App\Domain\Finances\Repositories\SouscriptionRepository;
 use App\Domain\Finances\Types\NatureCreance;
 use App\Domain\Finances\Types\PaiementStatut;
 use App\Domain\Finances\Types\TypeDetail;
@@ -21,7 +22,8 @@ use RuntimeException;
  * Le dû naît de l'engagement, jamais du paiement (cahier des charges,
  * « Souscription indépendante du paiement »). Un engagement vient, par ordre
  * de priorité pour une même nature de frais :
- *   1. d'une souscription (table souscriptions) ;
+ *   1. d'une souscription (table souscriptions), réservée aux services :
+ *      cantine, transport, activités, événements ;
  *   2. d'un abonnement de service (inscriptions_cantine, abonnements_bus),
  *      d'une inscription à une activité, d'une pré-inscription à un événement ;
  *   3. des montants portés par l'inscription elle-même (frais_scolarite,
@@ -237,13 +239,30 @@ class EngagementService
             ];
         };
 
-        // 1) Frais souscrits (remise déduite)
+        // 1) Frais souscrits (remise déduite). Les souscriptions qui ne font que
+        //    refléter un abonnement pris dans un module (cantine, bus, activité,
+        //    événement) sont écartées : l'abonnement est compté plus bas.
         $souscriptions = DB::table('souscriptions as s')
             ->leftJoin('frais_ecoles as f', 'f.id', '=', 's.frais_ecole_id')
             ->where('s.inscription_id', $inscriptionId)
             ->where('s.etat', 1)
+            ->whereIn('s.type_paiement', array_map(fn (TypeDetail $t) => $t->value, SouscriptionRepository::SERVICES))
+            ->where(fn ($q) => $q->whereNull('s.origine')
+                ->orWhereNotIn('s.origine', array_keys(SouscriptionChargementService::MODULES)))
             ->orderBy('s.id')
-            ->get(['s.id', 's.type_paiement', 's.montant_annuel_prevu', 's.taux_remise', 's.frais_ecole_id', 'f.libelle']);
+            ->get(['s.id', 's.type_paiement', 's.montant_annuel_prevu', 's.taux_remise', 's.frais_ecole_id',
+                   's.origine', DB::raw('COALESCE(s.libelle, f.libelle) as libelle')]);
+
+        // Cantine et bus repris de la base historique : l'abonnement du module, s'il existe, prime
+        $abonnes = [
+            TypeDetail::CANTINE->value => 'inscriptions_cantine',
+            TypeDetail::BUS->value     => 'abonnements_bus',
+        ];
+        $souscriptions = $souscriptions->reject(fn ($sousc) => $sousc->origine === SouscriptionChargementService::REPRISE
+            && isset($abonnes[(int) $sousc->type_paiement])
+            && DB::table($abonnes[(int) $sousc->type_paiement])
+                ->where('inscription_id', $inscriptionId)->where('etat', 1)
+                ->where('statut', StatutInscriptionCantine::ACTIF->value)->exists());
 
         foreach ($souscriptions as $sousc) {
             $type = TypeDetail::tryFrom((int) $sousc->type_paiement);

@@ -6,20 +6,20 @@
     <title>Bulletins de paie — {{ $periode->libelle }}</title>
     <style>
         @page { size: A4; margin: 12mm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #1f2d3a; margin: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #2B1E1E; margin: 0; }
 
         /* ============ PAGE DE GARDE ============ */
         .cover { page-break-after: always; }
         .cover-header {
-            border-bottom: 3px solid #C81E3A; padding-bottom: 8px; margin-bottom: 16px;
+            border-bottom: 2px solid #D4A94D; padding-bottom: 8px; margin-bottom: 16px;
         }
-        .cover-brand { font-size: 18px; font-weight: bold; color: #C81E3A; letter-spacing: .5px; }
-        .cover-sub { font-size: 9px; color: #6f7e8c; margin-top: 3px; }
+        .cover-brand { font-size: 18px; font-weight: bold; color: #E31E24; letter-spacing: .5px; }
+        .cover-sub { font-size: 9px; color: #5A4A4A; margin-top: 3px; }
         .cover-title {
-            font-size: 16px; font-weight: bold; color: #1f2d3a;
+            font-size: 16px; font-weight: bold; color: #2B1E1E;
             margin: 24px 0 4px;
         }
-        .cover-meta { font-size: 10px; color: #6f7e8c; margin-bottom: 20px; }
+        .cover-meta { font-size: 10px; color: #5A4A4A; margin-bottom: 20px; }
 
         /* Stats globales */
         .stats-grid {
@@ -29,25 +29,25 @@
             margin-bottom: 16px;
         }
         .stats-grid td {
-            background: #faf6ee; border: 1px solid #ece4d6; border-radius: 8px;
+            background: #FBF4E6; border: 1px solid #EADFCB; border-radius: 8px;
             padding: 12px 14px; width: 25%;
         }
         .stats-grid .label {
-            font-size: 7.5px; text-transform: uppercase; color: #6f7e8c; letter-spacing: .5px;
+            font-size: 7.5px; text-transform: uppercase; color: #5A4A4A; letter-spacing: .5px;
         }
         .stats-grid .value {
-            font-size: 13px; font-weight: bold; color: #1f2d3a; margin-top: 4px;
+            font-size: 13px; font-weight: bold; color: #2B1E1E; margin-top: 4px;
         }
-        .stats-grid .value.green { color: #1c7a4d; }
-        .stats-grid .value.gold  { color: #B8860B; }
-        .stats-grid .value.red   { color: #C81E3A; }
+        .stats-grid .value.green { color: #1F7A4D; }
+        .stats-grid .value.gold  { color: #8A6516; }
+        .stats-grid .value.red   { color: #E31E24; }
 
         /* Ventilation modes */
         .modes-grid { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 16px; }
         .modes-grid td {
             border-radius: 8px; padding: 12px 14px; width: 50%; color: #fff;
         }
-        .modes-grid .billette { background: #B8860B; }
+        .modes-grid .billette { background: #8A6516; }
         .modes-grid .banque   { background: #2563eb; }
         .modes-grid .label { font-size: 8px; opacity: .85; text-transform: uppercase; letter-spacing: .5px; }
         .modes-grid .value { font-size: 15px; font-weight: bold; margin-top: 4px; }
@@ -58,20 +58,20 @@
             width: 100%; border-collapse: collapse; font-size: 8.5px;
         }
         .cover-list-table thead th {
-            background: #1f2d3a; color: #fff; font-size: 7.5px;
+            background: #2B1E1E; color: #fff; font-size: 7.5px;
             text-transform: uppercase; letter-spacing: .4px;
             padding: 6px 8px; text-align: left;
         }
         .cover-list-table thead th.right { text-align: right; }
         .cover-list-table tbody td {
-            padding: 5px 8px; border-bottom: 1px solid #ece4d6;
+            padding: 5px 8px; border-bottom: 1px solid #EADFCB;
         }
         .cover-list-table tbody td.right { text-align: right; font-variant-numeric: tabular-nums; }
         .cover-list-table tbody tr:nth-child(even) { background: #fafaf7; }
         .cover-list-table tfoot td {
             padding: 10px 8px 0;
             font-weight: bold;
-            border-top: 2px solid #C81E3A;
+            border-top: 2px solid #E31E24;
         }
         .cover-list-table tfoot td.right { text-align: right; font-variant-numeric: tabular-nums; }
 
@@ -80,57 +80,57 @@
         .bulletin-page:last-child { page-break-after: auto; }
 
         .bulletin-header {
-            border-bottom: 2px solid #C81E3A; padding-bottom: 6px; margin-bottom: 10px;
+            border-bottom: 2px solid #E31E24; padding-bottom: 6px; margin-bottom: 10px;
             width: 100%;
         }
         .bulletin-header-table { width: 100%; }
         .bulletin-header-table td { vertical-align: top; }
         .bulletin-header-table td.right { text-align: right; width: 40%; }
-        .bulletin-brand { font-size: 11px; font-weight: bold; color: #C81E3A; }
-        .bulletin-ref { font-size: 8px; color: #6f7e8c; margin-top: 2px; }
+        .bulletin-brand { font-size: 11px; font-weight: bold; color: #E31E24; }
+        .bulletin-ref { font-size: 8px; color: #5A4A4A; margin-top: 2px; }
 
         .bulletin-title {
             text-align: center; font-size: 11px; font-weight: bold;
-            color: #fff; background: #1f2d3a; padding: 6px 10px;
+            color: #fff; background: #2B1E1E; padding: 6px 10px;
             border-radius: 4px; margin-bottom: 10px;
             letter-spacing: 1px;
         }
 
         .bulletin-info { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .bulletin-info td {
-            background: #faf6ee; border: 1px solid #ece4d6;
+            background: #FBF4E6; border: 1px solid #EADFCB;
             padding: 6px 8px; font-size: 8.5px; vertical-align: top;
             width: 50%;
         }
-        .bulletin-info .label { font-size: 7px; text-transform: uppercase; color: #6f7e8c; letter-spacing: .5px; display: block; }
-        .bulletin-info .value { font-weight: 600; color: #1f2d3a; margin-top: 2px; display: block; }
+        .bulletin-info .label { font-size: 7px; text-transform: uppercase; color: #5A4A4A; letter-spacing: .5px; display: block; }
+        .bulletin-info .value { font-weight: 600; color: #2B1E1E; margin-top: 2px; display: block; }
 
         table.bulletin-detail {
             width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 8px;
         }
         table.bulletin-detail thead th {
-            background: #1f2d3a; color: #fff; font-size: 7.5px;
+            background: #2B1E1E; color: #fff; font-size: 7.5px;
             text-transform: uppercase; letter-spacing: .4px;
             padding: 5px 8px; text-align: left;
         }
         table.bulletin-detail thead th.right { text-align: right; }
         table.bulletin-detail tbody td {
-            padding: 5px 8px; border-bottom: 1px solid #ece4d6;
+            padding: 5px 8px; border-bottom: 1px solid #EADFCB;
         }
         table.bulletin-detail tbody td.right { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
         table.bulletin-detail tbody tr.section-row td {
-            background: #faf6ee; font-weight: bold; color: #7A0F22;
+            background: #FBF4E6; font-weight: bold; color: #B3171C;
             font-size: 8px; text-transform: uppercase; letter-spacing: .4px;
             padding: 6px 8px;
         }
 
         .total-table { width: 100%; margin-top: 8px; }
         .total-table td { padding: 4px 8px; font-size: 9px; }
-        .total-table td.label { text-align: right; color: #6f7e8c; }
+        .total-table td.label { text-align: right; color: #5A4A4A; }
         .total-table td.value { text-align: right; font-weight: bold; width: 130px; font-variant-numeric: tabular-nums; }
         .total-table tr.final td {
-            border-top: 2px solid #C81E3A; padding-top: 8px;
-            font-size: 12px; color: #7A0F22;
+            border-top: 2px solid #E31E24; padding-top: 8px;
+            font-size: 12px; color: #B3171C;
         }
 
         .bulletin-mode {
@@ -140,14 +140,14 @@
         }
 
         .bulletin-footer {
-            margin-top: 20px; padding-top: 8px; border-top: 1px dashed #ece4d6;
-            font-size: 7.5px; color: #6f7e8c; text-align: center;
+            margin-top: 20px; padding-top: 8px; border-top: 1px dashed #EADFCB;
+            font-size: 7.5px; color: #5A4A4A; text-align: center;
         }
 
         /* Garde-fou : si aucun bulletin */
         .empty-cover {
             text-align: center; padding: 60px 20px;
-            color: #9aa7b2; font-size: 11px;
+            color: #7A6A6A; font-size: 11px;
         }
     </style>
 </head>
@@ -158,7 +158,7 @@
      ================================================================ --}}
 @if($paies->isEmpty())
     <div class="empty-cover">
-        <strong style="display:block;font-size:14px;color:#1f2d3a;margin-bottom:10px;">
+        <strong style="display:block;font-size:14px;color:#2B1E1E;margin-bottom:10px;">
             Aucun bulletin pour la période « {{ $periode->libelle }} »
         </strong>
         Générez les bulletins depuis l'écran Périodes avant de télécharger le récapitulatif.
@@ -172,11 +172,12 @@
     <div class="cover-header">
         <table style="width:100%">
             <tr>
+                <td style="width: 19mm; padding-right: 8px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '17mm'])</td>
                 <td>
                     <div class="cover-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                     <div class="cover-sub">Plateforme de gestion scolaire et budgétaire</div>
                 </td>
-                <td style="text-align:right;font-size:8px;color:#6f7e8c;line-height:1.6;">
+                <td style="text-align:right;font-size:8px;color:#5A4A4A;line-height:1.6;">
                     <div><strong>Généré le</strong> {{ $genereLe->format('d/m/Y à H:i') }}</div>
                     @if($generePar) <div>par {{ $generePar->name }}</div> @endif
                 </td>
@@ -263,7 +264,7 @@
             <tr>
                 <td colspan="2" style="text-transform:uppercase;">Totaux</td>
                 <td class="right">{{ number_format($recap['total_brut'], 0, ',', ' ') }}</td>
-                <td class="right" style="color:#7A0F22;">{{ number_format($recap['total_net'], 0, ',', ' ') }}</td>
+                <td class="right" style="color:#B3171C;">{{ number_format($recap['total_net'], 0, ',', ' ') }}</td>
                 <td></td>
             </tr>
         </tfoot>
@@ -282,7 +283,7 @@
                 <tr>
                     <td>
                         <div class="bulletin-brand">ÉCOLE INTERNATIONALE MARIAM</div>
-                        <div style="font-size:8px;color:#6f7e8c;">Bulletin de paie</div>
+                        <div style="font-size:8px;color:#5A4A4A;">Bulletin de paie</div>
                     </td>
                     <td class="right">
                         <div class="bulletin-ref">
@@ -302,14 +303,14 @@
                 <td>
                     <span class="label">Employé</span>
                     <span class="value">{{ $paie->employe?->nom_prenom ?? '—' }}</span>
-                    <span style="font-size:8px;color:#6f7e8c;">
+                    <span style="font-size:8px;color:#5A4A4A;">
                         {{ $paie->employe?->profession?->libelle ?? '' }}
                     </span>
                 </td>
                 <td>
                     <span class="label">Période</span>
                     <span class="value">{{ $periode->libelle }}</span>
-                    <span style="font-size:8px;color:#6f7e8c;">
+                    <span style="font-size:8px;color:#5A4A4A;">
                         du {{ optional($periode->date_debut)->format('d/m/Y') }}
                         au {{ optional($periode->date_fin)->format('d/m/Y') }}
                     </span>
@@ -357,7 +358,7 @@
                     <tr class="section-row"><td colspan="2">Déductions</td></tr>
                     <tr>
                         <td>CNSS, charges familiales, forfait professionnel</td>
-                        <td class="right" style="color:#C81E3A;">
+                        <td class="right" style="color:#E31E24;">
                             − {{ number_format((float) $paie->total_deductions, 2, ',', ' ') }}
                         </td>
                     </tr>
@@ -369,12 +370,12 @@
                         <td>
                             IRPP
                             @if($paie->employe?->irpp_mode === 'auto')
-                                <span style="font-size:7.5px;color:#6f7e8c;"> (calculé par barème)</span>
+                                <span style="font-size:7.5px;color:#5A4A4A;"> (calculé par barème)</span>
                             @else
-                                <span style="font-size:7.5px;color:#6f7e8c;"> (montant fixe)</span>
+                                <span style="font-size:7.5px;color:#5A4A4A;"> (montant fixe)</span>
                             @endif
                         </td>
-                        <td class="right" style="color:#C81E3A;">
+                        <td class="right" style="color:#E31E24;">
                             − {{ number_format((float) $paie->total_retenues, 2, ',', ' ') }}
                         </td>
                     </tr>
@@ -390,13 +391,13 @@
             </tr>
             <tr>
                 <td class="label">Déductions</td>
-                <td class="value" style="color:#C81E3A;">
+                <td class="value" style="color:#E31E24;">
                     − {{ number_format((float) $paie->total_deductions, 2, ',', ' ') }}
                 </td>
             </tr>
             <tr>
                 <td class="label">Retenues</td>
-                <td class="value" style="color:#C81E3A;">
+                <td class="value" style="color:#E31E24;">
                     − {{ number_format((float) $paie->total_retenues, 2, ',', ' ') }}
                 </td>
             </tr>

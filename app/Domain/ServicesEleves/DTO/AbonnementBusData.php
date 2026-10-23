@@ -2,6 +2,11 @@
 
 namespace App\Domain\ServicesEleves\DTO;
 
+/**
+ * Souscription au bus : l'élève, la zone de ramassage et le montant convenu.
+ * La ligne, le chauffeur et le véhicule découlent de la zone ; la position GPS
+ * du domicile se renseigne après la souscription.
+ */
 final readonly class AbonnementBusData
 {
     public function __construct(
@@ -10,10 +15,7 @@ final readonly class AbonnementBusData
         public float   $montantMensuel,
         public int     $nombreMois,
         public ?int    $zoneId,
-        public ?int    $voitureId,
-        public ?int    $ligneId,
-        public string  $sens,
-        public ?string $pointArret,
+        public string  $sens = 'aller_retour',
     ) {}
 
     public static function fromRequest(array $data): self
@@ -23,11 +25,8 @@ final readonly class AbonnementBusData
             dateDebut:      $data['date_debut'],
             montantMensuel: (float) $data['montant_mensuel'],
             nombreMois:     (int) $data['nombre_mois'],
-            zoneId:         isset($data['zone_id']) ? (int) $data['zone_id'] : null,
-            voitureId:      isset($data['voiture_id']) ? (int) $data['voiture_id'] : null,
-            ligneId:        isset($data['ligne_id']) ? (int) $data['ligne_id'] : null,
+            zoneId:         ! empty($data['zone_id']) ? (int) $data['zone_id'] : null,
             sens:           $data['sens'] ?? 'aller_retour',
-            pointArret:     $data['point_arret'] ?? null,
         );
     }
 

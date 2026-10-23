@@ -13,9 +13,9 @@
 
 @section('page_actions')
     @can('structure.gerer')
-    <button type="button" class="btn btn-nouveau" id="btnNouvelleAnnee" data-bs-toggle="modal" data-bs-target="#anneeModal">
+    <x-bouton variante="nouveau" type="button" id="btnNouvelleAnnee" data-bs-toggle="modal" data-bs-target="#anneeModal">
         <i class="fas fa-plus-circle me-1"></i> Nouvelle année scolaire
-    </button>
+    </x-bouton>
     @endcan
 @endsection
 
@@ -26,8 +26,8 @@
        redéclarés ici. Palette chaude alignée sur Cycles/Niveaux (pas de
        gris Bootstrap générique #f8f9fa/#e9ecef). */
     .annees-page {
-        --annees-bg-soft: #faf6ee;
-        --annees-border: #ece4d6;
+        --annees-bg-soft: var(--eim-cream);
+        --annees-border: var(--eim-border);
     }
 
     /* ===== Échelle de tailles de texte pour cette page =====
@@ -46,14 +46,14 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        box-shadow: 0 2px 8px rgba(122,15,28,.04);
+        box-shadow: 0 2px 8px rgba(142,18,22,.04);
         transition: transform .2s ease, box-shadow .2s ease;
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(122,15,28,.08); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(142,18,22,.08); }
     .stat-icon {
         width: 48px; height: 48px; border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.15rem; background: rgba(200,30,58,.08); color: var(--school-red);
+        font-size: 1.15rem; background: rgba(227,30,36,.08); color: var(--school-red);
         flex-shrink: 0;
     }
     .stat-info .stat-value { font-size: 1.2rem; font-weight: 700; line-height: 1.2; color: var(--school-ink); }
@@ -68,24 +68,20 @@
     .btn-outline-scolarite:hover { background: var(--annees-bg-soft); border-color: var(--school-red); color: var(--school-red); }
 
     /* Card & tableau principal */
-    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background: #fff; overflow: hidden; }
+    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background: #fff; overflow: hidden; }
     .main-card .card-header { border-bottom: 1px solid var(--annees-border) !important; }
 
     .filtre-input {
         border-radius: 10px; border: 1px solid var(--annees-border);
         padding: .55rem .9rem; font-size: .88rem;
     }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .search-wrapper { position: relative; }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aa7b2; font-size: .85rem; }
-    .search-input { padding-left: 36px !important; }
 
     .btn-filtrer {
         background: var(--school-red); color: #fff; border: none; border-radius: 10px;
         padding: .55rem 1rem; font-weight: 600; font-size: .88rem; transition: all .2s ease;
     }
-    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.25); }
+    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; box-shadow: 0 4px 12px rgba(227,30,36,.25); }
 
     .compteur-badge {
         display: inline-block; background: var(--annees-bg-soft); color: var(--school-red);
@@ -96,9 +92,9 @@
     .btn-nouveau {
         background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
         color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
-        box-shadow: 0 4px 14px rgba(200,30,58,.25); transition: all .2s ease;
+        box-shadow: 0 4px 14px rgba(227,30,36,.25); transition: all .2s ease;
     }
-    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); }
+    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(227,30,36,.35); }
 
     /* Tableau */
     .table-annees thead tr { background: var(--annees-bg-soft); }
@@ -108,7 +104,7 @@
     }
     .table-annees thead th i { color: var(--school-gold-dark); }
     .table-annees tbody td { padding: .9rem 1rem; border-bottom: 1px solid var(--annees-border); font-size: .9rem; color: var(--school-ink); }
-    .table-annees tbody tr:hover { background: #fdfaf5; }
+    .table-annees tbody tr:hover { background: var(--eim-hover); }
     .table-annees tbody tr:last-child td { border-bottom: none; }
 
     .annee-libelle { font-weight: 700; color: var(--school-ink); display: block; font-size: .94rem; }
@@ -117,15 +113,15 @@
     .inscription-periode i { font-size: .7rem; color: var(--school-muted); }
 
     /* Badges statut, alignés sur le vert déjà utilisé pour "Actif" sur
-       Cycles (#e3f7ec / #1c7a4d) — pas une teinte différente. */
+       Cycles (#e3f7ec / var(--eim-success)) — pas une teinte différente. */
     .badge-etat {
         display: inline-flex; align-items: center; gap: 6px; font-size: .75rem;
         font-weight: 600; padding: .4em .85em; border-radius: 999px;
     }
-    .badge-etat-active { background: #e3f7ec; color: #1c7a4d; }
+    .badge-etat-active { background: #e3f7ec; color: var(--eim-success); }
     .badge-etat-cloturee { background: var(--annees-bg-soft); color: var(--school-muted); }
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .badge-etat-active .badge-dot { background: #1c7a4d; }
+    .badge-etat-active .badge-dot { background: var(--eim-success); }
     .badge-etat-cloturee .badge-dot { background: var(--school-muted); }
     .badge-etat-attente { background: #fdf4e0; color: var(--school-gold-dark); }
     .badge-etat-attente .badge-dot { background: var(--school-gold-dark); }
@@ -136,7 +132,7 @@
         padding: .3em .7em; border-radius: 999px;
     }
 
-    .empty-state { padding: 3.5rem 1rem; text-align: center; color: #9aa7b2; }
+    .empty-state { padding: 3.5rem 1rem; text-align: center; color: #7A6A6A; }
     .empty-state i { font-size: 2.5rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
     .empty-state p { font-size: .9rem; }
 
@@ -161,15 +157,13 @@
     .form-section .form-control {
         border-radius: 8px; border: 1px solid var(--annees-border); padding: .55rem .75rem; font-size: .88rem;
     }
-    .form-section .form-control:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .btn-annuler { background: #fff; border: 1px solid var(--annees-border); color: #5b6b7a; border-radius: 8px; font-weight: 500; padding: .55rem 1.2rem; font-size: .88rem; }
+    .btn-annuler { background: #fff; border: 1px solid var(--annees-border); color: var(--eim-ink-soft); border-radius: 8px; font-weight: 500; padding: .55rem 1.2rem; font-size: .88rem; }
     .btn-annuler:hover { background: var(--annees-bg-soft); }
     .btn-enregistrer {
         background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff;
         border: none; border-radius: 8px; font-weight: 600; padding: .55rem 1.4rem; font-size: .88rem;
     }
-    .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
 </style>
 @endsection
 
@@ -178,58 +172,41 @@
         {{-- En-tête / structure pédagogique synthétique --}}
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-sitemap"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $cyclesCount }}</div>
-                        <div class="stat-label">Cycles enregistrés</div>
-                    </div>
-                </div>
+                <x-stat icone="fas fa-sitemap" libelle="Cycles enregistrés">{{ $cyclesCount }}</x-stat>
             </div>
             <div class="col-sm-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value">{{ $niveauxCount }}</div>
-                        <div class="stat-label">Niveaux d'étude</div>
-                    </div>
-                </div>
+                <x-stat icone="fas fa-layer-group" libelle="Niveaux d'étude">{{ $niveauxCount }}</x-stat>
             </div>
             <div class="col-sm-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
-                <a href="{{ route('scolarite.cycles.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+                <x-bouton variante="contour" href="{{ route('scolarite.cycles.index') }}" class="btn-sm rounded-pill px-3">
                     <i class="fas fa-sitemap me-1"></i> Cycles
-                </a>
-                <a href="{{ route('scolarite.niveaux.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+                </x-bouton>
+                <x-bouton variante="contour" href="{{ route('scolarite.niveaux.index') }}" class="btn-sm rounded-pill px-3">
                     <i class="fas fa-layer-group me-1"></i> Niveaux
-                </a>
+                </x-bouton>
             </div>
         </div>
 
         {{-- Tableau principal --}}
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4">
                 <form method="GET" class="row g-3 align-items-center">
                     <div class="col-md-6">
-                        <div class="search-wrapper">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" name="search" class="form-control filtre-input search-input"
-                                   placeholder="Rechercher une année scolaire (ex : 2026-2027)..." value="{{ request('search') }}">
-                        </div>
+                        <x-recherche name="search" placeholder="Rechercher une année scolaire (ex : 2026-2027)..." value="{{ request('search') }}" />
                     </div>
                     <div class="col-md-3 col-6">
-                        <button type="submit" class="btn btn-filtrer w-100">
+                        <x-bouton variante="filtrer" type="submit" class="w-100">
                             <i class="fas fa-filter me-1"></i> Filtrer
-                        </button>
+                        </x-bouton>
                     </div>
                     <div class="col-md-3 col-6 text-end">
-                        <span class="compteur-badge">{{ $annees->total() }} année(s)</span>
+                        <x-compteur>{{ $annees->total() }} année(s)</x-compteur>
                     </div>
                 </form>
             </div>
 
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-annees align-middle mb-0">
+                <x-tableau class="table-annees align-middle mb-0">
                         <thead>
                             <tr>
                                 <th class="ps-4"><i class="fas fa-calendar-alt me-2"></i>Année scolaire</th>
@@ -269,11 +246,7 @@
                                         @endif
                                     </td>
                                     <td class="text-center pe-4">
-                                        <div class="dropdown">
-                                            <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                        <x-actions>
                                                 @can('structure.gerer')
                                                 <li>
                                                     <button type="button" class="dropdown-item btn-edit-annee"
@@ -314,91 +287,68 @@
                                                     </li>
                                                     @endcan
                                                 @endif
-                                            </ul>
-                                        </div>
+                                            </x-actions>
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="empty-state">
-                                            <i class="fas fa-calendar-times"></i>
-                                            <p class="mb-0 fw-medium">Aucune année scolaire trouvée.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <x-vide colspan="4" icone="fas fa-calendar-times" :paragraphe="false"><p class="mb-0 fw-medium">Aucune année scolaire trouvée.</p></x-vide>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
-        </div>
+        </x-carte>
 
         <div class="mt-4">
-            {{ $annees->appends(request()->query())->links() }}
+            <x-pagination :liste="$annees->appends(request()->query())" />
         </div>
 
         {{-- Modale d'ajout/édition --}}
         @can('structure.gerer')
-        <div class="modal fade" id="anneeModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content modal-annees">
-                    <form id="annee-form">
-                        @csrf
-                        <input type="hidden" name="_method" id="annee-method" value="POST">
-                        <div class="modal-header modal-header-annees">
-                            <h5 class="modal-title" id="annee-modal-title">
-                                <i class="fas fa-plus-circle me-2"></i>Nouvelle année scolaire
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="form-section mb-3">
-                                <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations générales</div>
-                                <div class="mb-3">
-                                    <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                    <input type="text" name="libelle" id="annee-libelle" class="form-control"
-                                           placeholder="Ex : 2026-2027">
-                                    <div class="text-danger text-xs mt-1" id="annee-libelle-error"></div>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <label class="form-label">Date de rentrée <span class="text-danger">*</span></label>
-                                        <input type="date" name="date_rentree" id="annee-date-rentree" class="form-control">
-                                        <div class="text-danger text-xs mt-1" id="annee-date_rentree-error"></div>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label">Date de fin <span class="text-danger">*</span></label>
-                                        <input type="date" name="date_fin" id="annee-date-fin" class="form-control">
-                                        <div class="text-danger text-xs mt-1" id="annee-date_fin-error"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-section">
-                                <div class="form-section-title"><i class="fas fa-door-open"></i> Inscriptions &amp; réinscriptions</div>
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <label class="form-label">Ouverture</label>
-                                        <input type="date" name="date_ouverture_inscription" id="annee-date-ouverture" class="form-control">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label">Fermeture</label>
-                                        <input type="date" name="date_fermeture_reinscription" id="annee-date-fermeture" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light px-4 py-3">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer">
-                                <i class="fas fa-save me-1"></i> Enregistrer
-                            </button>
-                        </div>
-                    </form>
+        <x-modale id="anneeModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-annees" entete-class="modal-header-annees" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="annee-form">@csrf
+                        <input type="hidden" name="_method" id="annee-method" value="POST"></x-slot:formulaire>
+            <x-slot:titre id="annee-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle année scolaire</x-slot:titre>
+            <x-section titre="Informations générales" icone="fas fa-info-circle" class="mb-3">
+                <div class="mb-3">
+                    <x-libelle requis>Libellé</x-libelle>
+                    <input type="text" name="libelle" id="annee-libelle" class="form-control"
+                           placeholder="Ex : 2026-2027">
+                    <div class="text-danger text-xs mt-1" id="annee-libelle-error"></div>
                 </div>
-            </div>
-        </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <x-libelle requis>Date de rentrée</x-libelle>
+                        <input type="date" name="date_rentree" id="annee-date-rentree" class="form-control">
+                        <div class="text-danger text-xs mt-1" id="annee-date_rentree-error"></div>
+                    </div>
+                    <div class="col-6">
+                        <x-libelle requis>Date de fin</x-libelle>
+                        <input type="date" name="date_fin" id="annee-date-fin" class="form-control">
+                        <div class="text-danger text-xs mt-1" id="annee-date_fin-error"></div>
+                    </div>
+                </div>
+            </x-section>
+
+            <x-section>
+                <div class="form-section-title"><i class="fas fa-door-open"></i> Inscriptions &amp; réinscriptions</div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <x-libelle>Ouverture</x-libelle>
+                        <input type="date" name="date_ouverture_inscription" id="annee-date-ouverture" class="form-control">
+                    </div>
+                    <div class="col-6">
+                        <x-libelle>Fermeture</x-libelle>
+                        <input type="date" name="date_fermeture_reinscription" id="annee-date-fermeture" class="form-control">
+                    </div>
+                </div>
+            </x-section>
+            <x-slot:pied class="bg-light px-4 py-3">
+                <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+                <x-bouton type="submit">
+                    <i class="fas fa-save me-1"></i> Enregistrer
+                </x-bouton>
+            </x-slot:pied>
+        </x-modale>
         @endcan
     </div>
 @endsection

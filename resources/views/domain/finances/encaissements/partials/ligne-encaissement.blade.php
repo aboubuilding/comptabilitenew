@@ -14,7 +14,7 @@
     </td>
     <td class="col-eleve">
         <div class="fw-semibold">{{ $e->eleve_nom ? $e->eleve_nom . ' ' . $e->eleve_prenom : $e->payeur }}</div>
-        <div class="cell-sub">{{ $e->matricule }}@if ($e->classe) · {{ $e->classe }}@endif</div>
+        <div class="cell-sub niveau-classe">{{ $e->matricule }}@if ($e->niveau) · {{ $e->niveau }}@endif @if ($e->classe) · {{ $e->classe }}@endif</div>
         <div class="cell-sub">Payé par {{ $e->payeur }}</div>
     </td>
     <td class="col-detail">
@@ -30,16 +30,13 @@
     </td>
     <td class="text-center pe-4 text-nowrap">
         <a href="{{ $recuUrl }}" target="_blank" class="btn-imprimer btn-imprimer-recu" title="Imprimer le reçu"><i class="fas fa-print"></i><span class="d-none d-xl-inline ms-1">Reçu</span></a>
-        <div class="dropdown d-inline-block">
-            <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-            <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+        <x-actions class="d-inline-block">
                 <li><a href="#" role="button" class="dropdown-item btn-detail" data-paiement="{{ $e->paiement_id }}" data-recu="{{ $recuUrl }}"><i class="fas fa-eye"></i> Détail</a></li>
                 @if (! empty($annulable) && $caisseOuverteIci)
                     @can('encaissements.annuler')
                         <li><button type="button" class="dropdown-item text-danger btn-annuler-encaissement" data-paiement="{{ $e->paiement_id }}" data-reference="{{ $e->reference }}"><i class="fas fa-undo"></i> Annuler l'encaissement</button></li>
                     @endcan
                 @endif
-            </ul>
-        </div>
+            </x-actions>
     </td>
 </tr>

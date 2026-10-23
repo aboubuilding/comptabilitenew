@@ -12,32 +12,30 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.employes.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.employes.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
+    </x-bouton>
 
-    <a href="{{ route('rh.paies.index', ['employe_id' => $employe->id]) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.paies.index', ['employe_id' => $employe->id]) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-money-check-alt me-1"></i> Voir ses bulletins
-    </a>
+    </x-bouton>
 
     @can('employes.gerer')
         {{-- Redirige vers la liste avec l'employé pré-sélectionné pour édition.
              La modale existe là-bas : pas de duplication ici. --}}
-        <a href="{{ route('rh.employes.index', ['edit' => $employe->id]) }}"
-           class="btn btn-nouveau">
+        <x-bouton variante="nouveau" href="{{ route('rh.employes.index', ['edit' => $employe->id]) }}">
             <i class="fas fa-pen me-1"></i> Modifier
-        </a>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .show-page { --s-bg-soft:#faf6ee; --s-border:#ece4d6; }
+    .show-page { --s-bg-soft:var(--eim-cream); --s-border:var(--eim-border); }
 
     .main-card {
         border:none; border-radius:16px;
-        box-shadow: 0 10px 30px rgba(122,15,28,.06);
+        box-shadow: 0 10px 30px rgba(142,18,22,.06);
         background:#fff; overflow:hidden; margin-bottom:1rem;
     }
     .main-card .card-header { border-bottom:1px solid var(--s-border) !important; }
@@ -52,7 +50,7 @@
         background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));
         color:#fff; border-radius:16px; padding:1.25rem 1.5rem;
         display:flex; align-items:center; gap:1.25rem;
-        box-shadow: 0 8px 24px rgba(122,15,28,.18);
+        box-shadow: 0 8px 24px rgba(142,18,22,.18);
         margin-bottom:1.25rem;
     }
     .employe-avatar-lg {
@@ -78,14 +76,6 @@
     .info-value { font-weight:600; color:var(--school-ink); text-align:right; }
 
     /* Badges */
-    .badge-statut {
-        display:inline-flex; align-items:center; gap:6px;
-        padding:.35em .85em; border-radius:999px;
-        font-size:.72rem; font-weight:600;
-    }
-    .badge-statut.actif   { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.inactif { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     .badge-social {
         display:inline-flex; align-items:center; gap:6px;
@@ -153,10 +143,8 @@
             </div>
         </div>
         <div class="text-end">
-            <span class="badge-statut {{ $employe->isActif() ? 'actif' : 'inactif' }}"
-                  style="background:rgba(255,255,255,.2);color:#fff;">
-                <span class="badge-dot"></span>{{ $employe->isActif() ? 'Actif' : 'Inactif' }}
-            </span>
+            <x-badge class="{{ $employe->isActif() ? 'actif' : 'inactif' }}" style="background:rgba(255,255,255,.2);color:#fff;" point>{{ $employe->isActif() ? 'Actif' : 'Inactif' }}
+            </x-badge>
             <div style="font-size:1.1rem;font-weight:700;margin-top:.4rem;">
                 {{ number_format((float) $employe->salaire, 0, ',', ' ') }} F
             </div>
@@ -169,7 +157,7 @@
         <div class="col-lg-6">
 
             {{-- Informations générales --}}
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6><i class="fas fa-info-circle"></i> Informations générales</h6>
                 </div>
@@ -227,10 +215,10 @@
                         <span class="info-value">{{ $employe->nbre_enfant ?? 0 }}</span>
                     </div>
                 </div>
-            </div>
+            </x-carte>
 
             {{-- Protections sociales --}}
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6><i class="fas fa-shield-alt"></i> Protections sociales</h6>
                 </div>
@@ -265,7 +253,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-carte>
 
         </div>
 
@@ -273,7 +261,7 @@
         <div class="col-lg-6">
 
             {{-- Contact & adresse --}}
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6><i class="fas fa-address-book"></i> Contact &amp; adresse</h6>
                 </div>
@@ -295,10 +283,10 @@
                         <span class="info-value">{{ $employe->ville ?? '—' }}</span>
                     </div>
                 </div>
-            </div>
+            </x-carte>
 
             {{-- Mode de paiement & fiscalité --}}
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6><i class="fas fa-wallet"></i> Mode de paiement &amp; fiscalité</h6>
                 </div>
@@ -364,7 +352,7 @@
 
                     @if (($employe->irpp_mode ?? 'auto') === 'manuel')
                         <div class="alert alert-light border-0 small mt-3 mb-0"
-                             style="background:#faf6ee;color:var(--school-muted);">
+                             style="background:var(--eim-cream);color:var(--school-muted);">
                             <i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i>
                             Le montant d'IRPP est saisi manuellement dans le module
                             <a href="{{ route('rh.remunerations.index', ['employe_id' => $employe->id]) }}"
@@ -374,7 +362,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-carte>
 
         </div>
     </div>

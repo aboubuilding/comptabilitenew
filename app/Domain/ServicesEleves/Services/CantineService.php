@@ -43,6 +43,7 @@ class CantineService
         }
 
         $anneeId = app(AnneeScolaireContext::class)->id();
+        \App\Domain\Scolarite\Models\Annee::interdireSouscriptionSiCloturee($anneeId);
 
         return DB::transaction(function () use ($data, $anneeId) {
             $anneeScolaire = \App\Domain\Scolarite\Models\Annee::find($anneeId);

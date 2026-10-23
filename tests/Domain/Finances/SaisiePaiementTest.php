@@ -93,22 +93,33 @@ class SaisiePaiementTest extends DomainTestCase
         $this->assertEqualsWithDelta(50000, $lignes[TypeDetail::FRAIS_INSCRIPTION->value]['du'], 0.01);
     }
 
-    public function test_une_souscription_prime_sur_le_montant_porte_par_l_inscription(): void
+    public function test_la_scolarite_ne_vient_que_de_l_inscription_jamais_d_une_souscription(): void
     {
-        $inscription = $this->inscriptionHistorique();
-        app(SouscriptionService::class)->creer(new SouscriptionData(
-            $this->creerFrais(469000)->id, $inscription->id, 10, now()->toDateString(), null
-        ));
+        $inscription = $this->inscriptionHistorique(['taux_remise' => 5]);
+        // Une ancienne souscription de scolarité restée en base est ignorée
+        DB::table('souscriptions')->insert([
+            'inscription_id' => $inscription->id, 'type_paiement' => TypeDetail::FRAIS_SCOLAIRE->value,
+            'montant_annuel_prevu' => 999000, 'taux_remise' => 0, 'annee_id' => $this->annee->id, 'etat' => 1,
+        ]);
+
+        try {
+            app(SouscriptionService::class)->creer(new SouscriptionData(
+                $this->creerFrais(469000)->id, $inscription->id, 10, now()->toDateString(), null
+            ));
+            $this->fail('La scolarité ne doit pas pouvoir être souscrite.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString("portées par l'inscription", $e->getMessage());
+        }
 
         $scolarite = array_values(array_filter(
             $this->engagements->lignes($inscription->id),
             fn (array $l) => $l['type'] === TypeDetail::FRAIS_SCOLAIRE->value
         ));
 
-        // Une seule ligne de scolarité : celle de la souscription (469 000 − 10 %), pas de doublon
+        // Une seule ligne : le montant de l'inscription, remise de 5 % déduite
         $this->assertCount(1, $scolarite);
-        $this->assertStringStartsWith('souscription:', $scolarite[0]['cle']);
-        $this->assertEqualsWithDelta(422100, $scolarite[0]['du'], 0.01);
+        $this->assertStringStartsWith('inscription:', $scolarite[0]['cle']);
+        $this->assertEqualsWithDelta(445550, $scolarite[0]['du'], 0.01);
     }
 
     public function test_chaque_frais_distingue_le_paye_l_attente_d_encaissement_et_le_reste(): void
@@ -352,16 +363,25 @@ class SaisiePaiementTest extends DomainTestCase
         $this->paiement($this->inscriptionHistorique(), 'PAI-COURANT-01', 50000);
         $this->paiement($this->creerInscription(null, ['annee_id' => $precedente->id]), 'PAI-ANCIEN-01', 60000, ['annee_id' => $precedente->id]);
 
-        $this->actingAs($this->creerUtilisateur(Role::Comptable));
+        $this->actingAs($this->saisisseur());
 
         $this->get('/finances/paiements')->assertOk()->assertSee('PAI-COURANT-01')->assertDontSee('PAI-ANCIEN-01');
     }
 
     /* ===================== Modes de paiement et chèque ===================== */
 
+    /** Comptable qui a saisi les paiements créés par les tests (onglet « Mes paiements »). */
+    private ?\App\Domain\Administration\Models\User $saisisseur = null;
+
+    private function saisisseur(): \App\Domain\Administration\Models\User
+    {
+        return $this->saisisseur ??= $this->creerUtilisateur(Role::Comptable);
+    }
+
     private function paiement(Inscription $inscription, string $reference, float $montant, array $attributs = []): int
     {
         return DB::table('paiements')->insertGetId($attributs + [
+            'utilisateur_id' => $this->saisisseur()->id,
             'reference' => $reference, 'montant' => $montant, 'payeur' => 'KOFFI Yao', 'date_paiement' => now()->toDateString(),
             'statut_paiement' => PaiementStatut::ENCAISSE->value, 'mode_paiement' => ModePaiement::ESPECES->value,
             'inscription_id' => $inscription->id, 'annee_id' => $this->annee->id, 'etat' => 1,
@@ -463,7 +483,7 @@ class SaisiePaiementTest extends DomainTestCase
     {
         $eleve = $this->creerEleve(['nom' => 'KOFFI', 'prenom' => 'Ama', 'matricule' => 'M-0001']);
         $this->paiement($this->creerInscription($eleve), 'PAI-TEST-0001', 50000);
-        $this->actingAs($this->creerUtilisateur(Role::Comptable));
+        $this->actingAs($this->saisisseur());
 
         $page = $this->get('/finances/paiements')->assertOk()
             ->assertSee('PAI-TEST-0001')
@@ -504,6 +524,96 @@ class SaisiePaiementTest extends DomainTestCase
         \Illuminate\Support\Carbon::setTestNow();
     }
 
+    public function test_l_onglet_des_totaux_par_type_separe_encaisse_et_en_attente_sur_chaque_periode(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow('2026-10-14 10:00:00');   // un mercredi
+
+        $inscription = $this->inscriptionHistorique();
+        $le = fn (string $date) => ['date_paiement' => $date, 'date_encaissement' => $date];
+
+        $this->detail($inscription, 1000, TypeDetail::FRAIS_SCOLAIRE, true, $le('2026-10-14'));   // aujourd'hui
+        $this->detail($inscription, 2000, TypeDetail::FRAIS_SCOLAIRE, true, $le('2026-10-12'));   // cette semaine
+        $this->detail($inscription, 4000, TypeDetail::CANTINE, true, $le('2026-10-02'));          // ce mois
+        $this->detail($inscription, 8000, TypeDetail::BUS, true, $le('2026-09-20'));              // cette année
+        $this->detail($inscription, 300, TypeDetail::CANTINE, false, ['date_paiement' => '2026-10-14']);   // en attente, saisi aujourd'hui
+        $this->detail($inscription, 700, TypeDetail::FRAIS_SCOLAIRE, false, ['date_paiement' => '2026-09-01']);
+        // Ne comptent pas : inactif, annulé
+        $this->detail($inscription, 900000, TypeDetail::CANTINE, true, $le('2026-10-14') + ['etat' => 2]);
+        $this->detail($inscription, 900000, TypeDetail::CANTINE, true, $le('2026-10-14') + ['statut_paiement' => PaiementStatut::ANNULE->value]);
+
+        $parType = app(\App\Domain\Finances\Repositories\PaiementRepository::class)->totauxParType($this->annee->id);
+        $encaisse = $parType['encaisse']->keyBy('type');
+        $attente = $parType['attente']->keyBy('type');
+
+        $scolarite = $encaisse[TypeDetail::FRAIS_SCOLAIRE->value];
+        $this->assertSame([3000.0, 3000.0, 3000.0, 1000.0], [$scolarite->annee, $scolarite->mois, $scolarite->semaine, $scolarite->jour]);
+        $cantine = $encaisse[TypeDetail::CANTINE->value];
+        $this->assertSame([4000.0, 4000.0, 0.0, 0.0], [$cantine->annee, $cantine->mois, $cantine->semaine, $cantine->jour]);
+        $this->assertSame([8000.0, 0.0], [$encaisse[TypeDetail::BUS->value]->annee, $encaisse[TypeDetail::BUS->value]->mois]);
+        $this->assertSame([300.0, 300.0], [$attente[TypeDetail::CANTINE->value]->annee, $attente[TypeDetail::CANTINE->value]->jour]);
+        $this->assertSame([700.0, 0.0], [$attente[TypeDetail::FRAIS_SCOLAIRE->value]->annee, $attente[TypeDetail::FRAIS_SCOLAIRE->value]->mois]);
+
+        // L'onglet : Administrateur et Direction ; tables de cinq colonnes
+        $this->actingAs($this->creerUtilisateur(Role::Directeur));
+        $page = $this->get('/finances/paiements?onglet=totaux')->assertOk()
+            ->assertSee('Totaux par type de paiement')->assertSee('Paiements encaissés')->assertSee("Paiements en attente d'encaissement")
+            ->assertSee('Cantine')->assertSee('Transport');
+        $entete = explode('</thead>', explode('id="table-types-encaisse"', $page->getContent())[1])[0];
+        $this->assertSame(5, preg_match_all('/<th[ >]/', $entete));
+
+        $this->actingAs($this->creerUtilisateur(Role::Comptable));
+        $this->get('/finances/paiements?onglet=totaux')->assertOk()
+            ->assertDontSee('id="onglet-totaux"', false)->assertDontSee('id="totaux-par-type"', false);
+
+        \Illuminate\Support\Carbon::setTestNow();
+    }
+
+    public function test_l_onglet_des_details_liste_chaque_ligne_avec_son_paiement_filtrable_et_pagine(): void
+    {
+        $inscription = $this->inscriptionHistorique();
+        $paiement = DB::table('paiements')->insertGetId([
+            'reference' => 'PAI-DETAIL-01', 'montant' => 158000, 'payeur' => 'MAMAN Test', 'date_paiement' => '2026-10-01',
+            'statut_paiement' => PaiementStatut::ENCAISSE->value, 'mode_paiement' => \App\Domain\Finances\Types\ModePaiement::ESPECES->value,
+            'inscription_id' => $inscription->id, 'annee_id' => $this->annee->id, 'etat' => 1,
+        ]);
+        $this->detail($inscription, 150000, TypeDetail::FRAIS_SCOLAIRE, true, ['paiement_id' => $paiement, 'libelle' => 'Scolarité tranche 1']);
+        $this->detail($inscription, 8000, TypeDetail::CANTINE, false, ['paiement_id' => $paiement, 'libelle' => 'Cantine octobre']);
+        $this->detail($inscription, 999000, TypeDetail::CANTINE, true, ['paiement_id' => $paiement, 'libelle' => 'Ligne inactive', 'etat' => 2]);
+        $autre = $this->creerAnnee(['libelle' => '2025-2026']);
+        $this->detail($inscription, 777000, TypeDetail::BUS, true, ['libelle' => 'Bus autre année', 'annee_id' => $autre->id]);
+        foreach (range(1, 25) as $n) {
+            $this->detail($inscription, 1000, TypeDetail::PRODUIT, true, ['libelle' => "Article {$n}"]);
+        }
+
+        // Réservé à l'Administrateur : ni la Direction ni le Comptable ne le voient
+        foreach ([Role::Directeur, Role::Comptable] as $role) {
+            $this->actingAs($this->creerUtilisateur($role));
+            $refus = $this->get('/finances/paiements?onglet=details')->assertOk()
+                ->assertDontSee('id="onglet-details"', false)->assertDontSee('id="table-details"', false);
+            $this->assertContains($refus->viewData('onglet'), ['mes', 'tous']);
+        }
+
+        $this->actingAs($this->creerUtilisateur(Role::Administrateur));
+        $page = $this->get('/finances/paiements?onglet=details')->assertOk()
+            ->assertSee('id="onglet-details"', false);
+        $this->assertSame(27, $page->viewData('details')->total());          // lignes actives de l'année
+        $this->assertSame(20, $page->viewData('details')->count());          // paginé
+        $entete = explode('</thead>', explode('id="table-details"', $page->getContent())[1])[0];
+        $this->assertSame(5, preg_match_all('/<th[ >]/', $entete));
+
+        // Filtre par type : on y voit le paiement qui porte la ligne, et le lien vers son détail
+        $page = $this->get('/finances/paiements?onglet=details&type_paiement=' . TypeDetail::CANTINE->value)->assertOk()
+            ->assertSee('Cantine octobre')->assertSee('PAI-DETAIL-01')->assertSee('MAMAN Test')
+            ->assertSee(route('finances.paiements.detail', $paiement), false)
+            ->assertDontSee('Scolarité tranche 1')->assertDontSee('Ligne inactive');
+        $this->assertSame(['lignes' => 1, 'montant' => 8000.0], $page->viewData('totauxDetails'));
+
+        // Filtre par statut de la ligne, recherche, seconde page
+        $this->assertSame(1, $this->get('/finances/paiements?onglet=details&statut_ligne=' . PaiementStatut::EN_ATTENTE->value)->viewData('details')->total());
+        $this->assertSame(2, $this->get('/finances/paiements?onglet=details&search=PAI-DETAIL')->viewData('details')->total());
+        $this->assertSame(7, $this->get('/finances/paiements?onglet=details&page=2')->viewData('details')->count());
+    }
+
     /** @dataProvider profilsEtTotaux */
     public function test_les_totaux_encaisses_sont_reserves_a_l_administrateur_et_a_la_direction(Role $role, bool $visibles): void
     {
@@ -527,6 +637,42 @@ class SaisiePaiementTest extends DomainTestCase
             'Comptable'              => [Role::Comptable, false],
             'Administrateur adjoint' => [Role::AdministrateurAdjoint, false],
         ];
+    }
+
+    public function test_le_comptable_ne_voit_que_ses_paiements_et_la_direction_voit_tous_les_paiements_avec_un_filtre(): void
+    {
+        $moi = $this->saisisseur();
+        $collegue = $this->creerUtilisateur(Role::Comptable, ['nom' => 'COLLEGUE', 'prenom' => 'Ama']);
+        $inscription = $this->inscriptionHistorique();
+        $mien = $this->paiement($inscription, 'PAI-MIEN-01', 50000);
+        $autre = $this->paiement($inscription, 'PAI-COLLEGUE-01', 60000, ['utilisateur_id' => $collegue->id]);
+
+        // Comptable : un seul onglet, « Mes paiements », avec ses seules saisies
+        $this->actingAs($moi);
+        $page = $this->get('/finances/paiements')->assertOk()
+            ->assertSee('id="onglet-mes"', false)->assertDontSee('id="onglet-tous"', false)
+            ->assertSee('PAI-MIEN-01')->assertDontSee('PAI-COLLEGUE-01');
+        $this->assertSame('mes', $page->viewData('onglet'));
+        $this->assertSame(1, $page->viewData('compteurs')['encaisse']);
+        // Demander « Tous » ne change rien ; ni le détail ni l'export d'un paiement d'un collègue
+        $this->get('/finances/paiements?onglet=tous')->assertOk()->assertDontSee('PAI-COLLEGUE-01');
+        $this->get('/finances/paiements?onglet=tous&saisi_par=' . $collegue->id)->assertOk()->assertDontSee('PAI-COLLEGUE-01');
+        $this->get(route('finances.paiements.detail', $autre))->assertForbidden();
+        $this->get(route('finances.paiements.detail', $mien))->assertOk();
+
+        // Direction : « Tous les paiements », filtrable par auteur de la saisie
+        $this->actingAs($this->creerUtilisateur(Role::Directeur));
+        $page = $this->get('/finances/paiements')->assertOk()
+            ->assertSee('id="onglet-tous"', false)->assertDontSee('id="onglet-mes"', false)
+            ->assertSee('PAI-MIEN-01')->assertSee('PAI-COLLEGUE-01')
+            ->assertSee('id="filtre-saisi-par"', false)->assertSee('COLLEGUE Ama');
+        $this->assertSame('tous', $page->viewData('onglet'));
+        $this->get('/finances/paiements?onglet=tous&saisi_par=' . $collegue->id)->assertOk()
+            ->assertSee('PAI-COLLEGUE-01')->assertDontSee('PAI-MIEN-01');
+
+        // Administrateur : les deux onglets
+        $this->actingAs($this->creerUtilisateur(Role::Administrateur));
+        $this->get('/finances/paiements')->assertOk()->assertSee('id="onglet-mes"', false)->assertSee('id="onglet-tous"', false);
     }
 
     /* ===================== Détail d'un paiement ===================== */
@@ -553,7 +699,7 @@ class SaisiePaiementTest extends DomainTestCase
         ]);
         $this->detail($inscription, 10000, TypeDetail::FRAIS_ASSURANCE, false, ['paiement_id' => $paiementId, 'libelle' => 'Assurance annuelle']);
 
-        $this->actingAs($this->creerUtilisateur(Role::Comptable));
+        $this->actingAs($this->saisisseur());
 
         $this->get('/finances/paiements')->assertOk()->assertSee(route('finances.paiements.detail', $paiementId), false);
 

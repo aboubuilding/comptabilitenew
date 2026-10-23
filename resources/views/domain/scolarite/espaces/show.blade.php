@@ -44,11 +44,7 @@
                                 @endif
                             </div>
                             @can('familles.gerer')
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                    <i class="fa fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                            <x-actions>
                                     <li>
                                         <button type="button" class="dropdown-item btn-edit-parent"
                                                 data-url="{{ route('scolarite.espaces.parents.edit', [$espace, $p]) }}">
@@ -68,17 +64,8 @@
                                             </form>
                                         </li>
                                     @endunless
-                                    <li>
-                                        <form action="{{ route('scolarite.espaces.parents.destroy', [$espace, $p]) }}"
-                                              method="POST" class="form-confirm-delete">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger">
-                                                <i class="fa fa-trash"></i> Supprimer
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+                                    <x-actions.supprimer :action="route('scolarite.espaces.parents.destroy', [$espace, $p])" icone="fa fa-trash">Supprimer</x-actions.supprimer>
+                                </x-actions>
                             @endcan
                         </div>
                         @if($p->telephone) <div class="small mt-1"><i class="fa fa-phone"></i> {{ $p->telephone }}</div> @endif
@@ -116,24 +103,20 @@
                             <div>
                                 <strong>{{ $c->email }}</strong>
                                 <br>
-                                <span class="badge-statut bg-{{ $c->etat ? 'success' : 'secondary' }}">
+                                <x-badge class="bg-{{ $c->etat ? 'success' : 'secondary' }}">
                                     {{ $c->etat ? 'Actif' : 'Inactif' }}
-                                </span>
+                                </x-badge>
                                 @if($c->statut_compte)
-                                    <span class="badge-statut bg-info ms-1">
+                                    <x-badge class="bg-info ms-1">
                                         {{ $c->statut_compte->libelle() }}
-                                    </span>
+                                    </x-badge>
                                 @endif
                                 @if($c->parent)
                                     <br><small class="text-muted">Titulaire : {{ $c->parent->nom_complet }}</small>
                                 @endif
                             </div>
                             @can('familles.gerer')
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                    <i class="fa fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                            <x-actions>
                                     <li>
                                         <button type="button" class="dropdown-item btn-edit-compte"
                                                 data-url="{{ route('scolarite.espaces.comptes.edit', [$espace, $c]) }}">
@@ -151,17 +134,8 @@
                                             </button>
                                         </form>
                                     </li>
-                                    <li>
-                                        <form action="{{ route('scolarite.espaces.comptes.destroy', [$espace, $c]) }}"
-                                              method="POST" class="form-confirm-delete">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger">
-                                                <i class="fa fa-trash"></i> Supprimer
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+                                    <x-actions.supprimer :action="route('scolarite.espaces.comptes.destroy', [$espace, $c])" icone="fa fa-trash">Supprimer</x-actions.supprimer>
+                                </x-actions>
                             @endcan
                         </div>
                     </div>
@@ -176,8 +150,7 @@
             <div class="main-card p-3">
                 <h6 class="mb-3"><i class="fa-user-graduate"></i> Élèves de la fratrie ({{ $espace->eleves->count() }})</h6>
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                <x-tableau class="table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Matricule</th>
@@ -197,9 +170,9 @@
                                     <td>{{ $e->nationalite->libelle ?? '—' }}</td>
                                     <td>
                                         @if($insc?->classe)
-                                            <span class="badge-statut bg-primary">{{ $insc->classe->libelle }}</span>
+                                            <x-badge class="bg-primary">{{ $insc->classe->libelle }}</x-badge>
                                         @else
-                                            <span class="badge-statut bg-warning text-dark">Non affecté</span>
+                                            <x-badge class="bg-warning text-dark">Non affecté</x-badge>
                                         @endif
                                         <small class="d-block text-muted">
                                             {{ $insc?->niveau?->libelle ?? '—' }}
@@ -211,25 +184,16 @@
                                 <tr><td colspan="5" class="text-muted text-center py-3">Aucun élève rattaché.</td></tr>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
         </div>
     </div>
 
     {{-- Modale parent --}}
-    <div class="modal fade" id="modalParent" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalParentContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalParent" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalParentContent" />
 
     {{-- Modale compte --}}
-    <div class="modal fade" id="modalCompte" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalCompteContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalCompte" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalCompteContent" />
 @endsection
 
 @push('js')

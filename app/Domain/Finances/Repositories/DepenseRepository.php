@@ -21,6 +21,7 @@ class DepenseRepository extends BaseRepository
                 'auteur:id,name',
                 'valideur:id,name',
                 'caisse:id,libelle',
+                'ligneBudgetaire:id,libelle',
             ])
             ->when($filters['annee_id'] ?? null, fn ($q, $v) => $q->where('annee_id', $v))
             ->when(

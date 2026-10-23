@@ -12,35 +12,29 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.cantine.inscriptions.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.inscriptions.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-users me-1"></i> Inscriptions
-    </a>
-    <a href="{{ route('services-eleves.cantine.menus.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.menus.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-book-open me-1"></i> Menus
-    </a>
-    <a href="{{ route('services-eleves.cantine.preparations.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.preparations.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-fire me-1"></i> Préparations
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .dc-page { --dc-bg-soft:#faf6ee; --dc-border:#ece4d6; }
+    .dc-page { --dc-bg-soft:var(--eim-cream); --dc-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--dc-border); border-radius:12px; padding:1.15rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition:transform .2s; }
-    .stat-card:hover { transform:translateY(-2px); }
+    .stat-card { background:#fff; border:1px solid var(--dc-border); border-radius:12px; padding:1.15rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition:transform .2s; }
     .stat-icon { width:48px; height:48px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.15rem; }
-    .stat-icon.green { background:rgba(28,122,77,.10); color:#1c7a4d; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.blue  { background:rgba(37,99,235,.10); color:#2563eb; }
-    .stat-icon.red   { background:rgba(200,30,58,.10); color:var(--school-red); }
     .stat-info .stat-value { font-size:1.3rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
-    .stat-info .stat-sub   { font-size:.7rem; color:var(--school-muted); margin-top:2px; }
 
-    .chart-card { background:#fff; border:1px solid var(--dc-border); border-radius:16px; overflow:hidden; box-shadow:0 4px 18px rgba(122,15,28,.05); }
+    .chart-card { background:#fff; border:1px solid var(--dc-border); border-radius:16px; overflow:hidden; box-shadow:0 4px 18px rgba(142,18,22,.05); }
     .chart-card .card-header { background:#fff; border-bottom:1px solid var(--dc-border); padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; }
     .chart-card .card-header h6 { margin:0; font-size:.92rem; font-weight:700; color:var(--school-ink); display:flex; align-items:center; gap:8px; }
     .chart-card .card-header i { color:var(--school-gold-dark); }
@@ -50,10 +44,10 @@
     .filters-card { background:#fff; border:1px solid var(--dc-border); border-radius:12px; padding:.85rem 1rem; margin-bottom:1.25rem; }
     .filtre-input { border-radius:8px; border:1px solid var(--dc-border); padding:.5rem .75rem; font-size:.85rem; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:8px; padding:.5rem 1.1rem; font-weight:600; font-size:.85rem; }
-    .btn-reset { background:#fff; border:1px solid var(--dc-border); color:#5b6b7a; border-radius:8px; padding:.5rem 1rem; font-size:.85rem; }
+    .btn-reset { background:#fff; border:1px solid var(--dc-border); color:var(--eim-ink-soft); border-radius:8px; padding:.5rem 1rem; font-size:.85rem; }
 
     /* Rentabilité */
-    .renta-card { background:linear-gradient(135deg,#1c7a4d,#2ecc71); color:#fff; border-radius:16px; padding:1.25rem 1.5rem; box-shadow:0 8px 24px rgba(28,122,77,.20); }
+    .renta-card { background:linear-gradient(135deg,var(--eim-success),#2ecc71); color:#fff; border-radius:16px; padding:1.25rem 1.5rem; box-shadow:0 8px 24px rgba(28,122,77,.20); }
     .renta-card.deficit { background:linear-gradient(135deg,var(--school-red-deep),var(--school-red)); }
     .renta-card .label { font-size:.75rem; opacity:.85; text-transform:uppercase; letter-spacing:.5px; }
     .renta-card .value { font-size:1.6rem; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
@@ -62,11 +56,11 @@
     .table-top thead tr { background:var(--dc-bg-soft); }
     .table-top thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.65rem .9rem; border-bottom:1px solid var(--dc-border); }
     .table-top tbody td { padding:.65rem .9rem; border-bottom:1px solid var(--dc-border); font-size:.85rem; vertical-align:middle; }
-    .table-top tbody tr:hover { background:#fdfaf5; }
+    .table-top tbody tr:hover { background:var(--eim-hover); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
     .num.grand { color:var(--school-red-dark); font-weight:700; }
 
-    .empty-state { padding:2rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:2rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2rem; margin-bottom:.5rem; display:block; color:#d8c8ae; }
 </style>
 @endsection
@@ -84,7 +78,7 @@
                 <input type="date" name="date_fin" class="form-control filtre-input" value="{{ $filters['date_fin'] }}">
             </div>
             <div class="col-md-4 d-flex gap-2">
-                <button type="submit" class="btn btn-filtrer flex-fill"><i class="fas fa-filter me-1"></i> Appliquer</button>
+                <x-bouton variante="filtrer" type="submit" class="flex-fill"><i class="fas fa-filter me-1"></i> Appliquer</x-bouton>
                 <a href="{{ route('services-eleves.cantine.dashboard') }}" class="btn btn-reset"><i class="fas fa-undo"></i></a>
             </div>
         </div>
@@ -93,46 +87,16 @@
     {{-- Cartes stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-users"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $statsAbonnements['total_actifs'] }}</div>
-                    <div class="stat-label">Abonnements actifs</div>
-                    <div class="stat-sub">{{ number_format($statsAbonnements['revenus_mensuels'], 0, ',', ' ') }} F/mois</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-users" couleur="green" libelle="Abonnements actifs">{{ $statsAbonnements['total_actifs'] }}<x-slot:complement><div class="stat-sub">{{ number_format($statsAbonnements['revenus_mensuels'], 0, ',', ' ') }} F/mois</div></x-slot:complement></x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-utensils"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $statsPreparations['parts'] }}</div>
-                    <div class="stat-label">Parts servies</div>
-                    <div class="stat-sub">{{ $statsPreparations['nb'] }} préparation(s)</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-utensils" couleur="blue" libelle="Parts servies">{{ $statsPreparations['parts'] }}<x-slot:complement><div class="stat-sub">{{ $statsPreparations['nb'] }} préparation(s)</div></x-slot:complement></x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-coins"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($statsPreparations['cout_moyen_par_part'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Coût moyen / part</div>
-                    <div class="stat-sub">Coût total : {{ number_format($statsPreparations['cout_total'], 0, ',', ' ') }}</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-coins" couleur="gold" libelle="Coût moyen / part">{{ number_format($statsPreparations['cout_moyen_par_part'], 0, ',', ' ') }}<x-slot:complement><div class="stat-sub">Coût total : {{ number_format($statsPreparations['cout_total'], 0, ',', ' ') }}</div></x-slot:complement></x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon {{ $tauxOccupation >= 80 ? 'green' : ($tauxOccupation >= 50 ? 'gold' : 'red') }}">
-                    <i class="fas fa-percentage"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($tauxOccupation, 1, ',', ' ') }} %</div>
-                    <div class="stat-label">Taux d'occupation</div>
-                    <div class="stat-sub">Parts servies / abonnés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-percentage" couleur="{{ $tauxOccupation >= 80 ? 'green' : ($tauxOccupation >= 50 ? 'gold' : 'red') }}" libelle="Taux d'occupation">{{ number_format($tauxOccupation, 1, ',', ' ') }} %<x-slot:complement><div class="stat-sub">Parts servies / abonnés</div></x-slot:complement></x-stat>
         </div>
     </div>
 
@@ -167,10 +131,7 @@
                 <div class="card-body">
                     @if ($rentabilite['recettes'] <= 0 && $rentabilite['couts'] <= 0)
                         <div class="chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
-                            <div class="empty-state">
-                                <i class="fas fa-balance-scale"></i>
-                                <p class="mb-0">Aucune donnée.</p>
-                            </div>
+                            <x-vide icone="fas fa-balance-scale" :paragraphe="false"><p class="mb-0">Aucune donnée.</p></x-vide>
                         </div>
                     @else
                         <div class="chart-wrapper">
@@ -192,10 +153,7 @@
                 <div class="card-body">
                     @if ($coutParJour->isEmpty())
                         <div class="chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
-                            <div class="empty-state">
-                                <i class="fas fa-chart-area"></i>
-                                <p class="mb-0">Aucune préparation sur la période.</p>
-                            </div>
+                            <x-vide icone="fas fa-chart-area" :paragraphe="false"><p class="mb-0">Aucune préparation sur la période.</p></x-vide>
                         </div>
                     @else
                         <div class="chart-wrapper">
@@ -213,10 +171,7 @@
                 <div class="card-body">
                     @if (empty($chartData['par_type_repas']['labels']))
                         <div class="chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
-                            <div class="empty-state">
-                                <i class="fas fa-utensils"></i>
-                                <p class="mb-0">Aucune donnée.</p>
-                            </div>
+                            <x-vide icone="fas fa-utensils" :paragraphe="false"><p class="mb-0">Aucune donnée.</p></x-vide>
                         </div>
                     @else
                         <div class="chart-wrapper">
@@ -237,10 +192,7 @@
                 </div>
                 <div class="card-body">
                     @if ($topMenus->isEmpty())
-                        <div class="empty-state">
-                            <i class="fas fa-trophy"></i>
-                            <p class="mb-0">Aucun menu servi sur la période.</p>
-                        </div>
+                        <x-vide icone="fas fa-trophy" :paragraphe="false"><p class="mb-0">Aucun menu servi sur la période.</p></x-vide>
                     @else
                         <div class="chart-wrapper">
                             <canvas id="chartTopMenus"></canvas>
@@ -256,10 +208,7 @@
                 </div>
                 <div class="card-body">
                     @if (empty($chartData['evolution']['labels']))
-                        <div class="empty-state">
-                            <i class="fas fa-chart-line"></i>
-                            <p class="mb-0">Aucune donnée.</p>
-                        </div>
+                        <x-vide icone="fas fa-chart-line" :paragraphe="false"><p class="mb-0">Aucune donnée.</p></x-vide>
                     @else
                         <div class="chart-wrapper">
                             <canvas id="chartEvolution"></canvas>
@@ -276,8 +225,8 @@
 <script>
 $(function () {
     const chartData = @json($chartData);
-    const COLORS = { green: '#1c7a4d', red: '#C81E3A', gold: '#B8860B', blue: '#2563eb', ink: '#1f2d3a', muted: '#6f7e8c', border: '#ece4d6' };
-    const DONUT_COLORS = ['#B8860B', '#C81E3A', '#2563eb', '#7A0F22'];
+    const COLORS = { green: '#1F7A4D', red: '#E31E24', gold: '#8A6516', blue: '#2563eb', ink: '#2B1E1E', muted: '#5A4A4A', border: '#EADFCB' };
+    const DONUT_COLORS = ['#8A6516', '#E31E24', '#2563eb', '#B3171C'];
     const fmtMoney = (v) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v) + ' F';
 
     // Rentabilité (donut)

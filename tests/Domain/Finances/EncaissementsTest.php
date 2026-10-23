@@ -260,7 +260,7 @@ class EncaissementsTest extends DomainTestCase
         $this->encaisserParEcran(270000)->assertOk();
         $this->caissier->update(['nom' => 'AMEGAN', 'prenom' => 'Kodjo']);
 
-        $page = $this->get('/finances/encaissements?onglet=jour')->assertOk()
+        $page = $this->get('/finances/encaissements?onglet=caisse')->assertOk()
             ->assertSee('Caisse principale')
             ->assertSee('AMEGAN Kodjo')
             ->assertSee('270 000')
@@ -344,7 +344,9 @@ class EncaissementsTest extends DomainTestCase
         // Une année précédente, clôturée, avec un paiement encaissé et un paiement en attente
         $precedente = $this->creerAnnee(['libelle' => '2025-2026', 'statut_annee' => \App\Domain\Scolarite\Types\StatutAnnee::Cloture->value]);
         $inscription = $this->creerInscription(null, ['annee_id' => $precedente->id]);
-        $ancien = function (string $reference, PaiementStatut $statut) use ($inscription, $precedente) {
+        $ancienneCaisse = $this->creerCaisseOuverte($this->caissier, 0, ['libelle' => 'Caisse 2025-2026', 'annee_id' => $precedente->id,
+            'statut' => CaisseStatut::CLOTUREE->value, 'date_cloture' => '2026-05-10']);
+        $ancien = function (string $reference, PaiementStatut $statut) use ($inscription, $precedente, $ancienneCaisse) {
             $id = \Illuminate\Support\Facades\DB::table('paiements')->insertGetId([
                 'reference' => $reference, 'montant' => 5000, 'payeur' => 'ANCIEN Payeur', 'date_paiement' => '2026-05-10',
                 'statut_paiement' => $statut->value, 'mode_paiement' => ModePaiement::ESPECES->value,
@@ -355,7 +357,7 @@ class EncaissementsTest extends DomainTestCase
                 'libelle' => 'Scolarité', 'montant' => 5000, 'type_paiement' => TypeDetail::FRAIS_SCOLAIRE->value,
                 'statut_paiement' => $statut->value, 'date_paiement' => '2026-05-10',
                 'date_encaissement' => $statut === PaiementStatut::ENCAISSE ? '2026-05-10' : null,
-                'caisse_id' => $statut === PaiementStatut::ENCAISSE ? $this->caisse->id : null,
+                'caisse_id' => $statut === PaiementStatut::ENCAISSE ? $ancienneCaisse->id : null,
                 'caissier_id' => $statut === PaiementStatut::ENCAISSE ? $this->caissier->id : null, 'etat' => 1,
             ]);
 
@@ -393,6 +395,50 @@ class EncaissementsTest extends DomainTestCase
             ->assertJsonPath('results.0.id', $enAttenteAncien);
     }
 
+    public function test_les_paiements_en_attente_couvrent_toute_la_base_et_se_filtrent_par_annee(): void
+    {
+        $precedente = $this->creerAnnee(['libelle' => '2025-2026', 'statut_annee' => \App\Domain\Scolarite\Types\StatutAnnee::Cloture->value]);
+        $inscription = $this->creerInscription(null, ['annee_id' => $precedente->id]);
+        $ancien = \Illuminate\Support\Facades\DB::table('paiements')->insertGetId([
+            'reference' => 'PAI-ANCIEN-ATT', 'montant' => 5000, 'payeur' => 'ANCIEN Payeur', 'date_paiement' => '2026-05-10',
+            'statut_paiement' => PaiementStatut::EN_ATTENTE->value, 'mode_paiement' => ModePaiement::ESPECES->value,
+            'inscription_id' => $inscription->id, 'annee_id' => $precedente->id, 'etat' => 1,
+        ]);
+        \Illuminate\Support\Facades\DB::table('details')->insert([
+            'paiement_id' => $ancien, 'inscription_id' => $inscription->id, 'annee_id' => $precedente->id,
+            'libelle' => 'Scolarité', 'montant' => 5000, 'type_paiement' => TypeDetail::FRAIS_SCOLAIRE->value,
+            'statut_paiement' => PaiementStatut::EN_ATTENTE->value, 'date_paiement' => '2026-05-10', 'etat' => 1,
+        ]);
+        $this->actingAs($this->caissier);
+
+        // Par défaut : l'année choisie dans l'en-tête sert de filtre
+        $page = $this->get('/finances/encaissements?onglet=attente')->assertOk()
+            ->assertSee($this->paiement->reference)
+            ->assertDontSee('PAI-ANCIEN-ATT')
+            ->assertSee('Toutes les années (2)')
+            ->assertSee('2025-2026 (1)');
+        $this->assertSame($this->annee->id, $page->viewData('anneeAttente'));
+        $this->assertSame(1, $page->viewData('compteurAttente')['nb']);
+
+        // Toutes les années : liste complète, rangée par année (la plus récente d'abord)
+        $page = $this->get('/finances/encaissements?onglet=attente&annee_attente=toutes')->assertOk()
+            ->assertSee('Année scolaire 2025-2026')
+            ->assertSeeInOrder([$this->paiement->reference, 'PAI-ANCIEN-ATT']);
+        $this->assertNull($page->viewData('anneeAttente'));
+        $this->assertSame(2, $page->viewData('compteurAttente')['nb']);
+        $this->assertEqualsWithDelta(275000, $page->viewData('compteurAttente')['montant'], 0.01);
+
+        // Une autre année que celle de l'en-tête
+        $page = $this->get('/finances/encaissements?onglet=attente&annee_attente=' . $precedente->id)->assertOk()
+            ->assertSee('PAI-ANCIEN-ATT')
+            ->assertDontSee($this->paiement->reference);
+        $this->assertSame(1, $page->viewData('compteurAttente')['nb']);
+
+        // « Tous les encaissements » reste sur l'année choisie, et l'encaissement aussi
+        $this->assertSame($this->annee->id, $page->viewData('filtres')['annee_id']);
+        $this->postJson("/finances/encaissements/paiement/{$ancien}/encaisser", ['montant_recu' => 5000])->assertStatus(422);
+    }
+
     public function test_les_paiements_en_attente_vont_du_plus_recent_au_plus_ancien(): void
     {
         $ancien = $this->paiement->id;
@@ -413,7 +459,7 @@ class EncaissementsTest extends DomainTestCase
     {
         $this->actingAs($this->caissier);
 
-        $this->get('/finances/encaissements?onglet=jour')
+        $this->get('/finances/encaissements?onglet=caisse')
             ->assertOk()
             ->assertSee('href="' . route('finances.encaissements.nouveau') . '"', false);
 
@@ -436,7 +482,7 @@ class EncaissementsTest extends DomainTestCase
         $precedente = $this->creerAnnee(['libelle' => '2025-2026', 'statut_annee' => \App\Domain\Scolarite\Types\StatutAnnee::Cloture->value]);
 
         foreach ([$this->annee->id, $precedente->id] as $anneeChoisie) {
-            $page = $this->get('/finances/encaissements?onglet=jour&annee_id=' . $anneeChoisie)->assertOk();
+            $page = $this->get('/finances/encaissements?onglet=caisse&annee_id=' . $anneeChoisie)->assertOk();
 
             // Le total du jour est l'argent entré dans la caisse aujourd'hui
             $this->assertEqualsWithDelta(270000, $page->viewData('totalJour'), 0.01);
@@ -447,5 +493,109 @@ class EncaissementsTest extends DomainTestCase
             );
             $page->assertSee('270 000 F')->assertSee('<span id="nb-jour">1</span> encaissement(s)', false);
         }
+    }
+
+    public function test_quatre_onglets_mes_encaissements_et_caisse_ouverte_avec_son_journal(): void
+    {
+        // Un encaissement par moi, un autre par un collègue (dans sa propre caisse)
+        $this->encaisserParEcran(270000)->assertOk();
+        $collegue = $this->creerUtilisateur(RoleUtilisateur::Caissier, ['nom' => 'COLLEGUE', 'prenom' => 'Yao']);
+        $caisseCollegue = $this->creerCaisseOuverte($collegue, 0, ['libelle' => 'Caisse annexe']);
+        $autre = app(PaiementService::class)->enregistrer(new PaiementData(
+            $this->creerInscription()->id, 'MENSAH Afi', null, ModePaiement::ESPECES->value,
+            [new PanierLigneData(TypeDetail::FRAIS_SCOLAIRE, 'Scolarité', 10000)],
+            $this->creerUtilisateur(RoleUtilisateur::Comptable)->id
+        ));
+        $this->service->encaisser($autre->details()->first()->id, $caisseCollegue->id, $collegue->id);
+
+        // Caissier avec une caisse ouverte : quatre onglets, la caisse ouverte par défaut
+        $this->actingAs($this->caissier);
+        $page = $this->get('/finances/encaissements')->assertOk()
+            ->assertSee('id="onglet-tous"', false)->assertSee('id="onglet-attente"', false)
+            ->assertSee('id="onglet-mes"', false)->assertSee('id="onglet-caisse"', false)
+            ->assertSee('id="btn-journal-caisse"', false)
+            ->assertSee('href="' . route('finances.caisses.show', $this->caisse->id) . '"', false);
+        $this->assertSame('caisse', $page->viewData('onglet'));
+        $this->assertSame(1, $page->viewData('totalCaisse')['nb']);
+        $this->assertSame(1, $page->viewData('totalMes')['nb'], 'Mes encaissements : seulement les miens.');
+        $this->assertEqualsWithDelta(270000, $page->viewData('totalMes')['montant'], 0.01);
+        $this->assertSame(2, $page->viewData('encaissements')->total(), 'Tous les encaissements de l\'année.');
+        // L'ancien onglet « jour » mène à la caisse ouverte
+        $this->assertSame('caisse', $this->get('/finances/encaissements?onglet=jour')->viewData('onglet'));
+
+        // Filtre par caissier
+        $page = $this->get('/finances/encaissements?onglet=tous&caissier_id=' . $collegue->id)->assertOk()
+            ->assertSee('id="filtre-caissier"', false)->assertSee('COLLEGUE Yao');
+        $this->assertSame(1, $page->viewData('encaissements')->total());
+        $this->assertSame($autre->reference, $page->viewData('encaissements')->first()->reference);
+
+        // Caisse clôturée : plus d'onglet « Caisse ouverte » ; « Mes encaissements » reste
+        $this->cloturerLaCaisse();
+        $page = $this->get('/finances/encaissements')->assertOk()
+            ->assertDontSee('id="onglet-caisse"', false)->assertSee('id="onglet-mes"', false);
+        $this->assertSame('mes', $page->viewData('onglet'));
+        $this->assertSame('mes', $this->get('/finances/encaissements?onglet=caisse')->viewData('onglet'));
+
+        // Un caissier sans caisse ouverte ni encaissement : « Mes encaissements » (vide), pas de « Caisse ouverte »
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Caissier));
+        $page = $this->get('/finances/encaissements')->assertOk()
+            ->assertSee('id="onglet-mes"', false)->assertDontSee('id="onglet-caisse"', false)->assertDontSee('id="btn-journal-caisse"', false);
+        $this->assertSame(0, $page->viewData('totalMes')['nb']);
+    }
+
+    public function test_le_recu_est_imprime_en_double_exemplaire(): void
+    {
+        $this->encaisserParEcran(270000)->assertOk();
+        $paiement = app(\App\Domain\Finances\Repositories\PaiementRepository::class)->findPourEncaissement($this->paiement->id);
+        $detail = app(\App\Domain\Finances\Repositories\PaiementRepository::class)->findDetailAvecRelations($paiement->details->first()->id);
+
+        $html = view('domain.finances.encaissements.recu', [
+            'detail' => $detail, 'paiement' => $paiement, 'eleve' => $paiement->inscription?->eleve,
+            'caisse' => $detail->caisse, 'genereLe' => now(), 'generePar' => $this->caissier,
+        ])->render();
+
+        // Original et duplicata sur la même feuille, chacun sur une demi-page, séparés par un pointillé de découpe
+        $this->assertSame(2, substr_count($html, 'exemplaire-mention'));
+        $this->assertStringContainsString('Original — exemplaire du payeur', $html);
+        $this->assertStringContainsString('Duplicata — exemplaire de l&#039;école', $html);
+        $this->assertSame(2, substr_count($html, 'REÇU DE PAIEMENT'));
+        $this->assertSame(2, substr_count($html, 'class="exemplaire demi"'));
+        $this->assertSame(1, substr_count($html, 'class="decoupe"'));
+        $this->assertStringNotContainsString('exemplaire seul', $html);
+
+        $this->get(route('finances.encaissements.paiement.recu', $this->paiement->id))->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_l_ecran_des_encaissements_precise_le_niveau_et_la_classe_de_l_eleve(): void
+    {
+        $structure = $this->creerStructure('CE2');
+        \Illuminate\Support\Facades\DB::table('inscriptions')->where('id', $this->paiement->inscription_id)
+            ->update(['niveau_id' => $structure['niveau_id'], 'classe_id' => $structure['classe_id']]);
+        $inscription = $this->paiement->fresh('inscription.niveau', 'inscription.classe')->inscription;
+        $niveau = $inscription->niveau->libelle;
+        $classe = $inscription->classe?->libelle;
+        $this->actingAs($this->caissier);
+
+        // Paiement en attente : niveau et classe
+        $this->get('/finances/encaissements?onglet=attente')->assertOk()
+            ->assertSee(' · ' . $niveau)->assertSee(' · ' . $classe);
+        $texte = $this->getJson('/finances/encaissements/paiements-en-attente?q=' . urlencode($inscription->eleve->nom))
+            ->assertOk()->json('results.0.text');
+        $this->assertStringContainsString("({$niveau} · {$classe})", $texte);
+        $this->get(route('finances.encaissements.paiement.resume', $this->paiement->id))->assertOk()
+            ->assertSee('Niveau ' . $niveau)->assertSee('Classe ' . $classe);
+
+        // Une fois encaissé : la ligne de la caisse aussi
+        $this->encaisserParEcran(270000)->assertOk();
+        $ligne = $this->get('/finances/encaissements?onglet=caisse')->assertOk()->viewData('encaissementsCaisse')->first();
+        $this->assertSame($niveau, $ligne->niveau);
+        $this->assertSame($classe, $ligne->classe);
+
+        // Sans classe : le niveau seul
+        \Illuminate\Support\Facades\DB::table('inscriptions')->where('id', $inscription->id)->update(['classe_id' => null]);
+        $ligne = $this->get('/finances/encaissements?onglet=caisse')->assertOk()->viewData('encaissementsCaisse')->first();
+        $this->assertSame($niveau, $ligne->niveau);
+        $this->assertNull($ligne->classe);
     }
 }

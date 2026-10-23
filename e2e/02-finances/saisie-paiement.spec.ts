@@ -167,7 +167,18 @@ test.describe('2.2 Nouveau paiement', () => {
 
     // Le chèque est entré au portefeuille pour le montant total du paiement
     await page.goto('/finances/cheques');
-    await expect(page.locator('tbody tr').filter({ hasText: 'CHQ-E2E-0001' }).first()).toContainText(/223\s000/);
+    const cheque = page.locator('tbody tr').filter({ hasText: 'CHQ-E2E-0001' }).first();
+    await expect(cheque).toContainText(/223\s000/);
+
+    // Le contenu du paiement qui a abouti au chèque se consulte depuis le chèque
+    await cheque.locator('.btn-action').click();
+    await cheque.locator('.btn-voir-paiement').click();
+    const fenetre = page.locator('#paiementModal');
+    await expect(fenetre.locator('.contenu-paiement')).toBeVisible();
+    await expect(fenetre).toContainText('ADJO Sena');
+    await expect(fenetre).toContainText('TENUE_DE_SPORT');
+    await expect(fenetre).toContainText(/223\s000 F/);
+    await fenetre.locator('.btn-annuler').click();
 
     // De retour sur l'élève : le paiement est en attente d'encaissement
     await ouvrirSaisiePaiement(page, MATRICULE);

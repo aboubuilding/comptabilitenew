@@ -12,35 +12,33 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.banques.show', $banque) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.banques.show', $banque) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .form-section { background:#faf6ee; border:1px solid #ece4d6; border-radius:12px; padding:1.25rem; }
+    .form-section { background:var(--eim-cream); border:1px solid var(--eim-border); border-radius:12px; padding:1.25rem; }
     .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--school-red); margin-bottom:.75rem; display:flex; align-items:center; gap:6px; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color: var(--school-ink); }
-    .form-section .form-control { border-radius:8px; border:1px solid #ece4d6; padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus { border-color:var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
+    .form-section .form-control { border-radius:8px; border:1px solid var(--eim-border); padding:.55rem .75rem; font-size:.88rem; }
 
-    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
-    .main-card .card-header { border-bottom: 1px solid #ece4d6 !important; }
+    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
+    .main-card .card-header { border-bottom: 1px solid var(--eim-border) !important; }
 
     .hint-box { background: #f0f6ff; border-left: 3px solid #2563eb; padding: .9rem 1rem; border-radius: 8px; font-size: .85rem; color: #1e3a8a; }
     .hint-box code { background: rgba(37,99,235,.10); padding: 1px 5px; border-radius: 4px; font-size: .8rem; }
 
     .btn-primary-red { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
-    .btn-primary-red:hover { color:#fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
+    .btn-primary-red:hover { color:#fff; box-shadow: 0 4px 12px rgba(227,30,36,.3); }
 </style>
 @endsection
 
 @section('contenu')
 <div class="row g-4">
     <div class="col-md-8">
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4">
                 <h6 class="mb-0" style="color: var(--school-ink);">
                     <i class="fas fa-file-import me-1" style="color: var(--school-gold-dark);"></i>
@@ -52,15 +50,12 @@
                       method="POST" enctype="multipart/form-data">
                     @csrf
 
-                    <div class="form-section mb-3">
-                        <div class="form-section-title">
-                            <i class="fas fa-file-excel"></i> Fichier du relevé (CSV ou Excel)
-                        </div>
+                    <x-section titre="Fichier du relevé (CSV ou Excel)" icone="fas fa-file-excel" class="mb-3">
                         <input type="file" name="fichier" class="form-control" accept=".csv,.xlsx,.xls" required>
                         <div class="form-text small mt-2">
                             Taille maximale : 5 Mo. Formats acceptés : CSV, XLSX, XLS.
                         </div>
-                    </div>
+                    </x-section>
 
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('finances.banques.show', $banque) }}" class="btn btn-light">Annuler</a>
@@ -70,7 +65,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </x-carte>
     </div>
 
     <div class="col-md-4">

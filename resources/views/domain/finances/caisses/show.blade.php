@@ -11,18 +11,18 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.caisses.export', $journal['caisse']->id) }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.caisses.export', $journal['caisse']->id) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Excel
-    </a>
-    <button onclick="window.print()" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" onclick="window.print()" class="btn-sm rounded-pill px-3">
         <i class="fas fa-print me-1"></i> Imprimer
-    </button>
+    </x-bouton>
 
     @if ($journal['caisse']->isOuverte())
         @can('caisses.mouvements')
-            <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#mouvementModal">
+            <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#mouvementModal">
                 <i class="fas fa-plus-circle me-1"></i> Mouvement
-            </button>
+            </x-bouton>
         @endcan
         @can('caisses.cloturer')
             <button type="button" class="btn"
@@ -33,51 +33,50 @@
         @endcan
     @endif
 
-    <a href="{{ route('finances.caisses.exportPdf', $journal['caisse']->id) }}"
-   class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.caisses.exportPdf', $journal['caisse']->id) }}" class="btn-sm rounded-pill px-3">
     <i class="fas fa-file-pdf me-1"></i> PDF
-</a>
+</x-bouton>
 @endsection
 
 @section('css')
 <style>
     .synth-card {
-        background: #fff; border: 1px solid #ece4d6; border-radius: 12px;
-        padding: 1.1rem 1.25rem; box-shadow: 0 2px 8px rgba(122,15,28,.04);
+        background: #fff; border: 1px solid var(--eim-border); border-radius: 12px;
+        padding: 1.1rem 1.25rem; box-shadow: 0 2px 8px rgba(142,18,22,.04);
         transition: transform .2s;
     }
     .synth-card:hover { transform: translateY(-2px); }
     .synth-card .label { font-size: .72rem; text-transform: uppercase; color: var(--school-muted); font-weight: 600; letter-spacing: .5px; }
     .synth-card .value { font-size: 1.35rem; font-weight: 700; color: var(--school-ink); margin-top: 6px; font-variant-numeric: tabular-nums; }
     .synth-card.accent   { border-left: 4px solid var(--school-red); }
-    .synth-card.entrees  { border-left: 4px solid #1c7a4d; }
+    .synth-card.entrees  { border-left: 4px solid var(--eim-success); }
     .synth-card.sorties  { border-left: 4px solid var(--school-red); }
     .synth-card.theorique{ border-left: 4px solid var(--school-gold-dark); }
 
-    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background: #fff; overflow: hidden; }
+    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background: #fff; overflow: hidden; }
 
     .journal-table thead tr { background: var(--school-ink); color: #fff; }
     .journal-table thead th {
         color: #fff; font-size: .74rem; text-transform: uppercase; letter-spacing: .5px;
         font-weight: 600; border: none; padding: .9rem 1rem; white-space: nowrap;
     }
-    .journal-table tbody td { padding: .75rem 1rem; vertical-align: middle; border-bottom: 1px solid #ece4d6; }
-    .journal-table tbody tr:hover { background: #fdfaf5; }
+    .journal-table tbody td { padding: .75rem 1rem; vertical-align: middle; border-bottom: 1px solid var(--eim-border); }
+    .journal-table tbody tr:hover { background: var(--eim-hover); }
     .journal-table .montant { font-variant-numeric: tabular-nums; font-weight: 600; }
-    .journal-table .montant.entree { color: #1c7a4d; }
+    .journal-table .montant.entree { color: var(--eim-success); }
     .journal-table .montant.sortie { color: var(--school-red); }
 
     .type-badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.68rem; font-weight:700; }
-    .type-badge.entree { background:#e3f7ec; color:#1c7a4d; }
+    .type-badge.entree { background:#e3f7ec; color:var(--eim-success); }
     .type-badge.sortie { background:#fdecea; color: var(--school-red); }
 
-    .onglets-journal { border-bottom:2px solid #ece4d6; gap:.25rem; flex-wrap:nowrap; overflow-x:auto; }
+    .onglets-journal { border-bottom:2px solid var(--eim-border); gap:.25rem; flex-wrap:nowrap; overflow-x:auto; }
     .onglets-journal .nav-link { border:none; border-bottom:3px solid transparent; color:var(--school-muted); font-weight:600; font-size:.9rem; padding:.75rem 1rem; white-space:nowrap; margin-bottom:-2px; background:none; }
     .onglets-journal .nav-link.active { color:var(--school-red); border-bottom-color:var(--school-red); }
-    .onglets-journal .compte { display:inline-block; min-width:22px; padding:0 .45rem; border-radius:999px; background:#faf6ee; color:var(--school-red); font-size:.72rem; margin-left:.35rem; border:1px solid #ece4d6; }
-    .total-type { background:#fff; border:1px solid #ece4d6; border-radius:10px; padding:.6rem .8rem; height:100%; }
+    .onglets-journal .compte { display:inline-block; min-width:22px; padding:0 .45rem; border-radius:999px; background:var(--eim-cream); color:var(--school-red); font-size:.72rem; margin-left:.35rem; border:1px solid var(--eim-border); }
+    .total-type { background:#fff; border:1px solid var(--eim-border); border-radius:10px; padding:.6rem .8rem; height:100%; }
     .total-type .libelle { font-size:.72rem; text-transform:uppercase; font-weight:700; color:var(--school-muted); }
-    .total-type .valeur { font-size:1.05rem; font-weight:700; color:#1c7a4d; font-variant-numeric:tabular-nums; }
+    .total-type .valeur { font-size:1.05rem; font-weight:700; color:var(--eim-success); font-variant-numeric:tabular-nums; }
     .total-type.total-general { background:#e3f7ec; border-color:#bfe6d0; }
 
     @media print {
@@ -114,7 +113,7 @@
         <div class="col-md-3 col-sm-6">
             <div class="synth-card entrees">
                 <div class="label">Total entrées</div>
-                <div class="value" style="color:#1c7a4d;">+{{ number_format($journal['totalEntrees'], 2, ',', ' ') }}</div>
+                <div class="value" style="color:var(--eim-success);">+{{ number_format($journal['totalEntrees'], 2, ',', ' ') }}</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
@@ -198,8 +197,7 @@
         <div class="tab-content">
             {{-- ========== Tous les mouvements : la chronologie ========== --}}
             <div class="tab-pane fade @if ($onglet === 'mouvements') show active @endif" id="panneau-mouvements" role="tabpanel">
-                <div class="table-responsive">
-                    <table class="table journal-table mb-0" id="table-mouvements">
+                <x-tableau class="journal-table mb-0" id="table-mouvements">
                         <thead>
                             <tr>
                                 <th style="width:130px;">Date</th>
@@ -230,11 +228,11 @@
                                 <td class="text-end montant sortie">{{ $t && ! $t->isEntree() ? $fmt($m->montant) : '' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p class="mb-0 fw-medium">Aucun mouvement dans cette session.</p></div></td></tr>
+                            <x-vide colspan="5" icone="fas fa-inbox" :paragraphe="false"><p class="mb-0 fw-medium">Aucun mouvement dans cette session.</p></x-vide>
                         @endforelse
                         </tbody>
                         @if ($journal['mouvements']->isNotEmpty())
-                            <tfoot style="background: #faf6ee;">
+                            <tfoot style="background: var(--eim-cream);">
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold text-xs text-uppercase">Totaux</td>
                                     <td class="text-end montant entree fw-bold">+{{ $fmt($journal['totalEntrees']) }}</td>
@@ -246,13 +244,12 @@
                                 </tr>
                             </tfoot>
                         @endif
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
 
             {{-- ========== Tous les encaissements, avec les totaux par nature ========== --}}
             <div class="tab-pane fade @if ($onglet === 'encaissements') show active @endif" id="panneau-encaissements" role="tabpanel">
-                <div class="p-3 border-bottom" style="border-color:#ece4d6 !important;">
+                <div class="p-3 border-bottom" style="border-color:var(--eim-border) !important;">
                     <div class="fw-bold text-xs text-uppercase mb-2" style="color: var(--school-red);">Totaux encaissés par type de paiement</div>
                     <div class="row g-2" id="totaux-par-type">
                         @forelse ($totauxParType as $total)
@@ -283,8 +280,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table journal-table mb-0" id="table-encaissements">
+                <x-tableau class="journal-table mb-0" id="table-encaissements">
                         <thead>
                             <tr>
                                 <th style="width:150px;">Encaissement</th>
@@ -330,11 +326,11 @@
                             </tr>
                         @endforeach
                         @if ($encaissements->isEmpty() && $entreesManuelles->isEmpty())
-                            <tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p class="mb-0 fw-medium">Aucun encaissement dans cette session.</p></div></td></tr>
+                            <x-vide colspan="5" icone="fas fa-inbox" :paragraphe="false"><p class="mb-0 fw-medium">Aucun encaissement dans cette session.</p></x-vide>
                         @endif
                         </tbody>
                         @if ($encaissements->isNotEmpty() || $entreesManuelles->isNotEmpty())
-                            <tfoot style="background: #faf6ee;">
+                            <tfoot style="background: var(--eim-cream);">
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold text-xs text-uppercase">Total encaissé</td>
                                     <td class="text-end montant entree fw-bold">{{ $fmt($totalEncaisse + $totalManuel) }}</td>
@@ -342,14 +338,12 @@
                                 </tr>
                             </tfoot>
                         @endif
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
 
             {{-- ========== Décaissements ========== --}}
             <div class="tab-pane fade @if ($onglet === 'decaissements') show active @endif" id="panneau-decaissements" role="tabpanel">
-                <div class="table-responsive">
-                    <table class="table journal-table mb-0" id="table-decaissements">
+                <x-tableau class="journal-table mb-0" id="table-decaissements">
                         <thead>
                             <tr>
                                 <th style="width:130px;">Date</th>
@@ -369,19 +363,18 @@
                                 <td class="text-end montant sortie">{{ $fmt($m->montant) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p class="mb-0 fw-medium">Aucun décaissement dans cette session.</p></div></td></tr>
+                            <x-vide colspan="5" icone="fas fa-inbox" :paragraphe="false"><p class="mb-0 fw-medium">Aucun décaissement dans cette session.</p></x-vide>
                         @endforelse
                         </tbody>
                         @if ($decaissements->isNotEmpty())
-                            <tfoot style="background: #faf6ee;">
+                            <tfoot style="background: var(--eim-cream);">
                                 <tr>
                                     <td colspan="4" class="text-end fw-bold text-xs text-uppercase">Total décaissé</td>
                                     <td class="text-end montant sortie fw-bold" id="total-decaisse">{{ $fmt($totalDecaisse) }}</td>
                                 </tr>
                             </tfoot>
                         @endif
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
         </div>
     </div>

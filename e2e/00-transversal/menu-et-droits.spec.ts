@@ -97,7 +97,11 @@ test.describe('Navigation dans le menu', () => {
 
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Scolarité' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Élèves' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Élèves' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Élèves' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
 
     await expect(page).toHaveURL(/\/scolarite\/eleves$/);
     await expect(page.locator('.page-title-main')).toBeVisible();

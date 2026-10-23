@@ -12,7 +12,7 @@
 @section('contenu')
     <style>
         .mariam-dashboard{
-            font-family: 'Kumbh Sans', sans-serif;
+            font-family: 'Manrope', sans-serif;
             color: var(--school-ink);
             /* Jetons propres à cette page uniquement — school-red,
                school-red-dark, school-gold, school-ink et school-muted
@@ -35,7 +35,7 @@
             padding: 2.25rem 2.5rem;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 12px 28px -12px rgba(122, 15, 34, 0.5);
+            box-shadow: 0 12px 28px -12px rgba(142,18,22, 0.5);
         }
         .dashboard-header::before{
             content: "";
@@ -56,13 +56,13 @@
         }
 
         .dashboard-welcome{
-            font-family: 'Playfair Display', serif;
+            font-family: 'Manrope', sans-serif;
             color: #fff;
             font-size: 1.85rem;
             margin-bottom: .35rem;
             letter-spacing: .2px;
         }
-        .dashboard-welcome .fw-bold{ color: var(--school-gold-light); }
+        .dashboard-welcome .fw-bold{ color: #fff; text-decoration: underline; text-decoration-color: var(--eim-gold); text-decoration-thickness: 3px; text-underline-offset: 6px; }
         .dashboard-subtitle{
             color: rgba(255,255,255,0.72);
             font-size: .95rem;
@@ -72,8 +72,8 @@
             display: inline-flex;
             align-items: center;
             background: rgba(212,169,77,0.14);
-            border: 1px solid rgba(212,169,77,0.45);
-            color: var(--school-gold-light);
+            border: 1px solid rgba(212,169,77,0.7);
+            color: #fff;
             font-weight: 600;
             font-size: .85rem;
             padding: .55rem 1.1rem;
@@ -103,7 +103,7 @@
         }
         .stat-card:hover{
             transform: translateY(-4px);
-            box-shadow: 0 16px 30px -14px rgba(122,15,34,0.28) !important;
+            box-shadow: 0 16px 30px -14px rgba(142,18,22,0.28) !important;
         }
         .stat-card:hover::before{ opacity: 1; }
 
@@ -128,7 +128,7 @@
             margin-top: 12px;
         }
         .stat-value{
-            font-family: 'Playfair Display', serif;
+            font-family: 'Manrope', sans-serif;
             font-weight: 700;
             color: var(--school-red-dark);
             margin-bottom: .3rem;
@@ -143,7 +143,7 @@
             background: #fff !important;
         }
         .card-title{
-            font-family: 'Playfair Display', serif;
+            font-family: 'Manrope', sans-serif;
             color: var(--school-red-dark);
             font-size: 1.15rem;
         }
@@ -214,7 +214,7 @@
         }
         .quick-action:hover{
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(122,15,34,0.12);
+            box-shadow: 0 8px 25px rgba(142,18,22,0.12);
             border-color: var(--school-gold);
         }
         .quick-action i{
@@ -347,11 +347,9 @@
 
         @if ($acces->isEmpty())
             <div class="card summary-card mb-5 shadow-sm" id="aucun-acces">
-                <div class="empty-state">
-                    <i class="fas fa-lock" aria-hidden="true"></i>
+                <x-vide :paragraphe="false"><i class="fas fa-lock" aria-hidden="true"></i>
                     <p class="mb-0">Aucun module ne vous est attribué pour l'instant.</p>
-                    <small class="text-muted">Rapprochez-vous de l'administrateur pour obtenir vos droits d'accès.</small>
-                </div>
+                    <small class="text-muted">Rapprochez-vous de l'administrateur pour obtenir vos droits d'accès.</small></x-vide>
             </div>
         @else
             <div class="row g-3 mb-5" id="acces-rapides">
@@ -392,8 +390,7 @@
             </div>
             <div class="card-body p-0">
                 @if(count($recentActivities ?? []) > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover summary-table mb-0 align-middle">
+                    <x-tableau class="table-hover summary-table mb-0 align-middle">
                             <thead class="text-white">
                             <tr>
                                 <th><i class="fas fa-tasks me-2" aria-hidden="true"></i>Action</th>
@@ -413,14 +410,11 @@
                                 </tr>
                             @endforeach
                             </tbody>
-                        </table>
-                    </div>
+                        </x-tableau>
                 @else
-                    <div class="empty-state">
-                        <i class="fas fa-inbox" aria-hidden="true"></i>
+                    <x-vide :paragraphe="false"><i class="fas fa-inbox" aria-hidden="true"></i>
                         <p class="mb-0">Aucune activité récente pour le moment.</p>
-                        <small class="text-muted">Les actions des utilisateurs apparaîtront ici.</small>
-                    </div>
+                        <small class="text-muted">Les actions des utilisateurs apparaîtront ici.</small></x-vide>
                 @endif
             </div>
         </div>

@@ -13,41 +13,33 @@
 
 @section('page_actions')
     @can('inscriptions.saisir')
-    <button type="button" class="btn btn-nouveau" id="btnNouvelleInscription" data-bs-toggle="modal" data-bs-target="#inscriptionModal">
+    <x-bouton variante="nouveau" type="button" id="btnNouvelleInscription" data-bs-toggle="modal" data-bs-target="#inscriptionModal">
         <i class="fas fa-plus-circle me-1"></i> Nouvelle inscription
-    </button>
+    </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('app/assets/plugins/select2/css/select2.min.css') }}">
 <style>
-    .inscriptions-page { --insc-bg-soft: #faf6ee; --insc-border: #ece4d6; }
+    .inscriptions-page { --insc-bg-soft: var(--eim-cream); --insc-border: var(--eim-border); }
 
-    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background: #fff; overflow: hidden; }
+    .main-card { border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background: #fff; overflow: hidden; }
     .main-card .card-header { border-bottom: 1px solid var(--insc-border) !important; }
 
-    .filtre-label { font-size: .74rem; font-weight: 600; color: #5b6b7a; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 5px; }
+    .filtre-label { font-size: .74rem; font-weight: 600; color: var(--eim-ink-soft); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 5px; }
     .filtre-input { border-radius: 10px; border: 1px solid var(--insc-border); padding: .5rem .8rem; font-size: .85rem; }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position: relative; }
-    .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #9aa7b2; font-size: .8rem; }
+    .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #7A6A6A; font-size: .8rem; }
     .search-input { padding-left: 32px !important; }
 
     .btn-filtrer { background: var(--school-red); color: #fff; border: none; border-radius: 10px; padding: .5rem 1rem; font-weight: 600; font-size: .85rem; }
-    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; }
 
     .compteur-badge {
         display: inline-block; background: var(--insc-bg-soft); color: var(--school-red);
         font-weight: 600; font-size: .82rem; padding: .4rem .85rem; border-radius: 999px; border: 1px solid var(--insc-border);
     }
 
-    .btn-nouveau {
-        background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
-        color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
-        box-shadow: 0 4px 14px rgba(200,30,58,.25);
-    }
-    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); }
+    .btn-nouveau:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(227,30,36,.35); }
 
     .table-inscriptions thead tr { background: var(--insc-bg-soft); }
     .table-inscriptions thead th {
@@ -55,7 +47,7 @@
         letter-spacing: .04em; border-bottom: 2px solid var(--insc-border); padding: .8rem .85rem; white-space: nowrap;
     }
     .table-inscriptions tbody td { padding: .7rem .85rem; border-bottom: 1px solid var(--insc-border); font-size: .85rem; color: var(--school-ink); vertical-align: middle; }
-    .table-inscriptions tbody tr:hover { background: #fdfaf5; }
+    .table-inscriptions tbody tr:hover { background: var(--eim-hover); }
     .table-inscriptions tbody tr:last-child td { border-bottom: none; }
 
     .eleve-nom { font-weight: 700; font-size: .87rem; display: block; }
@@ -65,12 +57,10 @@
 
     .badge-statut { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: .35em .75em; border-radius: 999px; white-space: nowrap; }
     .badge-statut-attente { background: #fdf3e2; color: #b8720b; }
-    .badge-statut-validee { background: #e3f7ec; color: #1c7a4d; }
+    .badge-statut-validee { background: #e3f7ec; color: var(--eim-success); }
     .badge-statut-rejetee { background: #fbeaea; color: #b13b3b; }
     .badge-statut-abandon { background: var(--insc-bg-soft); color: var(--school-muted); }
 
-    .empty-state { padding: 3rem 1rem; text-align: center; color: #9aa7b2; }
-    .empty-state i { font-size: 2.2rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
 
     .modal-inscriptions { border: none; border-radius: 16px; overflow: hidden; }
     .modal-header-inscriptions { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff; border-bottom: none; padding: 1.1rem 1.5rem; }
@@ -78,11 +68,9 @@
     .form-section { background: var(--insc-bg-soft); border: 1px solid var(--insc-border); border-radius: 12px; padding: 1rem 1.1rem; }
     .form-section-title { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--school-red); margin-bottom: .6rem; }
     .form-section .form-control, .form-section .form-select { border-radius: 8px; border: 1px solid var(--insc-border); font-size: .88rem; }
-    .form-section .form-control:focus, .form-section .form-select:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.1); }
-    .btn-annuler { background: #fff; border: 1px solid var(--insc-border); color: #5b6b7a; border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
+    .form-section .form-control:focus, .form-section .form-select:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(227,30,36,.1); }
+    .btn-annuler { background: #fff; border: 1px solid var(--insc-border); color: var(--eim-ink-soft); border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
     .btn-annuler:hover { background: var(--insc-bg-soft); }
-    .btn-enregistrer { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff; border: none; border-radius: 8px; font-weight: 600; padding: .5rem 1.3rem; }
-    .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
 
     /* .btn-action / .dropdown-menu-actions viennent de layouts/app.blade.php */
 </style>
@@ -90,7 +78,7 @@
 
 @section('contenu')
     <div class="inscriptions-page">
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4">
                 <form method="GET" class="row g-2 align-items-end">
                     <div class="col-6 col-md-2">
@@ -132,24 +120,19 @@
                     </div>
                     <div class="col-md-3">
                         <label class="filtre-label">Recherche</label>
-                        <div class="search-wrapper">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" name="search" class="form-control filtre-input search-input"
-                                   placeholder="Nom, matricule..." value="{{ request('search') }}">
-                        </div>
+                        <x-recherche name="search" placeholder="Nom, matricule..." value="{{ request('search') }}" />
                     </div>
                     <div class="col-6 col-md-1">
-                        <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter"></i></button>
+                        <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter"></i></x-bouton>
                     </div>
                 </form>
                 <div class="text-end mt-2">
-                    <span class="compteur-badge">{{ $inscriptions->total() }} inscription(s)</span>
+                    <x-compteur>{{ $inscriptions->total() }} inscription(s)</x-compteur>
                 </div>
             </div>
 
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-inscriptions align-middle mb-0">
+                <x-tableau class="table-inscriptions align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Élève</th>
@@ -176,15 +159,11 @@
                                     </td>
                                     <td>{{ $inscription->date_inscription?->format('d/m/Y') }}</td>
                                     <td>{{ $inscription->type_inscription?->label() ?? '—' }}</td>
-                                    <td><span class="badge-statut {{ $statut['classe'] }}">{{ $statut['label'] }}</span></td>
+                                    <td><x-badge class="{{ $statut['classe'] }}">{{ $statut['label'] }}</x-badge></td>
                                     <td class="text-end">{{ number_format($inscription->frais_scolarite ?? 0, 0, ',', ' ') }} F</td>
                                     <td class="text-end">{{ $inscription->taux_remise ?? 0 }} %</td>
                                     <td class="text-center">
-                                        <div class="dropdown">
-                                            <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                        <x-actions>
                                                 @if ($inscription->isEnAttente())
                                                     @can('inscriptions.valider')
                                                     <li>
@@ -225,134 +204,114 @@
                                                         </a>
                                                     </li>
                                                 @endif
-                                            </ul>
-                                        </div>
+                                            </x-actions>
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="8">
-                                        <div class="empty-state">
-                                            <i class="fas fa-file-signature"></i>
-                                            <p class="mb-0">Aucune inscription ne correspond à ces critères.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <x-vide colspan="8" icone="fas fa-file-signature" :paragraphe="false"><p class="mb-0">Aucune inscription ne correspond à ces critères.</p></x-vide>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
+                    </x-tableau>
             </div>
-        </div>
+        </x-carte>
         <div class="mt-3">
-            {{ $inscriptions->appends(request()->query())->links() }}
+            <x-pagination :liste="$inscriptions->appends(request()->query())" />
         </div>
 
         {{-- Modale de création --}}
         @can('inscriptions.saisir')
-        <div class="modal fade" id="inscriptionModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content modal-inscriptions">
-                    <form id="inscription-form">
-                        @csrf
-                        <div class="modal-header modal-header-inscriptions">
-                            <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle inscription</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="form-section mb-3">
-                                <div class="form-section-title">Élève &amp; classe</div>
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Élève <span class="text-danger">*</span></label>
-                                        <select name="eleve_id" id="insc-eleve" class="form-select" style="width:100%;">
-                                            <option value=""></option>
-                                            @foreach ($elevesOptions as $eleve)
-                                                <option value="{{ $eleve->id }}">{{ $eleve->nom }} {{ $eleve->prenom }} @if($eleve->matricule) ({{ $eleve->matricule }}) @endif</option>
-                                            @endforeach
-                                        </select>
-                                        <div class="text-danger small mt-1" id="insc-eleve_id-error"></div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Type <span class="text-danger">*</span></label>
-                                        <select name="type_inscription" class="form-select">
-                                            @foreach (\App\Domain\Scolarite\Types\TypeInscription::options() as $val => $label)
-                                                <option value="{{ $val }}">{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="date_inscription" class="form-control" value="{{ now()->format('Y-m-d') }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Cycle <span class="text-danger">*</span></label>
-                                        <select name="cycle_id" class="form-select">
-                                            <option value="">-- Choisir --</option>
-                                            @foreach ($cyclesOptions as $cycle)
-                                                <option value="{{ $cycle->id }}">{{ $cycle->libelle }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Niveau <span class="text-danger">*</span></label>
-                                        <select name="niveau_id" class="form-select">
-                                            <option value="">-- Choisir --</option>
-                                            @foreach ($niveauxOptions as $niveau)
-                                                <option value="{{ $niveau->id }}">{{ $niveau->libelle }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Classe</label>
-                                        <select name="classe_id" class="form-select">
-                                            <option value="">-- Choisir --</option>
-                                            @foreach ($classesOptions as $classe)
-                                                <option value="{{ $classe->id }}">{{ $classe->libelle }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-section">
-                                <div class="form-section-title">Frais &amp; remise</div>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Frais scolarité</label>
-                                        <input type="number" step="0.01" name="frais_scolarite" class="form-control">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Frais inscription</label>
-                                        <input type="number" step="0.01" name="frais_inscription" class="form-control">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Taux de remise (%)</label>
-                                        <input type="number" name="taux_remise" class="form-control" min="0" max="100">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Frais cantine</label>
-                                        <input type="number" step="0.01" name="frais_cantine" class="form-control">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Frais bus</label>
-                                        <input type="number" step="0.01" name="frais_bus" class="form-control">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Frais livre</label>
-                                        <input type="number" step="0.01" name="frais_livre" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i>Enregistrer</button>
-                        </div>
-                    </form>
+        <x-modale id="inscriptionModal" data-bs-backdrop="static" aria-hidden="true" dialogue="modal-lg" contenu-class="modal-inscriptions" entete-class="modal-header-inscriptions" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="inscription-form">@csrf</x-slot:formulaire>
+            <x-slot:titre><i class="fas fa-plus-circle me-2"></i>Nouvelle inscription</x-slot:titre>
+            <x-section class="mb-3">
+                <div class="form-section-title">Élève &amp; classe</div>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <x-libelle requis>Élève</x-libelle>
+                        <select name="eleve_id" id="insc-eleve" class="form-select" style="width:100%;">
+                            <option value=""></option>
+                            @foreach ($elevesOptions as $eleve)
+                                <option value="{{ $eleve->id }}">{{ $eleve->nom }} {{ $eleve->prenom }} @if($eleve->matricule) ({{ $eleve->matricule }}) @endif</option>
+                            @endforeach
+                        </select>
+                        <div class="text-danger small mt-1" id="insc-eleve_id-error"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <x-libelle requis>Type</x-libelle>
+                        <select name="type_inscription" class="form-select">
+                            @foreach (\App\Domain\Scolarite\Types\TypeInscription::options() as $val => $label)
+                                <option value="{{ $val }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <x-libelle requis>Date</x-libelle>
+                        <input type="date" name="date_inscription" class="form-control" value="{{ now()->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle requis>Cycle</x-libelle>
+                        <select name="cycle_id" class="form-select">
+                            <option value="">-- Choisir --</option>
+                            @foreach ($cyclesOptions as $cycle)
+                                <option value="{{ $cycle->id }}">{{ $cycle->libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle requis>Niveau</x-libelle>
+                        <select name="niveau_id" class="form-select">
+                            <option value="">-- Choisir --</option>
+                            @foreach ($niveauxOptions as $niveau)
+                                <option value="{{ $niveau->id }}">{{ $niveau->libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Classe</x-libelle>
+                        <select name="classe_id" class="form-select">
+                            <option value="">-- Choisir --</option>
+                            @foreach ($classesOptions as $classe)
+                                <option value="{{ $classe->id }}">{{ $classe->libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </x-section>
+
+            <x-section>
+                <div class="form-section-title">Frais &amp; remise</div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <x-libelle>Frais scolarité</x-libelle>
+                        <input type="number" step="0.01" name="frais_scolarite" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Frais inscription</x-libelle>
+                        <input type="number" step="0.01" name="frais_inscription" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Taux de remise (%)</x-libelle>
+                        <input type="number" name="taux_remise" class="form-control" min="0" max="100">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Frais cantine</x-libelle>
+                        <input type="number" step="0.01" name="frais_cantine" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Frais bus</x-libelle>
+                        <input type="number" step="0.01" name="frais_bus" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <x-libelle>Frais livre</x-libelle>
+                        <input type="number" step="0.01" name="frais_livre" class="form-control">
+                    </div>
+                </div>
+            </x-section>
+            <x-slot:pied>
+                <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+                <x-bouton type="submit"><i class="fas fa-save me-1"></i>Enregistrer</x-bouton>
+            </x-slot:pied>
+        </x-modale>
 
         @endcan
 
@@ -361,27 +320,16 @@
              action/titre définis en JS selon le bouton cliqué). Soumission
              en POST classique (pas d'AJAX) : rechargement + flash de
              session standard. --}}
-        <div class="modal fade" id="motifModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content modal-inscriptions">
-                    <form id="motif-form" method="POST" action="">
-                        @csrf
-                        <div class="modal-header modal-header-inscriptions">
-                            <h5 class="modal-title" id="motif-modal-title">Motif</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <label class="form-label">Motif <span class="text-danger">*</span></label>
-                            <textarea name="motif" id="motif-textarea" class="form-control" rows="3" required></textarea>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer">Confirmer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <x-modale id="motifModal" data-bs-backdrop="static" aria-hidden="true" dialogue="" contenu-class="modal-inscriptions" entete-class="modal-header-inscriptions" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="motif-form" method="POST" action="">@csrf</x-slot:formulaire>
+            <x-slot:titre id="motif-modal-title">Motif</x-slot:titre>
+            <x-libelle requis>Motif</x-libelle>
+            <textarea name="motif" id="motif-textarea" class="form-control" rows="3" required></textarea>
+            <x-slot:pied>
+                <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+                <x-bouton type="submit">Confirmer</x-bouton>
+            </x-slot:pied>
+        </x-modale>
         @endcanany
     </div>
 @endsection

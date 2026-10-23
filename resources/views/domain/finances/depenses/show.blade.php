@@ -11,45 +11,44 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.depenses.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.depenses.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
+    </x-bouton>
     @if ($imputations->isEmpty())
         @can('analytique.ventiler')
-            <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#ventilationModal">
+            <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#ventilationModal">
                 <i class="fas fa-sitemap me-1"></i> Ventiler
-            </button>
+            </x-bouton>
         @endcan
     @else
         @can('analytique.ventiler')
-            <button type="button" class="btn btn-outline-scolarite btn-sm rounded-pill px-3"
-                    data-bs-toggle="modal" data-bs-target="#ventilationModal">
+            <x-bouton variante="contour" type="button" class="btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#ventilationModal">
                 <i class="fas fa-pen me-1"></i> Re-ventiler
-            </button>
+            </x-bouton>
         @endcan
     @endif
 @endsection
 
 @section('css')
 <style>
-    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
-    .main-card .card-header { border-bottom:1px solid #ece4d6 !important; }
+    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
+    .main-card .card-header { border-bottom:1px solid var(--eim-border) !important; }
     .info-row { display:flex; justify-content:space-between; padding:.6rem 0; border-bottom:1px solid #f1ece2; }
     .info-row:last-child { border-bottom:none; }
     .info-label { font-size:.8rem; color:var(--school-muted); text-transform:uppercase; letter-spacing:.5px; }
     .info-value { font-weight:600; color:var(--school-ink); }
     .badge-depense { display:inline-flex; align-items:center; gap:6px; font-size:.75rem; font-weight:600; padding:.4em .85em; border-radius:999px; }
     .badge-depense-attente { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-depense-validee { background:#e3f7ec; color:#1c7a4d; }
+    .badge-depense-validee { background:#e3f7ec; color:var(--eim-success); }
     .badge-depense-rejetee { background:#fdecea; color:var(--school-red); }
-    .centre-code { font-family:monospace; background:#faf6ee; color:var(--school-red); padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700; }
+    .centre-code { font-family:monospace; background:var(--eim-cream); color:var(--school-red); padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700; }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-    .empty-state { padding:2rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:2rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2rem; margin-bottom:.5rem; display:block; color:#d8c8ae; }
     .modal-ventil { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
     .modal-header-ventil { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border-bottom:none; padding:1.15rem 1.5rem; }
-    .ventil-row { background:#faf6ee; border:1px solid #ece4d6; border-radius:10px; padding:.65rem .85rem; margin-bottom:.5rem; display:flex; align-items:center; gap:.75rem; }
-    .ventil-row select, .ventil-row input { border-radius:6px; border:1px solid #ece4d6; padding:.4rem .6rem; font-size:.85rem; }
+    .ventil-row { background:var(--eim-cream); border:1px solid var(--eim-border); border-radius:10px; padding:.65rem .85rem; margin-bottom:.5rem; display:flex; align-items:center; gap:.75rem; }
+    .ventil-row select, .ventil-row input { border-radius:6px; border:1px solid var(--eim-border); padding:.4rem .6rem; font-size:.85rem; }
 </style>
 @endsection
 
@@ -58,7 +57,7 @@
 
     {{-- Fiche dépense --}}
     <div class="col-md-5">
-        <div class="card main-card mb-4">
+        <x-carte class="mb-4">
             <div class="card-header bg-white py-3 px-4">
                 <h6 class="mb-0"><i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i> Informations</h6>
             </div>
@@ -94,42 +93,37 @@
                     </div>
                 @endif
                 @if ($depense->motif_depense)
-                    <div class="mt-3 p-2 rounded" style="background:#faf6ee;font-size:.85rem;color:#4a5560;">
+                    <div class="mt-3 p-2 rounded" style="background:var(--eim-cream);font-size:.85rem;color:var(--eim-ink-soft);">
                         <strong>Motif :</strong> {{ $depense->motif_depense }}
                     </div>
                 @endif
                 @if ($depense->justificatif_path)
                     <div class="mt-3">
-                        <a href="{{ asset('storage/' . $depense->justificatif_path) }}" target="_blank"
-                           class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+                        <x-bouton variante="contour" href="{{ asset('storage/' . $depense->justificatif_path) }}" target="_blank" class="btn-sm rounded-pill px-3">
                             <i class="fas fa-paperclip me-1"></i> Voir le justificatif
-                        </a>
+                        </x-bouton>
                     </div>
                 @endif
             </div>
-        </div>
+        </x-carte>
     </div>
 
     {{-- Ventilation analytique --}}
     <div class="col-md-7">
-        <div class="card main-card">
+        <x-carte>
             <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-sitemap me-1" style="color:var(--school-gold-dark);"></i> Ventilation analytique</h6>
-                <span class="compteur-badge">{{ $imputations->count() }} centre(s)</span>
+                <x-compteur>{{ $imputations->count() }} centre(s)</x-compteur>
             </div>
             <div class="card-body p-0">
                 @if ($imputations->isEmpty())
-                    <div class="empty-state">
-                        <i class="fas fa-sitemap"></i>
-                        <p class="mb-0">Cette dépense n'est imputée à aucun centre analytique.</p>
+                    <x-vide icone="fas fa-sitemap" :paragraphe="false"><p class="mb-0">Cette dépense n'est imputée à aucun centre analytique.</p>
                         @can('analytique.ventiler')
                             <p class="text-muted small mb-0">Cliquez sur « Ventiler » pour répartir son montant.</p>
-                        @endcan
-                    </div>
+                        @endcan</x-vide>
                 @else
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead style="background:#faf6ee;">
+                    <x-tableau class="mb-0">
+                            <thead style="background:var(--eim-cream);">
                                 <tr>
                                     <th class="ps-4" style="font-size:.76rem;text-transform:uppercase;color:var(--school-red);">Centre</th>
                                     <th class="text-end" style="font-size:.76rem;text-transform:uppercase;color:var(--school-red);">Montant</th>
@@ -154,85 +148,72 @@
                                 </tr>
                             @endforeach
                             </tbody>
-                            <tfoot style="background:#faf6ee;">
+                            <tfoot style="background:var(--eim-cream);">
                                 <tr>
                                     <td class="ps-4 fw-bold text-uppercase text-xs" style="color:var(--school-red-dark);">Total</td>
                                     <td class="num fw-bold">{{ number_format($imputations->sum('montant'), 2, ',', ' ') }}</td>
                                     <td class="num fw-bold">{{ number_format($imputations->sum(fn ($imp) => $partDe($imp) ?? 0), 2, ',', ' ') }} %</td>
                                 </tr>
                             </tfoot>
-                        </table>
-                    </div>
+                        </x-tableau>
                 @endif
             </div>
-        </div>
+        </x-carte>
     </div>
 </div>
 
 {{-- Modale ventilation --}}
 @can('analytique.ventiler')
-<div class="modal fade" id="ventilationModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content modal-ventil">
-            <form method="POST" action="{{ route('finances.ventiler', $depense) }}" id="ventil-form">
-                @csrf
+<x-modale id="ventilationModal" data-bs-backdrop="static" dialogue="modal-dialog-centered modal-lg" contenu-class="modal-ventil" entete-class="modal-header-ventil" corps-class="p-4" croix-blanche>
+    <x-slot:formulaire method="POST" action="{{ route('finances.ventiler', $depense) }}" id="ventil-form">@csrf
                 <input type="hidden" name="source_type" value="depense">
                 <input type="hidden" name="source_id"   value="{{ $depense->id }}">
-                <input type="hidden" name="sens"        value="depense">
-
-                <div class="modal-header modal-header-ventil">
-                    <h5 class="modal-title"><i class="fas fa-sitemap me-2"></i>Ventiler la dépense</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3 p-3"
-                         style="background:#faf6ee;border-radius:10px;">
-                        <div>
-                            <div class="text-muted text-xs">Dépense</div>
-                            <div class="fw-semibold">{{ $depense->libelle }}</div>
-                        </div>
-                        <div class="text-end">
-                            <div class="text-muted text-xs">Montant à ventiler</div>
-                            <div class="fw-bold" style="color:var(--school-red-dark);">
-                                {{ number_format((float) $depense->montant, 2, ',', ' ') }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Mode de ventilation</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="mode" id="mode-montant" value="montant" checked>
-                            <label class="btn btn-outline-secondary" for="mode-montant">Montant fixe</label>
-
-                            <input type="radio" class="btn-check" name="mode" id="mode-pourcentage" value="pourcentage">
-                            <label class="btn btn-outline-secondary" for="mode-pourcentage">Pourcentage</label>
-                        </div>
-                    </div>
-
-                    <div id="ventil-rows"></div>
-
-                    <button type="button" class="btn btn-outline-scolarite btn-sm rounded-pill px-3" id="add-row">
-                        <i class="fas fa-plus me-1"></i> Ajouter un centre
-                    </button>
-
-                    <div class="alert alert-light border-0 small mt-3 mb-0"
-                         style="background:#faf6ee;color:var(--school-muted);">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <span id="ventil-hint">
-                            La somme des montants doit être égale à
-                            {{ number_format((float) $depense->montant, 2, ',', ' ') }}.
-                        </span>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer la ventilation</button>
-                </div>
-            </form>
+                <input type="hidden" name="sens"        value="depense"></x-slot:formulaire>
+    <x-slot:titre><i class="fas fa-sitemap me-2"></i>Ventiler la dépense</x-slot:titre>
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3"
+         style="background:var(--eim-cream);border-radius:10px;">
+        <div>
+            <div class="text-muted text-xs">Dépense</div>
+            <div class="fw-semibold">{{ $depense->libelle }}</div>
+        </div>
+        <div class="text-end">
+            <div class="text-muted text-xs">Montant à ventiler</div>
+            <div class="fw-bold" style="color:var(--school-red-dark);">
+                {{ number_format((float) $depense->montant, 2, ',', ' ') }}
+            </div>
         </div>
     </div>
-</div>
+
+    <div class="mb-3">
+        <x-libelle class="small fw-semibold">Mode de ventilation</x-libelle>
+        <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="mode" id="mode-montant" value="montant" checked>
+            <label class="btn btn-outline-secondary" for="mode-montant">Montant fixe</label>
+
+            <input type="radio" class="btn-check" name="mode" id="mode-pourcentage" value="pourcentage">
+            <label class="btn btn-outline-secondary" for="mode-pourcentage">Pourcentage</label>
+        </div>
+    </div>
+
+    <div id="ventil-rows"></div>
+
+    <x-bouton variante="contour" type="button" class="btn-sm rounded-pill px-3" id="add-row">
+        <i class="fas fa-plus me-1"></i> Ajouter un centre
+    </x-bouton>
+
+    <div class="alert alert-light border-0 small mt-3 mb-0"
+         style="background:var(--eim-cream);color:var(--school-muted);">
+        <i class="fas fa-info-circle me-1"></i>
+        <span id="ventil-hint">
+            La somme des montants doit être égale à
+            {{ number_format((float) $depense->montant, 2, ',', ' ') }}.
+        </span>
+    </div>
+    <x-slot:pied class="bg-light px-4 py-3">
+        <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+        <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer la ventilation</x-bouton>
+    </x-slot:pied>
+</x-modale>
 @endcan
 
 {{-- Template ligne (Blade + JS) --}}

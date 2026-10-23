@@ -6,15 +6,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Connexion · École Internationale Mariam</title>
+    <title>Connexion · EIM Compta</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('app/assets/img/favicon.png') }}" />
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo/eim-compta-icon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo/favicon-32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/logo/apple-touch-icon.png') }}">
 
-    <!-- Google Fonts : Kumbh Sans + Playfair Display -->
+    <!-- Police de la charte : Manrope -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ asset('app/assets/css/bootstrap.min.css') }}" />
@@ -32,230 +34,152 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 
+    @include('admin.layouts.partials._charte')
     <style>
-        :root {
-            --school-red: #C81E3A;
-            --school-red-dark: #7A0F22;
-            --school-red-deep: #4A0C19;
-            --school-gold: #D4A94D;
-            --school-gold-soft: #E9CE9B;
-            --school-ink: #1f2d3a;
-            --school-muted: #6f7e8c;
-            --school-icon: #a5895a;
-            --school-danger: #C81E3A;
-            --school-warning: #B8720B;
-            --school-page-bg: #E7E2D4;
-            --school-paper: #FBF8F1;
-            --school-paper-line: #EAE1CC;
-            --school-input-bg: #F7F3E9;
-        }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body.account-page {
-            font-family: 'Kumbh Sans', sans-serif;
+            font-family: var(--eim-ff);
             min-height: 100vh;
-            height: 100vh;
-            background: var(--school-page-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            background: var(--eim-bg);
+            color: var(--eim-ink);
         }
 
         #global-loader {
             position: fixed;
             inset: 0;
             z-index: 99999;
-            background: #ffffff;
+            background: var(--eim-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: opacity 0.6s ease, visibility 0.6s ease;
         }
-        #global-loader.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
+        #global-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #global-loader .spinner-border { color: var(--eim-red); }
 
+        /* ===== Deux panneaux : identité à gauche, formulaire à droite ===== */
         .school-wrapper {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100vh;
             display: flex;
-            align-items: stretch;
-            overflow: hidden;
-            background: #ffffff;
+            min-height: 100vh;
+            width: 100%;
         }
-
-        /* ============== PANEL GAUCHE — le cadre à filet doré ============== */
 
         .school-brand-panel {
             flex: 0 0 45%;
-            height: 100vh;
-            background: radial-gradient(130% 150% at 12% 8%, #9c1830 0%, var(--school-red-dark) 48%, var(--school-red-deep) 100%);
-            padding: 0;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 56px;
+            color: #fff;
+            background: radial-gradient(130% 150% at 12% 8%, var(--eim-red) 0%, var(--eim-red-hover) 48%, var(--eim-red-deep) 100%);
+            border-right: 3px solid var(--eim-gold);
         }
-
+        /* cadre à double filet or */
         .school-frame {
             position: absolute;
-            inset: 30px;
-            border: 1px solid rgba(212, 169, 77, 0.38);
+            inset: 28px;
+            border: 1px solid rgba(212, 169, 77, .45);
+            border-radius: var(--eim-radius);
             pointer-events: none;
         }
         .school-frame::after {
             content: '';
             position: absolute;
             inset: 7px;
-            border: 1px solid rgba(212, 169, 77, 0.2);
+            border: 1px solid rgba(212, 169, 77, .22);
+            border-radius: var(--eim-radius-sm);
         }
-        .school-corner {
-            position: absolute;
-            width: 32px;
-            height: 32px;
-            color: var(--school-gold);
-            opacity: 0.75;
-            pointer-events: none;
-        }
-        .school-corner svg { width: 100%; height: 100%; display: block; }
-        .school-corner.tl { top: 30px; left: 30px; }
-        .school-corner.tr { top: 30px; right: 30px; transform: scaleX(-1); }
-        .school-corner.bl { bottom: 30px; left: 30px; transform: scaleY(-1); }
-        .school-corner.br { bottom: 30px; right: 30px; transform: scale(-1, -1); }
-
         .school-glow {
             position: absolute;
-            width: 560px;
-            height: 560px;
-            right: -200px;
-            bottom: -180px;
-            background: radial-gradient(circle, rgba(212, 169, 77, 0.16) 0%, rgba(212, 169, 77, 0) 70%);
+            width: 560px; height: 560px;
+            right: -200px; bottom: -180px;
+            background: radial-gradient(circle, rgba(212, 169, 77, .18) 0%, rgba(212, 169, 77, 0) 70%);
             pointer-events: none;
         }
-
-        .school-brand-content {
-            position: relative;
-            z-index: 2;
-            max-width: 440px;
-            margin: 0 auto;
-            padding: 0 60px;
+        .school-brand-content { position: relative; z-index: 1; max-width: 420px; }
+        .school-brand-seal img {
+            width: 112px; height: 112px;
+            filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .28));
+            margin-bottom: 28px;
         }
-
-        .school-brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 56px;
-        }
-        .school-brand-logo img {
-            height: 52px;
-            width: auto;
-            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.2));
-        }
-        .school-brand-logo-text {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.15rem;
-            line-height: 1.3;
-        }
-        .school-brand-logo-text small {
-            display: block;
-            font-family: 'Kumbh Sans', sans-serif;
-            font-weight: 500;
-            font-size: 0.66rem;
-            letter-spacing: 1.4px;
+        .school-brand-kicker {
+            font-size: .7rem;
+            font-weight: 600;
             text-transform: uppercase;
-            color: var(--school-gold-soft);
-            margin-top: 4px;
+            letter-spacing: .12em;
+            color: var(--eim-gold-soft);
+            margin-bottom: 10px;
         }
-
         .school-brand-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.4rem, 4vw, 3.1rem);
-            font-weight: 700;
+            font-size: clamp(2.2rem, 3.6vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
             line-height: 1.08;
-            letter-spacing: -0.5px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .school-brand-desc {
-            font-size: 0.96rem;
-            color: rgba(255,255,255,0.78);
+            font-size: .95rem;
             line-height: 1.7;
-            max-width: 380px;
-            margin-bottom: 44px;
+            color: rgba(255, 255, 255, .88);
+            margin-bottom: 32px;
         }
-
-        .school-registry {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            border-top: 1px solid rgba(255,255,255,0.14);
-        }
+        .school-registry { list-style: none; padding: 0; margin: 0; border-top: 1px solid rgba(255, 255, 255, .18); }
         .school-registry li {
-            padding: 15px 0 15px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.14);
-            border-left: 2px solid var(--school-gold);
-            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .18);
+            font-size: .9rem;
             font-weight: 500;
-            color: rgba(255,255,255,0.92);
+            color: #fff;
         }
-
-        .school-brand-footer {
-            margin-top: 40px;
-            font-size: 0.74rem;
-            color: rgba(255,255,255,0.42);
-            letter-spacing: 0.3px;
-        }
-
-        /* ============== PANEL DROIT ============== */
+        .school-registry li i { color: var(--eim-gold); width: 18px; text-align: center; }
+        .school-brand-footer { margin-top: 32px; font-size: .75rem; color: rgba(255, 255, 255, .7); }
 
         .school-form-panel {
             flex: 1;
-            height: 100vh;
-            background: var(--school-paper);
-            padding: 56px 64px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            overflow-y: auto;
+            padding: 48px 56px;
+            background: var(--eim-bg);
         }
-        .school-form-inner {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-        }
+        .school-form-inner { width: 100%; max-width: 420px; }
 
-        .school-mobile-logo {
-            display: none;
-            text-align: center;
-            margin-bottom: 28px;
-        }
-        .school-mobile-logo img { height: 52px; }
+        .school-seal { display: none; text-align: center; margin-bottom: 18px; }
+        .school-seal img { width: 88px; height: 88px; filter: drop-shadow(0 8px 18px rgba(142, 18, 22, .18)); }
 
-        .school-card-head {
-            margin-bottom: 32px;
+        @media (max-width: 991.98px) {
+            .school-wrapper { flex-direction: column; }
+            .school-brand-panel { display: none; }
+            .school-form-panel { padding: 40px 20px; }
+            .school-seal { display: block; }
         }
-        .school-card-head h3 {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.85rem;
-            color: var(--school-ink);
-            margin-bottom: 8px;
+        /* sur grand écran, le copyright figure déjà dans le panneau gauche */
+        @media (min-width: 992px) { .school-footer-note { display: none; } }
+
+        .school-card-head { margin-bottom: 28px; }
+        .school-card-head h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--eim-ink);
+            margin-bottom: 4px;
         }
-        .school-card-head p {
-            color: var(--school-muted);
-            font-size: 0.9rem;
-            margin: 0;
+        .school-card-head h1 span { color: var(--eim-red); }
+        .school-card-head .school-kicker {
+            font-size: .68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--eim-red-hover);
+            margin-bottom: 6px;
         }
+        .school-card-head p { color: var(--eim-ink-soft); font-size: .9rem; margin: 0; }
 
         /* ---- Bandeau d'alerte contextuel ---- */
         .school-alert-banner {
@@ -263,7 +187,7 @@
             align-items: flex-start;
             gap: 12px;
             padding: 14px 16px;
-            border-radius: 10px;
+            border-radius: var(--eim-radius);
             margin-bottom: 22px;
             font-size: 0.86rem;
             line-height: 1.5;
@@ -271,26 +195,10 @@
             animation: alertIn 0.25s ease-out both;
         }
         .school-alert-banner.show { display: flex; }
-        .school-alert-banner i {
-            font-size: 1.1rem;
-            margin-top: 1px;
-            flex-shrink: 0;
-        }
-        .school-alert-banner .alert-title {
-            font-weight: 700;
-            display: block;
-            margin-bottom: 2px;
-        }
-        .school-alert-banner.type-danger {
-            background: #fdecee;
-            border-color: #f6c4cb;
-            color: var(--school-danger);
-        }
-        .school-alert-banner.type-warning {
-            background: #fdf3e2;
-            border-color: #f2dba9;
-            color: var(--school-warning);
-        }
+        .school-alert-banner i { font-size: 1.1rem; margin-top: 1px; flex-shrink: 0; }
+        .school-alert-banner .alert-title { font-weight: 700; display: block; margin-bottom: 2px; }
+        .school-alert-banner.type-danger { background: #FCEBEB; border-color: #F3C4C5; color: var(--eim-danger); }
+        .school-alert-banner.type-warning { background: var(--eim-cream); border-color: var(--eim-gold-soft); color: #6B4E10; }
         @keyframes alertIn {
             from { opacity: 0; transform: translateY(-6px); }
             to { opacity: 1; transform: translateY(0); }
@@ -298,143 +206,112 @@
 
         .school-label {
             font-weight: 600;
-            font-size: 0.8rem;
-            color: var(--school-ink);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--eim-ink);
             display: flex;
             align-items: center;
             gap: 6px;
             margin-bottom: 7px;
         }
-        .school-label i { color: var(--school-red); }
+        .school-label .text-danger { color: var(--eim-danger) !important; }
 
         .school-input-group {
             display: flex;
             align-items: stretch;
-            background: var(--school-input-bg);
-            border: 1.5px solid var(--school-paper-line);
-            border-radius: 10px;
-            transition: all 0.2s ease;
+            background: var(--eim-cream);
+            border: 1.5px solid var(--eim-border);
+            border-radius: var(--eim-radius-sm);
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
             overflow: hidden;
         }
         .school-input-group:focus-within {
-            border-color: var(--school-red);
-            box-shadow: 0 0 0 4px rgba(200, 30, 58, 0.10);
-            background: #ffffff;
+            border-color: var(--eim-red);
+            box-shadow: 0 0 0 2px rgba(227, 30, 36, .25);
+            background: var(--eim-surface);
         }
-        .school-input-group.is-invalid {
-            border-color: var(--school-danger);
-            background: #fdf6f7;
-        }
-        .school-input-group.is-invalid:focus-within {
-            box-shadow: 0 0 0 4px rgba(200, 30, 58, 0.12);
-        }
+        .school-input-group.is-invalid { border-color: var(--eim-danger); background: #FDF6F6; }
         .school-input-group .form-control {
             border: none;
             background: transparent;
             padding: 13px 14px;
             font-size: 0.92rem;
             box-shadow: none !important;
-            color: var(--school-ink);
+            color: var(--eim-ink);
         }
+        .school-input-group .form-control::placeholder { color: #8A7B7B; }
         .school-input-group .form-control:focus { outline: none; box-shadow: none; }
         .school-input-group .input-group-text {
             border: none;
             background: transparent;
-            color: var(--school-icon);
+            color: var(--eim-ink-soft);
             padding: 0 14px;
             font-size: 1.05rem;
             cursor: pointer;
         }
-        .school-input-group .toggle-password:hover {
-            color: var(--school-red);
-        }
+        .school-input-group .toggle-password:hover { color: var(--eim-red-hover); }
 
+        /* jQuery masque le message par style="display:none", que le !important de .d-block écrasait */
+        .invalid-feedback.d-block[style*="none"] { display: none !important; }
         .invalid-feedback.d-block {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 0.78rem;
             margin-top: 6px;
-            color: var(--school-danger);
+            color: var(--eim-danger);
         }
 
         .school-row-between {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 14px 0 26px;
+            margin: 14px 0 24px;
             font-size: 0.85rem;
         }
-        .school-row-between .form-check-label {
-            color: #4d5e6e;
-            cursor: pointer;
-            user-select: none;
-        }
-        .school-row-between .form-check-input:checked {
-            background-color: var(--school-red);
-            border-color: var(--school-red);
-        }
-        .school-row-between a {
-            color: var(--school-red);
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .school-row-between a:hover {
-            color: var(--school-red-dark);
-        }
+        .school-row-between .form-check-label { color: var(--eim-ink-soft); cursor: pointer; user-select: none; }
+        .school-row-between .form-check-input:checked { background-color: var(--eim-red); border-color: var(--eim-red); }
+        .school-row-between a { color: var(--eim-red-hover); font-weight: 600; text-decoration: none; }
+        .school-row-between a:hover { color: var(--eim-red-deep); text-decoration: underline; }
 
         .school-btn-submit {
             width: 100%;
             border: none;
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: var(--eim-radius-sm);
+            padding: 14px;
+            font-family: var(--eim-ff);
             font-weight: 700;
             font-size: 0.95rem;
             color: #fff;
-            background: linear-gradient(120deg, var(--school-red-dark), var(--school-red));
+            background: var(--eim-red);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: all 0.25s ease;
-            box-shadow: 0 12px 26px rgba(200, 30, 58, 0.26);
+            transition: background .2s ease, box-shadow .2s ease;
+            box-shadow: 0 10px 24px rgba(227, 30, 36, .22);
             cursor: pointer;
-            position: relative;
         }
-        .school-btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 32px rgba(200, 30, 58, 0.32);
-            filter: brightness(1.05);
-        }
-        .school-btn-submit:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-        .school-btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
+        .school-btn-submit:hover:not(:disabled) { background: var(--eim-red-hover); }
+        .school-btn-submit:active:not(:disabled) { background: var(--eim-red-deep); }
+        .school-btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .school-access-note {
-            margin-top: 26px;
-            padding-top: 20px;
-            border-top: 1px solid var(--school-paper-line);
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid var(--eim-border);
             text-align: center;
             font-size: 0.83rem;
-            color: var(--school-muted);
+            color: var(--eim-ink-soft);
             line-height: 1.6;
-        }
-        .school-access-note a {
-            color: var(--school-red);
-            font-weight: 700;
-            text-decoration: none;
         }
 
         .school-footer-note {
-            text-align: center;
-            margin-top: 22px;
+            text-align: left;
+            margin-top: 18px;
             font-size: 0.75rem;
-            color: #a8a08c;
+            color: var(--eim-ink-soft);
         }
 
         /* Focus clavier visible partout (accessibilité) */
@@ -442,66 +319,27 @@
         button:focus-visible,
         input:focus-visible,
         [role="button"]:focus-visible {
-            outline: 2px solid var(--school-red);
+            outline: 2px solid var(--eim-red);
             outline-offset: 2px;
         }
 
-        /* Toastr personnalisé aux couleurs de l'école */
-        #toast-container > .toast-success { background-color: #1e8a4c !important; }
-        #toast-container > .toast-error { background-color: var(--school-red) !important; }
-        #toast-container > .toast-warning { background-color: var(--school-warning) !important; }
+        /* Toastr aux couleurs de la charte */
+        #toast-container > div { font-family: var(--eim-ff); border-radius: var(--eim-radius); opacity: 1; }
+        #toast-container > .toast-success { background-color: var(--eim-success) !important; }
+        #toast-container > .toast-error { background-color: var(--eim-danger) !important; }
+        #toast-container > .toast-warning { background-color: #8A6516 !important; }
         #toast-container > .toast-info { background-color: #2b6cb0 !important; }
 
-        @media (max-width: 991.98px) {
-            body.account-page {
-                height: auto;
-                overflow-y: auto;
-            }
-            .school-wrapper {
-                flex-direction: column;
-                height: auto;
-            }
-            .school-brand-panel {
-                flex: none;
-                height: auto;
-                min-height: 260px;
-                justify-content: center;
-                padding: 40px 0;
-            }
-            .school-frame, .school-corner { display: none; }
-            .school-brand-content {
-                max-width: 100%;
-                text-align: center;
-                padding: 0 32px;
-            }
-            .school-registry { display: none; }
-            .school-brand-desc {
-                max-width: 100%;
-                margin-bottom: 0;
-            }
-            .school-brand-logo { justify-content: center; display: none; }
-            .school-mobile-logo { display: block; }
-            .school-brand-title { font-size: 2rem; margin-bottom: 12px; }
-            .school-brand-footer { display: none; }
-            .school-form-panel {
-                flex: none;
-                height: auto;
-                padding: 36px 28px;
-            }
-        }
-
         @media (max-width: 480px) {
-            .school-brand-panel { padding: 32px 0; min-height: 220px; }
-            .school-form-panel { padding: 28px 18px; }
-            .school-card-head h3 { font-size: 1.5rem; }
+            .school-form-panel { padding: 32px 16px; }
+            .school-card-head h1 { font-size: 1.5rem; }
         }
 
-        .school-wrapper { animation: fadeInUp 0.7s ease-out both; }
+        .school-form-inner, .school-brand-content { animation: fadeInUp 0.6s ease-out both; }
         @keyframes fadeInUp {
             0% { opacity: 0; transform: translateY(14px); }
             100% { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
@@ -510,74 +348,48 @@
         .shake { animation: shake 0.45s ease; }
 
         @media (prefers-reduced-motion: reduce) {
-            .school-wrapper, .shake, .school-alert-banner { animation: none !important; }
+            .school-form-inner, .school-brand-content, .shake, .school-alert-banner { animation: none !important; }
         }
     </style>
 </head>
 <body class="account-page">
 
 <div id="global-loader">
-    <div class="spinner-border text-danger" role="status" style="width:3.5rem;height:3.5rem;">
+    <div class="spinner-border" role="status" style="width:3.5rem;height:3.5rem;">
         <span class="visually-hidden">Chargement…</span>
     </div>
 </div>
 
 <div class="school-wrapper">
 
-    <!-- PANEL GAUCHE -->
+    <!-- PANNEAU GAUCHE : identité -->
     <aside class="school-brand-panel">
         <div class="school-frame"></div>
-        <div class="school-corner tl">
-            <svg viewBox="0 0 48 48" fill="none"><path d="M4 44 V16 Q4 4 16 4 H44" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="4" r="2.2" fill="currentColor"/><circle cx="4" cy="44" r="2.2" fill="currentColor"/></svg>
-        </div>
-        <div class="school-corner tr">
-            <svg viewBox="0 0 48 48" fill="none"><path d="M4 44 V16 Q4 4 16 4 H44" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="4" r="2.2" fill="currentColor"/><circle cx="4" cy="44" r="2.2" fill="currentColor"/></svg>
-        </div>
-        <div class="school-corner bl">
-            <svg viewBox="0 0 48 48" fill="none"><path d="M4 44 V16 Q4 4 16 4 H44" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="4" r="2.2" fill="currentColor"/><circle cx="4" cy="44" r="2.2" fill="currentColor"/></svg>
-        </div>
-        <div class="school-corner br">
-            <svg viewBox="0 0 48 48" fill="none"><path d="M4 44 V16 Q4 4 16 4 H44" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="4" r="2.2" fill="currentColor"/><circle cx="4" cy="44" r="2.2" fill="currentColor"/></svg>
-        </div>
         <div class="school-glow"></div>
-
         <div class="school-brand-content">
-            <div class="school-brand-logo">
-                <img src="{{ asset('app/assets/img/logomariam.png') }}" alt="Logo École Internationale Mariam">
-                <div class="school-brand-logo-text">
-                    École Internationale Mariam
-                    <small>Excellence &amp; Éducation</small>
-                </div>
-            </div>
-
-            <h1 class="school-brand-title">Bienvenue.</h1>
+            <div class="school-brand-seal"><x-logo variant="sceau" decoratif /></div>
+            <div class="school-brand-kicker">École Internationale Mariam</div>
+            <h2 class="school-brand-title">EIM Compta</h2>
             <p class="school-brand-desc">
-                Accédez à l'ensemble des outils de gestion scolaire : suivi pédagogique, vie scolaire, finances et administration.
+                La gestion financière de l'établissement : encaissements, caisses, dépenses, recouvrement et pilotage budgétaire.
             </p>
-
             <ul class="school-registry">
-                <li>Excellence académique et suivi personnalisé</li>
-                <li>Communauté éducative connectée</li>
-                <li>Transport, cantine et activités extrascolaires</li>
+                <li><i class="fas fa-cash-register" aria-hidden="true"></i>Encaissements et caisses suivis au jour le jour</li>
+                <li><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>Dépenses, décaissements et lignes budgétaires</li>
+                <li><i class="fas fa-bell" aria-hidden="true"></i>Recouvrement et relances des familles</li>
             </ul>
-
-            <div class="school-brand-footer">
-                &copy; {{ date('Y') }} École Internationale Mariam — Tous droits réservés.
-            </div>
+            <div class="school-brand-footer">&copy; {{ date('Y') }} École Internationale Mariam — Tous droits réservés.</div>
         </div>
     </aside>
 
-    <!-- PANEL DROIT -->
-    <div class="school-form-panel">
+    <!-- PANNEAU DROIT : connexion -->
+    <main class="school-form-panel">
         <div class="school-form-inner">
-
-            <div class="school-mobile-logo">
-                <img src="{{ asset('app/assets/img/logomariam.png') }}" alt="Logo">
-                <h5 style="font-family:'Playfair Display',serif; margin-top:10px;">École Internationale Mariam</h5>
-            </div>
+            <div class="school-seal"><x-logo variant="sceau" /></div>
 
             <div class="school-card-head">
-                <h3>Connexion</h3>
+                <div class="school-kicker">EIM Compta</div>
+                <h1>Connexion</h1>
                 <p>Saisissez vos identifiants pour accéder à votre espace.</p>
             </div>
 
@@ -647,10 +459,10 @@
             </form>
 
             <div class="school-footer-note">
-                &copy; {{ date('Y') }} <strong>École Internationale Mariam</strong> — Tous droits réservés.
+                &copy; {{ date('Y') }} École Internationale Mariam — Tous droits réservés.
             </div>
         </div>
-    </div>
+    </main>
 </div>
 
 <!-- SCRIPTS -->
@@ -796,7 +608,7 @@
                 icon: 'info',
                 title: 'Mot de passe oublié',
                 text: "Veuillez contacter l'administrateur pour réinitialiser votre mot de passe.",
-                confirmButtonColor: '#C81E3A',
+                confirmButtonColor: '#E31E24',
                 confirmButtonText: 'Compris'
             });
         });
@@ -982,7 +794,7 @@
                 icon: mapping.sweetalert.icon,
                 title: mapping.sweetalert.title,
                 text: text,
-                confirmButtonColor: '#C81E3A',
+                confirmButtonColor: '#E31E24',
                 confirmButtonText: "J'ai compris"
             });
             return;
@@ -1071,7 +883,7 @@
                     icon: 'warning',
                     title: 'Session expirée',
                     text: 'Votre session a expiré. La page va être actualisée.',
-                    confirmButtonColor: '#C81E3A',
+                    confirmButtonColor: '#E31E24',
                     confirmButtonText: 'Actualiser'
                 }).then(function() { window.location.reload(); });
                 break;

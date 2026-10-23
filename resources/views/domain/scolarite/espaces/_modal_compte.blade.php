@@ -18,12 +18,12 @@
 
         <div class="row g-3">
             <div class="col-md-12">
-                <label class="form-label">Email du compte <span class="text-danger">*</span></label>
+                <x-libelle requis>Email du compte</x-libelle>
                 <input type="email" name="email" class="form-control" maxlength="150"
                        value="{{ old('email', $compte->email ?? '') }}" required>
             </div>
             <div class="col-md-12">
-                <label class="form-label">Parent titulaire <span class="text-danger">*</span></label>
+                <x-libelle requis>Parent titulaire</x-libelle>
                 <select name="parent_id" class="form-select" required>
                     <option value="">— Sélectionner —</option>
                     @foreach($parents as $p)
@@ -36,7 +36,7 @@
                 </select>
             </div>
             <div class="col-md-12">
-                <label class="form-label">Statut</label>
+                <x-libelle>Statut</x-libelle>
                 <select name="statut_compte" class="form-select">
                     @php
                         $statutCompte = (int) old('statut_compte', $compte->statut_compte?->value ?? \App\Domain\Scolarite\Types\StatutCompte::ACTIF->value);

@@ -18,7 +18,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('administration.journal.index') }}" class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label small">Utilisateur</label>
+                <x-libelle class="small">Utilisateur</x-libelle>
                 <select name="user_id" class="form-select filtre-input">
                     <option value="">Tous</option>
                     @foreach($users as $u)
@@ -29,7 +29,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Module</label>
+                <x-libelle class="small">Module</x-libelle>
                 <select name="module" class="form-select filtre-input">
                     <option value="">Tous</option>
                     @foreach($modules as $m)
@@ -38,7 +38,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Action</label>
+                <x-libelle class="small">Action</x-libelle>
                 <select name="action" class="form-select filtre-input">
                     <option value="">Toutes</option>
                     @foreach($types as $t)
@@ -47,17 +47,17 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Du</label>
+                <x-libelle class="small">Du</x-libelle>
                 <input type="date" name="date_debut" class="form-control filtre-input"
                        value="{{ $filtres['date_debut'] ?? '' }}">
             </div>
             <div class="col-md-2">
-                <label class="form-label small">Au</label>
+                <x-libelle class="small">Au</x-libelle>
                 <input type="date" name="date_fin" class="form-control filtre-input"
                        value="{{ $filtres['date_fin'] ?? '' }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}" placeholder="Description, entité, utilisateur...">
             </div>
@@ -73,8 +73,7 @@
     </div>
 
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Date</th>
@@ -120,20 +119,12 @@
                             <td><small class="text-muted">{{ $a->ip }}</small></td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-clipboard-list fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucune action enregistrée.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="7" icone="fa fa-clipboard-list fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucune action enregistrée.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $actions->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$actions" />
         </div>
     </div>
 @endsection

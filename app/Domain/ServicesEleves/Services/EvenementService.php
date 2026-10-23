@@ -83,6 +83,12 @@ class EvenementService
      */
     public function preInscrire(int $evenementId, int $inscriptionId, int $userId): ParticipationEvenement
     {
+        // L'événement appartient à une année ; à défaut, l'année de l'en-tête
+        \App\Domain\Scolarite\Models\Annee::interdireSouscriptionSiCloturee(
+            (int) (\Illuminate\Support\Facades\DB::table('evenements')->where('id', $evenementId)->value('annee_id')
+                ?: app(\App\Support\AnneeScolaireContext::class)->id())
+        );
+
         return DB::transaction(function () use ($evenementId, $inscriptionId, $userId) {
             $evenement = $this->evenements->findOrFail($evenementId);
 

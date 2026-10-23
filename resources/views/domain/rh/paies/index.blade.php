@@ -11,50 +11,39 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.paies.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.paies.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
-    <a href="{{ route('rh.paies.dashboard', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.paies.dashboard', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-chart-pie me-1"></i> Dashboard
-    </a>
-    <a href="{{ route('rh.periodes.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.periodes.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-calendar-alt me-1"></i> Périodes
-    </a>
-    <a href="{{ route('rh.remunerations.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.remunerations.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-sliders-h me-1"></i> Rémunérations
-    </a>
+    </x-bouton>
     @can('paie.gerer')
-        <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#paieModal">
+        <x-bouton variante="nouveau" type="button" data-bs-toggle="modal" data-bs-target="#paieModal">
             <i class="fas fa-plus-circle me-1"></i> Générer un bulletin
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .paie-page { --p-bg-soft:#faf6ee; --p-border:#ece4d6; }
+    .paie-page { --p-bg-soft:var(--eim-cream); --p-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--p-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition:transform .2s; }
-    .stat-card:hover { transform:translateY(-2px); }
-    .stat-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-    .stat-icon.blue  { background:rgba(37,99,235,.10);  color:#2563eb; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
-    .stat-icon.red   { background:rgba(200,30,58,.10);  color:var(--school-red); }
+    .stat-card { background:#fff; border:1px solid var(--p-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition:transform .2s; }
     .stat-info .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--p-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--p-border); padding:.55rem .9rem; font-size:.88rem; }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background:var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
     .btn-nouveau { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; }
     .btn-nouveau:hover { color:#fff; }
@@ -66,19 +55,16 @@
     .table-paies thead th { color:var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; padding:.9rem 1rem; border-bottom:2px solid var(--p-border); white-space:nowrap; }
     .table-paies thead th i { color:var(--school-gold-dark); }
     .table-paies tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--p-border); font-size:.9rem; vertical-align:middle; }
-    .table-paies tbody tr:hover { background:#fdfaf5; }
+    .table-paies tbody tr:hover { background:var(--eim-hover); }
 
     .reference { font-family:monospace; font-size:.75rem; background:var(--p-bg-soft); color:var(--school-red); padding:2px 8px; border-radius:6px; font-weight:700; }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .num.grand { color:var(--school-red-dark); }
-    .num.net { color:#1c7a4d; font-weight:800; font-size:1rem; }
+    .num.net { color:var(--eim-success); font-weight:800; font-size:1rem; }
 
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
-    .badge-statut.brouillon { background:#eceff2; color:#5b6b7a; }
+    .badge-statut.brouillon { background:#eceff2; color:var(--eim-ink-soft); }
     .badge-statut.valide    { background:#e0ecfc; color:#2563eb; }
-    .badge-statut.paye      { background:#e3f7ec; color:#1c7a4d; }
     .badge-statut.annule    { background:#fdecea; color:var(--school-red); }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     /* Badges mode paiement */
     .badge-mode {
@@ -96,10 +82,10 @@
         font-size:.7rem; font-weight:700;
     }
     .badge-retrait.attente { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-retrait.retire  { background:#e3f7ec; color:#1c7a4d; }
+    .badge-retrait.retire  { background:#e3f7ec; color:var(--eim-success); }
     .badge-retrait.vire    { background:#e0ecfc; color:#2563eb; }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .modal-rh { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
@@ -107,7 +93,7 @@
     .form-section { background:var(--p-bg-soft); border:1px solid var(--p-border); border-radius:12px; padding:1.1rem; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color:var(--school-ink); }
     .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid var(--p-border); padding:.55rem .75rem; font-size:.88rem; }
-    .btn-annuler { background:#fff; border:1px solid var(--p-border); color:#5b6b7a; border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--p-border); color:var(--eim-ink-soft); border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-enregistrer { background:linear-gradient(135deg,var(--school-red-dark),var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
 </style>
 @endsection
@@ -118,53 +104,25 @@
     {{-- Stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['total'] }}</div>
-                    <div class="stat-label">Bulletins</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-file-invoice" couleur="blue" libelle="Bulletins">{{ $stats['total'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-coins"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($stats['masse_brute'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Masse brute</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-coins" couleur="gold" libelle="Masse brute">{{ number_format($stats['masse_brute'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($stats['masse_nette'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Masse nette</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-money-bill-wave" couleur="green" libelle="Masse nette">{{ number_format($stats['masse_nette'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-hourglass-half"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $stats['brouillons'] }}</div>
-                    <div class="stat-label">En brouillon</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-hourglass-half" couleur="red" libelle="En brouillon">{{ $stats['brouillons'] }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Employé..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Employé..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-3">
                     <select name="periode_id" class="form-select filtre-input">
@@ -185,19 +143,18 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-filtrer flex-fill">
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill">
                         <i class="fas fa-filter me-1"></i> Filtrer
-                    </button>
-                    <a href="{{ route('rh.paies.index') }}" class="btn btn-outline-scolarite">
+                    </x-bouton>
+                    <x-bouton variante="contour" href="{{ route('rh.paies.index') }}">
                         <i class="fas fa-undo"></i>
-                    </a>
+                    </x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-paies align-middle mb-0">
+            <x-tableau class="table-paies align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Référence</th>
@@ -231,9 +188,8 @@
                             <td class="num">{{ number_format((float) $paie->total_retenues, 0, ',', ' ') }}</td>
                             <td class="num net">{{ number_format((float) $paie->net_a_payer, 0, ',', ' ') }}</td>
                             <td>
-                                <span class="badge-statut {{ $paie->statut?->css() }}">
-                                    <span class="badge-dot"></span>{{ $paie->statut?->label() }}
-                                </span>
+                                <x-badge class="{{ $paie->statut?->css() }}" point>{{ $paie->statut?->label() }}
+                                </x-badge>
                             </td>
                             <td>
                                 {{-- Mode de paiement --}}
@@ -273,12 +229,7 @@
                                 @endif
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
 
                                         {{-- Toujours disponible : voir le bulletin --}}
                                         <li>
@@ -335,7 +286,7 @@
                                                           data-confirm-title="Confirmer le retrait en espèces ?"
                                                           data-confirm-text="L'employé a bien récupéré sa paie à la billetterie.">
                                                         @csrf
-                                                        <button class="dropdown-item" style="color:#1c7a4d;">
+                                                        <button class="dropdown-item" style="color:var(--eim-success);">
                                                             <i class="fas fa-hand-holding-usd"></i>
                                                             Confirmer le retrait
                                                         </button>
@@ -360,105 +311,74 @@
                                                 </li>
                                             @endif
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="10">
-                                <div class="empty-state">
-                                    <i class="fas fa-money-check-alt"></i>
-                                    <p class="mb-0">Aucun bulletin de paie.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="10" icone="fas fa-money-check-alt" :paragraphe="false"><p class="mb-0">Aucun bulletin de paie.</p></x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $paies->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$paies->appends(request()->query())" /></div>
 
     {{-- Modale génération bulletin --}}
     @can('paie.gerer')
-    <div class="modal fade" id="paieModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-rh">
-                <form id="paie-form">
-                    @csrf
-                    <div class="modal-header modal-header-rh">
-                        <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Générer un bulletin</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="alert alert-light border-0 small mb-3" style="background:#f0f6ff;color:#1e3a8a;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Le bulletin est calculé automatiquement depuis la rémunération, les déductions
-                            et les retenues de l'employé (IRPP calculé selon son mode). Il est créé en
-                            <strong>brouillon</strong>.
-                        </div>
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Employé <span class="text-danger">*</span></label>
-                                <select name="employe_id" class="form-select" required>
-                                    <option value="">— Sélectionner —</option>
-                                    @foreach ($employes as $e)
-                                        <option value="{{ $e->id }}">{{ $e->nom_prenom }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Période <span class="text-danger">*</span></label>
-                                <select name="periode_id" class="form-select" required>
-                                    <option value="">— Sélectionner —</option>
-                                    @foreach ($periodes as $p)
-                                        <option value="{{ $p->id }}">{{ $p->libelle }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer">
-                            <i class="fas fa-calculator me-1"></i> Générer
-                        </button>
-                    </div>
-                </form>
-            </div>
+    <x-modale id="paieModal" data-bs-backdrop="static" contenu-class="modal-rh" entete-class="modal-header-rh" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="paie-form">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-file-invoice me-2"></i>Générer un bulletin</x-slot:titre>
+        <div class="alert alert-light border-0 small mb-3" style="background:#f0f6ff;color:#1e3a8a;">
+            <i class="fas fa-info-circle me-1"></i>
+            Le bulletin est calculé automatiquement depuis la rémunération, les déductions
+            et les retenues de l'employé (IRPP calculé selon son mode). Il est créé en
+            <strong>brouillon</strong>.
         </div>
-    </div>
+        <x-section>
+            <div class="mb-3">
+                <x-libelle requis>Employé</x-libelle>
+                <select name="employe_id" class="form-select" required>
+                    <option value="">— Sélectionner —</option>
+                    @foreach ($employes as $e)
+                        <option value="{{ $e->id }}">{{ $e->nom_prenom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-libelle requis>Période</x-libelle>
+                <select name="periode_id" class="form-select" required>
+                    <option value="">— Sélectionner —</option>
+                    @foreach ($periodes as $p)
+                        <option value="{{ $p->id }}">{{ $p->libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit">
+                <i class="fas fa-calculator me-1"></i> Générer
+            </x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
     {{-- Modale annulation --}}
     @can('paie.gerer')
-    <div class="modal fade" id="annulerPaieModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-rh">
-                <form id="annuler-paie-form" method="POST" action="">
-                    @csrf
-                    <div class="modal-header" style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;">
-                        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Annuler le bulletin</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <p>Annuler le bulletin <strong id="annuler-ref">—</strong> ?</p>
-                        <div class="form-section">
-                            <label class="form-label small fw-semibold">Motif <span class="text-danger">*</span></label>
-                            <textarea name="motif" rows="3" class="form-control" required minlength="5"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <x-modale id="annulerPaieModal" aria-hidden="true" contenu-class="modal-rh" entete-style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="annuler-paie-form" method="POST" action="">@csrf</x-slot:formulaire>
+        <x-slot:titre><i class="fas fa-exclamation-triangle me-2"></i>Annuler le bulletin</x-slot:titre>
+        <p>Annuler le bulletin <strong id="annuler-ref">—</strong> ?</p>
+        <x-section>
+            <x-libelle class="small fw-semibold" requis>Motif</x-libelle>
+            <textarea name="motif" rows="3" class="form-control" required minlength="5"></textarea>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <button type="submit" class="btn" style="background:var(--school-red-dark);color:#fff;">Confirmer</button>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

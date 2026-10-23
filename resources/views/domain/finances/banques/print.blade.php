@@ -10,13 +10,13 @@
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 10px;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin: 0;
         }
 
         /* ===== En-tête ===== */
         .header {
-            border-bottom: 3px solid #C81E3A;
+            border-bottom: 2px solid #D4A94D;
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
@@ -26,30 +26,30 @@
         .header-brand {
             font-size: 16px;
             font-weight: bold;
-            color: #C81E3A;
+            color: #E31E24;
             letter-spacing: .5px;
         }
         .header-sub {
             font-size: 9px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin-top: 2px;
         }
         .header-meta {
             text-align: right;
             font-size: 8.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
         }
 
         /* ===== Titre ===== */
         .doc-title {
             font-size: 14px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin: 0 0 4px;
         }
         .doc-subtitle {
             font-size: 10px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin-bottom: 12px;
         }
 
@@ -61,8 +61,8 @@
             margin-bottom: 12px;
         }
         .stats td {
-            background: #faf6ee;
-            border: 1px solid #ece4d6;
+            background: #FBF4E6;
+            border: 1px solid #EADFCB;
             border-radius: 6px;
             padding: 8px 10px;
             width: 25%;
@@ -70,19 +70,19 @@
         .stats .label {
             font-size: 7.5px;
             text-transform: uppercase;
-            color: #6f7e8c;
+            color: #5A4A4A;
             letter-spacing: .5px;
         }
         .stats .value {
             font-size: 12px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin-top: 2px;
         }
-        .stats .value.green { color: #1c7a4d; }
-        .stats .value.red   { color: #C81E3A; }
+        .stats .value.green { color: #1F7A4D; }
+        .stats .value.red   { color: #E31E24; }
         .stats .value.blue  { color: #1d4ed8; }
-        .stats .value.gold  { color: #B8860B; }
+        .stats .value.gold  { color: #8A6516; }
 
         /* ===== Tableau ===== */
         table.journal {
@@ -91,7 +91,7 @@
             font-size: 9px;
         }
         table.journal thead th {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #ffffff;
             font-size: 8px;
             text-transform: uppercase;
@@ -105,7 +105,7 @@
 
         table.journal tbody td {
             padding: 6px 8px;
-            border-bottom: 1px solid #ece4d6;
+            border-bottom: 1px solid #EADFCB;
             vertical-align: top;
         }
         table.journal tbody tr:nth-child(even) { background: #fafaf7; }
@@ -120,11 +120,11 @@
             font-weight: bold;
         }
         .badge-emis     { background: #dbeafe; color: #1d4ed8; }
-        .badge-encaisse { background: #e3f7ec; color: #1c7a4d; }
-        .badge-rejete   { background: #fdecea; color: #C81E3A; }
+        .badge-encaisse { background: #e3f7ec; color: #1F7A4D; }
+        .badge-rejete   { background: #fdecea; color: #E31E24; }
 
         .montant { font-weight: bold; }
-        .texte-petit { font-size: 8px; color: #6f7e8c; }
+        .texte-petit { font-size: 8px; color: #5A4A4A; }
 
         /* ===== Totaux ===== */
         .totaux {
@@ -132,7 +132,7 @@
             margin-top: 12px;
         }
         .totaux td { padding: 6px 8px; }
-        .totaux .label { text-align: right; color: #6f7e8c; font-size: 9px; }
+        .totaux .label { text-align: right; color: #5A4A4A; font-size: 9px; }
         .totaux .value {
             text-align: right;
             font-weight: bold;
@@ -141,26 +141,26 @@
             width: 130px;
         }
         .totaux tr.final td {
-            border-top: 2px solid #C81E3A;
+            border-top: 2px solid #E31E24;
             padding-top: 10px;
             font-size: 12px;
-            color: #7A0F22;
+            color: #B3171C;
         }
 
         /* ===== Pied de page ===== */
         .footer {
             margin-top: 20px;
             padding-top: 8px;
-            border-top: 1px solid #ece4d6;
+            border-top: 1px solid #EADFCB;
             font-size: 8px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             text-align: center;
         }
 
         .empty {
             text-align: center;
             padding: 30px 0;
-            color: #9aa7b2;
+            color: #7A6A6A;
             font-style: italic;
         }
     </style>
@@ -171,6 +171,7 @@
 <div class="header">
     <table class="header-table">
         <tr>
+            <td style="width: 19mm; padding-right: 8px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '17mm'])</td>
             <td>
                 <div class="header-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                 <div class="header-sub">Plateforme de gestion scolaire et budgétaire</div>
@@ -273,7 +274,7 @@
     <table class="totaux">
         <tr>
             <td class="label">Total encaissé</td>
-            <td class="value" style="color: #1c7a4d;">
+            <td class="value" style="color: #1F7A4D;">
                 {{ number_format($montants['encaisse'], 2, ',', ' ') }}
             </td>
         </tr>
@@ -285,7 +286,7 @@
         </tr>
         <tr>
             <td class="label">Total rejeté</td>
-            <td class="value" style="color: #C81E3A;">
+            <td class="value" style="color: #E31E24;">
                 {{ number_format($montants['rejete'], 2, ',', ' ') }}
             </td>
         </tr>

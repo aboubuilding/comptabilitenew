@@ -253,7 +253,11 @@ test.describe('4.4 Activités & Événements', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Services aux Élèves' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord activités' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord activités' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord activités' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
     await expect(page.locator('main')).toContainText('Sortie au zoo');
 

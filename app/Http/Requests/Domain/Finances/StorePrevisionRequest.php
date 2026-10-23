@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests\Domain\Finances;
 
-use App\Domain\Finances\Types\TypePrevision;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
+/** Ligne budgétaire : libellé et montant global. */
 class StorePrevisionRequest extends FormRequest
 {
     public function authorize(): bool
@@ -17,11 +16,13 @@ class StorePrevisionRequest extends FormRequest
     {
         return [
             'libelle'              => ['required', 'string', 'max:150'],
-            'type'                 => ['required', Rule::in(array_keys(TypePrevision::options()))],
             'montant_previsionnel' => ['required', 'numeric', 'min:0.01'],
-            'centre_analytique_id' => ['nullable', 'exists:centres_analytiques,id'],
-            'date_debut'           => ['nullable', 'date'],
-            'date_fin'             => ['nullable', 'date', 'after_or_equal:date_debut'],
+            'centre_analytique_id' => ['nullable', 'integer', 'exists:centres_analytiques,id'],
         ];
+    }
+
+    public function attributes(): array
+    {
+        return ['montant_previsionnel' => 'montant global'];
     }
 }

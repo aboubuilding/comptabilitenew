@@ -166,7 +166,11 @@ test.describe('4.2 Cantine scolaire', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Services aux Élèves' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord cantine' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord cantine' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord cantine' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
 
     const export_ = await page.request.get('/services-eleves/cantine/inscriptions/export');

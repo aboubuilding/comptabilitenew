@@ -5,6 +5,8 @@
 | Menu de navigation — les 6 menus du cahier des charges (§ 2 et § 4)
 |--------------------------------------------------------------------------
 | Chaque entrée : [libellé, icône, nom de route, permission requise].
+| Un menu de plus de 8 écrans s'affiche en sous-menus : chaque groupe ouvre
+| ses écrans dans un second niveau (voir _header.blade.php).
 | Une entrée n'est affichée que si l'utilisateur a la permission ; un groupe
 | ou un menu sans aucune entrée visible disparaît (voir _header.blade.php).
 | Les permissions sont celles de config/permissions.php.
@@ -35,16 +37,23 @@ return [
     [
         'libelle' => 'Finances & Comptabilité',
         'icone'   => 'fa-wallet',
+        // Icône de chaque groupe quand le menu, trop long, s'affiche en sous-menus
+        'icones'  => [
+            'Frais & Échéanciers' => 'fa-tags',
+            'Paiements & Caisses' => 'fa-cash-register',
+            'Pilotage financier' => 'fa-chart-line',
+            'Comptabilité analytique' => 'fa-chart-pie',
+        ],
         'groupes' => [
             'Frais & Échéanciers' => [
                 ['Frais scolaires', 'fa-tags', 'finances.frais-ecoles.index', 'frais.voir'],
                 ['Plans d\'échéancier', 'fa-list-ol', 'finances.plan-echeanciers.index', 'frais.voir'],
-                ['Tranches', 'fa-layer-group', 'finances.tranches.index', 'frais.voir'],
                 ['Souscriptions', 'fa-handshake', 'finances.souscriptions.index', 'souscriptions.voir'],
             ],
             'Paiements & Caisses' => [
                 ['Paiements', 'fa-receipt', 'finances.paiements.index', 'paiements.voir'],
                 ['Encaissements', 'fa-cash-register', 'finances.encaissements.index', 'encaissements.voir'],
+                ['Décaissements', 'fa-money-bill-wave', 'finances.decaissements.index', 'decaissements.voir'],
                 ['Caisses', 'fa-clipboard-list', 'finances.caisses.index', 'caisses.voir'],
                 ['Écarts de caisse à valider', 'fa-balance-scale', 'finances.caisses.ecarts.index', 'caisses.valider_ecart'],
                 ['Banques', 'fa-university', 'finances.banques.index', 'banques.voir'],
@@ -52,7 +61,7 @@ return [
             ],
             'Pilotage financier' => [
                 ['Dépenses', 'fa-file-invoice-dollar', 'finances.depenses.index', 'depenses.voir'],
-                ['Prévisions budgétaires', 'fa-chart-line', 'finances.previsions.index', 'previsions.voir'],
+                ['Lignes budgétaires', 'fa-chart-line', 'finances.previsions.index', 'previsions.voir'],
                 ['Recouvrement', 'fa-hand-holding-usd', 'finances.recouvrement.index', 'recouvrement.voir'],
             ],
             'Comptabilité analytique' => [
@@ -67,6 +76,12 @@ return [
     [
         'libelle' => 'Logistique & Achats',
         'icone'   => 'fa-boxes',
+        // Icône de chaque groupe quand le menu, trop long, s'affiche en sous-menus
+        'icones'  => [
+            'Approvisionnement' => 'fa-truck',
+            'Produits & Stock' => 'fa-warehouse',
+            'Boutique / Point de vente' => 'fa-store',
+        ],
         'groupes' => [
             'Approvisionnement' => [
                 ['Fournisseurs', 'fa-truck', 'logistique.fournisseurs.index', 'fournisseurs.voir'],
@@ -92,6 +107,13 @@ return [
     [
         'libelle' => 'Services aux Élèves',
         'icone'   => 'fa-concierge-bell',
+        // Icône de chaque groupe quand le menu, trop long, s'affiche en sous-menus
+        'icones'  => [
+            'Transport scolaire' => 'fa-bus-alt',
+            'Cantine scolaire' => 'fa-utensils',
+            'Bibliothèque' => 'fa-book',
+            'Activités & Événements' => 'fa-futbol',
+        ],
         'groupes' => [
             'Transport scolaire' => [
                 ['Tableau de bord transport', 'fa-chart-bar', 'services-eleves.transport.dashboard', 'transport.voir'],

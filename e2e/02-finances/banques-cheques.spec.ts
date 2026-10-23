@@ -7,17 +7,20 @@ import { actionDeLigne, attendreToast, expect, seConnecter, test } from '../supp
  */
 test.describe.configure({ mode: 'serial' });
 
+/**
+ * Un chèque naît d'un paiement : l'écran n'a plus de bouton « Nouveau chèque ».
+ * Pour ces scénarios de rapprochement, le chèque est déposé directement par l'API.
+ */
 async function enregistrerCheque(page: Page, numero: string, montant: string): Promise<void> {
   await page.goto('/finances/cheques');
-  await page.locator('[data-bs-target="#chequeModal"]').click();
-  const formulaire = page.locator('#cheque-form');
-  await formulaire.locator('[name=numero]').fill(numero);
-  await formulaire.locator('[name=emetteur]').fill('KOFFI Yao');
-  await formulaire.locator('[name=banque_id]').selectOption({ label: 'ECOBANK' });
-  await formulaire.locator('[name=montant]').fill(montant);
-  await formulaire.locator('[name=date_emission]').fill('2026-09-28');
-  await formulaire.locator('button[type=submit]').click();
-  await attendreToast(page);
+  const banque = await page.locator('select[name=banque_id] option', { hasText: 'ECOBANK' }).first().getAttribute('value');
+  const jeton = await page.locator('meta[name=csrf-token]').getAttribute('content');
+  const reponse = await page.request.post('/finances/cheques', {
+    headers: { 'X-CSRF-TOKEN': jeton!, Accept: 'application/json' },
+    form: { numero, emetteur: 'KOFFI Yao', banque_id: banque!, montant, date_emission: '2026-09-28' },
+  });
+  expect(reponse.status(), await reponse.text()).toBe(200);
+  await page.reload();
 }
 
 const ligneDe = (page: Page, texte: string) => page.locator('tbody tr').filter({ hasText: texte });
@@ -45,13 +48,11 @@ test.describe('2.5 Banques & Chèques', () => {
     await expect(page.locator('tbody')).toContainText('ORABANK Togo');
   });
 
-  test('un chèque incomplet est refusé', async ({ page }) => {
+  test('l\'écran des chèques ne propose plus de « Nouveau chèque » : un chèque naît d\'un paiement', async ({ page }) => {
     await page.goto('/finances/cheques');
-    await page.locator('[data-bs-target="#chequeModal"]').click();
-    await page.locator('#cheque-form button[type=submit]').click();
-
-    await expect(page.locator('#chequeModal')).toBeVisible();
-    await expect(page.locator('#chequeModal .is-invalid').first()).toBeVisible();
+    await expect(page.locator('[data-bs-target="#chequeModal"]')).toHaveCount(0);
+    await expect(page.locator('#chequeModal')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Nouveau chèque/ })).toHaveCount(0);
   });
 
   test('enregistrer un chèque : il entre au portefeuille avec le statut « Émis »', async ({ page }) => {
@@ -114,14 +115,21 @@ test.describe('2.5 Banques & Chèques', () => {
     await expect(page.locator('tbody')).not.toContainText('CHQ-0001');
   });
 
-  test('la fiche d\'une banque et l\'écran de rapprochement bancaire s\'ouvrent', async ({ page }) => {
+  test('l\'action « Paiements et chèques » d\'une banque : perçu, reste, chèques en attente et chèque adossé', async ({ page }) => {
     await page.goto('/finances/banques');
-    const lien = ligneDe(page, 'ECOBANK').locator('a[href*="/finances/banques/"]').first();
-    if (await lien.count()) {
-      await lien.click();
-      await expect(page.locator('main')).toContainText('ECOBANK');
-      await expect(page.locator('main')).toContainText('CHQ-0001');
-    }
+    await expect(ligneDe(page, 'ECOBANK').locator('.montant-percu')).toContainText(/\d/);   // CHQ-0001 encaissé
+    await actionDeLigne(page, 'ECOBANK', 'Paiements et chèques');
+
+    await expect(page.locator('main')).toContainText('ECOBANK');
+    await expect(page.locator('#onglet-attente')).toHaveClass(/active/);
+    await expect(page.locator('#montant-percu')).toContainText(' F');
+    await expect(page.locator('#montant-reste')).toContainText(' F');
+
+    // Le chèque encaissé, avec le paiement qu'il règle
+    await page.locator('#onglet-encaisse').click();
+    await expect(page.locator('#table-paiements-banque tbody')).toContainText('CHQ-0001');
+    await page.locator('#onglet-rejete').click();
+    await expect(page.locator('#table-paiements-banque tbody')).toContainText('CHQ-0002');
   });
 
   test('le portefeuille de chèques s\'exporte', async ({ page }) => {

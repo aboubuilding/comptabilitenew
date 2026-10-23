@@ -6,38 +6,38 @@
     <title>Fournisseurs — École Internationale Mariam</title>
     <style>
         @page { margin: 12mm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #1f2d3a; margin: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #2B1E1E; margin: 0; }
 
-        .header { border-bottom: 3px solid #C81E3A; padding-bottom: 8px; margin-bottom: 12px; }
+        .header { border-bottom: 2px solid #D4A94D; padding-bottom: 8px; margin-bottom: 12px; }
         .header-table { width: 100%; }
-        .header-brand { font-size: 15px; font-weight: bold; color: #C81E3A; letter-spacing: .5px; }
-        .header-sub { font-size: 8.5px; color: #6f7e8c; margin-top: 2px; }
-        .header-meta { text-align: right; font-size: 8px; color: #6f7e8c; line-height: 1.5; }
+        .header-brand { font-size: 15px; font-weight: bold; color: #E31E24; letter-spacing: .5px; }
+        .header-sub { font-size: 8.5px; color: #5A4A4A; margin-top: 2px; }
+        .header-meta { text-align: right; font-size: 8px; color: #5A4A4A; line-height: 1.5; }
 
         .doc-title { font-size: 13px; font-weight: bold; margin: 0 0 3px; }
-        .doc-subtitle { font-size: 9px; color: #6f7e8c; margin-bottom: 10px; }
+        .doc-subtitle { font-size: 9px; color: #5A4A4A; margin-bottom: 10px; }
 
         table.journal { width: 100%; border-collapse: collapse; font-size: 8.5px; }
         table.journal thead th {
-            background: #1f2d3a; color: #ffffff;
+            background: #2B1E1E; color: #ffffff;
             font-size: 7.5px; text-transform: uppercase; letter-spacing: .4px;
             padding: 6px; text-align: left; font-weight: normal;
         }
         table.journal thead th.right { text-align: right; }
         table.journal thead th.center { text-align: center; }
         table.journal tbody td {
-            padding: 6px; border-bottom: 1px solid #ece4d6; vertical-align: top;
+            padding: 6px; border-bottom: 1px solid #EADFCB; vertical-align: top;
         }
         table.journal tbody tr:nth-child(even) { background: #fafaf7; }
         table.journal tbody td.right { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
         table.journal tbody td.center { text-align: center; }
-        table.journal tbody td .sub { font-size: 7.5px; color: #6f7e8c; display: block; margin-top: 1px; }
+        table.journal tbody td .sub { font-size: 7.5px; color: #5A4A4A; display: block; margin-top: 1px; }
 
         .footer {
-            margin-top: 16px; padding-top: 6px; border-top: 1px solid #ece4d6;
-            font-size: 7.5px; color: #6f7e8c; text-align: center;
+            margin-top: 16px; padding-top: 6px; border-top: 1px solid #EADFCB;
+            font-size: 7.5px; color: #5A4A4A; text-align: center;
         }
-        .empty { text-align: center; padding: 30px 0; color: #9aa7b2; font-style: italic; }
+        .empty { text-align: center; padding: 30px 0; color: #7A6A6A; font-style: italic; }
     </style>
 </head>
 <body>
@@ -45,6 +45,7 @@
 <div class="header">
     <table class="header-table">
         <tr>
+            <td style="width: 19mm; padding-right: 8px;">@include('admin.layouts.partials._pdf-sceau', ['taille' => '17mm'])</td>
             <td>
                 <div class="header-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                 <div class="header-sub">Plateforme de gestion scolaire et budgétaire</div>

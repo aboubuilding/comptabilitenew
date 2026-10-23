@@ -18,7 +18,11 @@ test.describe('6.2 Référentiels & Paramètres généraux', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Administration' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Nationalités' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Nationalités' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Nationalités' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page).toHaveURL(/\/administration\/nationalites$/);
 
     for (const colonne of ['Libellé', 'Type de référentiel', 'Statut']) {

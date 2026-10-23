@@ -11,42 +11,35 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('logistique.clients.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('logistique.clients.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
+    </x-bouton>
     @can('ventes.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouveauClient"
-                data-bs-toggle="modal" data-bs-target="#clientModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouveauClient" data-bs-toggle="modal" data-bs-target="#clientModal">
             <i class="fas fa-plus-circle me-1"></i> Nouveau client
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('contenu')
 <div class="container-fluid p-0">
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-6">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Nom, téléphone, email..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Nom, téléphone, email..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter me-1"></i> Filtrer</button>
+                    <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter me-1"></i> Filtrer</x-bouton>
                 </div>
                 <div class="col-md-3 text-end">
-                    <span class="compteur-badge">{{ $clients->total() }} client(s)</span>
+                    <x-compteur>{{ $clients->total() }} client(s)</x-compteur>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-ventes align-middle mb-0">
+            <x-tableau class="table-ventes align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Nom</th>
@@ -64,9 +57,7 @@
                             <td class="text-sm">{{ $c->telephone ?? '—' }}</td>
                             <td class="text-sm">{{ $c->email ?? '—' }}</td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('ventes.gerer')
                                         <li>
                                             <button class="dropdown-item btn-edit-client"
@@ -85,77 +76,59 @@
                                         @endcan
                                         <li><hr class="dropdown-divider"></li>
                                         @can('ventes.gerer')
-                                        <li>
-                                            <form action="{{ route('logistique.clients.destroy', $c) }}" method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button class="dropdown-item text-danger"><i class="fas fa-trash"></i> Désactiver</button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('logistique.clients.destroy', $c)" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-user-friends"></i><p>Aucun client.</p></div></td></tr>
+                        <x-vide colspan="5" icone="fas fa-user-friends">Aucun client.</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
-    <div class="mt-4">{{ $clients->appends(request()->query())->links('vendor.pagination.custom') }}</div>
+    <div class="mt-4"><x-pagination :liste="$clients->appends(request()->query())" /></div>
 
     @can('ventes.gerer')
-    <div class="modal fade" id="clientModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-vente">
-                <form id="client-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="client-method" value="POST">
-                    <div class="modal-header modal-header-vente">
-                        <h5 class="modal-title" id="client-title"><i class="fas fa-user-plus me-2"></i>Nouveau client</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="form-section">
-                            <div class="mb-3">
-                                <label class="form-label">Nom / Raison sociale <span class="text-danger">*</span></label>
-                                <input type="text" name="nom_raison_sociale" id="c-nom" class="form-control" required maxlength="200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Type <span class="text-danger">*</span></label>
-                                <select name="type_client" id="c-type" class="form-select">
-                                    @foreach ($types as $v => $l)
-                                        <option value="{{ $v }}">{{ $l }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Téléphone</label>
-                                    <input type="text" name="telephone" id="c-tel" class="form-control" maxlength="30">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Email</label>
-                                    <input type="email" name="email" id="c-email" class="form-control" maxlength="150">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Adresse</label>
-                                    <input type="text" name="adresse" id="c-adresse" class="form-control" maxlength="1000">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i> Enregistrer</button>
-                    </div>
-                </form>
+    <x-modale id="clientModal" data-bs-backdrop="static" contenu-class="modal-vente" entete-class="modal-header-vente" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="client-form">@csrf
+                    <input type="hidden" name="_method" id="client-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="client-title"><i class="fas fa-user-plus me-2"></i>Nouveau client</x-slot:titre>
+        <x-section>
+            <div class="mb-3">
+                <x-libelle requis>Nom / Raison sociale</x-libelle>
+                <input type="text" name="nom_raison_sociale" id="c-nom" class="form-control" required maxlength="200">
             </div>
-        </div>
-    </div>
+            <div class="mb-3">
+                <x-libelle requis>Type</x-libelle>
+                <select name="type_client" id="c-type" class="form-select">
+                    @foreach ($types as $v => $l)
+                        <option value="{{ $v }}">{{ $l }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <x-libelle>Téléphone</x-libelle>
+                    <input type="text" name="telephone" id="c-tel" class="form-control" maxlength="30">
+                </div>
+                <div class="col-md-6">
+                    <x-libelle>Email</x-libelle>
+                    <input type="email" name="email" id="c-email" class="form-control" maxlength="150">
+                </div>
+                <div class="col-12">
+                    <x-libelle>Adresse</x-libelle>
+                    <input type="text" name="adresse" id="c-adresse" class="form-control" maxlength="1000">
+                </div>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit"><i class="fas fa-save me-1"></i> Enregistrer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection

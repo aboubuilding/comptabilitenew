@@ -25,7 +25,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('administration.users.index') }}" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small">Profil</label>
+                <x-libelle class="small">Profil</x-libelle>
                 <select name="role_id" class="form-select filtre-input">
                     <option value="">Tous</option>
                     @foreach($roles as $role)
@@ -36,7 +36,7 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}"
                        placeholder="Nom, login ou email...">
@@ -51,8 +51,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Photo</th>
@@ -82,17 +81,17 @@
                             </td>
                             <td>{{ $user->login }}</td>
                             <td>
-                                <span class="badge-statut bg-primary">
+                                <x-badge class="bg-primary">
                                     {{ $user->roleRelation->libelle ?? '—' }}
-                                </span>
+                                </x-badge>
                                 @foreach ($user->profilsComplementaires as $complementaire)
-                                    <span class="badge-statut bg-secondary">+ {{ $complementaire->libelle }}</span>
+                                    <x-badge class="bg-secondary">+ {{ $complementaire->libelle }}</x-badge>
                                 @endforeach
                             </td>
                             <td>
-                                <span class="badge-statut bg-{{ $user->etat ? 'success' : 'secondary' }}">
+                                <x-badge class="bg-{{ $user->etat ? 'success' : 'secondary' }}">
                                     {{ $user->etat ? 'Actif' : 'Inactif' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td>
                                 @if($user->last_login_at)
@@ -103,11 +102,7 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('utilisateurs.gerer')
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-user"
@@ -117,44 +112,23 @@
                                         </li>
                                         @endcan
                                         @can('utilisateurs.gerer')
-                                        <li>
-                                            <form action="{{ route('administration.users.destroy', $user) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Désactiver
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('administration.users.destroy', $user)" icone="fa fa-trash" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-users fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucun utilisateur.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="7" icone="fa fa-users fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucun utilisateur.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $users->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$users" />
         </div>
     </div>
 
     {{-- Modale --}}
-    <div class="modal fade" id="modalUser" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalUserContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalUser" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalUserContent" />
 
 @endsection
 

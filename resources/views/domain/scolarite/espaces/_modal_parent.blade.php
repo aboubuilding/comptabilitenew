@@ -10,17 +10,17 @@
     <div class="modal-body">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Nom <span class="text-danger">*</span></label>
+                <x-libelle requis>Nom</x-libelle>
                 <input type="text" name="nom_parent" class="form-control" maxlength="150"
                        value="{{ old('nom_parent', $parent->nom_parent ?? '') }}" required>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                <x-libelle requis>Prénom</x-libelle>
                 <input type="text" name="prenom_parent" class="form-control" maxlength="150"
                        value="{{ old('prenom_parent', $parent->prenom_parent ?? '') }}" required>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Rôle</label>
+                <x-libelle>Rôle</x-libelle>
                 <select name="role" class="form-select">
                     <option value="">— Sélectionner —</option>
                     <option value="1" @selected(old('role', $parent->role ?? '') == 1)>Père</option>
@@ -30,27 +30,27 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Téléphone</label>
+                <x-libelle>Téléphone</x-libelle>
                 <input type="text" name="telephone" class="form-control" maxlength="50"
                        value="{{ old('telephone', $parent->telephone ?? '') }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">WhatsApp</label>
+                <x-libelle>WhatsApp</x-libelle>
                 <input type="text" name="whatsapp" class="form-control" maxlength="50"
                        value="{{ old('whatsapp', $parent->whatsapp ?? '') }}">
             </div>
             <div class="col-md-6">
-                <label class="form-label">Email</label>
+                <x-libelle>Email</x-libelle>
                 <input type="email" name="email" class="form-control" maxlength="150"
                        value="{{ old('email', $parent->email ?? '') }}">
             </div>
             <div class="col-md-6">
-                <label class="form-label">Profession</label>
+                <x-libelle>Profession</x-libelle>
                 <input type="text" name="profession" class="form-control" maxlength="150"
                        value="{{ old('profession', $parent->profession ?? '') }}">
             </div>
             <div class="col-md-6">
-                <label class="form-label">Nationalité</label>
+                <x-libelle>Nationalité</x-libelle>
                 <select name="nationalite_id" class="form-select">
                     <option value="">— Sélectionner —</option>
                     @foreach($nationalites as $n)
@@ -62,12 +62,12 @@
                 </select>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Quartier</label>
+                <x-libelle>Quartier</x-libelle>
                 <input type="text" name="quartier" class="form-control" maxlength="150"
                        value="{{ old('quartier', $parent->quartier ?? '') }}">
             </div>
             <div class="col-md-12">
-                <label class="form-label">Adresse complète</label>
+                <x-libelle>Adresse complète</x-libelle>
                 <textarea name="adresse" rows="2" class="form-control">{{ old('adresse', $parent->adresse ?? '') }}</textarea>
             </div>
             <div class="col-md-12">

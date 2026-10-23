@@ -20,11 +20,9 @@ class StoreAbonnementBusRequest extends FormRequest
             'date_debut'      => ['required', 'date'],
             'montant_mensuel' => ['required', 'numeric', 'min:0.01'],
             'nombre_mois'     => ['required', 'integer', 'min:1', 'max:12'],
+            // La zone suffit : la ligne et le véhicule en découlent
             'zone_id'         => ['nullable', 'exists:zones,id'],
-            'voiture_id'      => ['nullable', 'exists:voitures,id'],
-            'ligne_id'        => ['nullable', 'exists:lignes,id'],
             'sens'            => ['required', Rule::in(array_keys(SensTrajet::options()))],
-            'point_arret'     => ['nullable', 'string', 'max:200'],
         ];
     }
 }

@@ -12,12 +12,12 @@ class Depense extends Model
     protected $table = 'depenses';
 
     protected $fillable = [
-        'libelle', 'beneficiaire', 'motif_depense', 'date_depense', 'montant',
+        'libelle', 'beneficiaire', 'motif_depense', 'date_depense', 'montant', 'ligne_budgetaire_id',
         'justificatif_path', 'justificatif_nom_original',
         'annee_id', 'utilisateur_id',
         'statut_depense',
         'valide_par', 'date_validation', 'motif_rejet',
-        'caisse_id', 'date_reglement', 'regle_par',
+        'caisse_id', 'date_reglement', 'regle_par', 'montant_decaisse', 'etat',
         'etat',
     ];
 
@@ -44,6 +44,12 @@ class Depense extends Model
     public function regleur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'regle_par');
+    }
+
+    /** Ligne budgétaire à laquelle la dépense est imputée. */
+    public function ligneBudgetaire(): BelongsTo
+    {
+        return $this->belongsTo(Prevision::class, 'ligne_budgetaire_id');
     }
 
     public function caisse(): BelongsTo

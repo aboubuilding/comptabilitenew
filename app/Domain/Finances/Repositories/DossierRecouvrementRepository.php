@@ -18,17 +18,25 @@ class DossierRecouvrementRepository extends BaseRepository
 
     public function listePaginee(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
+        $clos = [DossierStatut::SOLDE->value, DossierStatut::IRRECOUVRABLE->value];
+
         return $this->activeQuery()
             ->with([
                 'responsable:id,name',
-                'inscription:id,eleve_id,classe_id',
+                'inscription:id,eleve_id,classe_id,niveau_id',
                 'inscription.eleve:id,nom,prenom,matricule',
                 'inscription.classe:id,libelle',
+                'inscription.niveau:id,libelle',
                 'relances',
+                'echeances',
+                'paiementCloture:id,reference,date_paiement,montant',
             ])
             ->when($filters['annee_id'] ?? null, fn ($q, $v) => $q->where('annee_id', $v))
+            // Onglet « Dossiers clôturés » : soldés ou irrécouvrables
+            ->when(($filters['onglet'] ?? null) === 'clotures', fn ($q) => $q->whereIn('statut', $clos))
             ->when($filters['statut'] ?? null,   fn ($q, $v) => $q->where('statut', $v))
-            ->when($filters['nature'] ?? null,   fn ($q, $v) => $q->where('nature', $v))
+            // Nature : les dossiers qui réclament au moins une échéance de cette nature (écolage, cantine…)
+            ->when($filters['nature'] ?? null,   fn ($q, $v) => $q->whereHas('echeances', fn ($e) => $e->where('nature', $v)))
             ->when($filters['search'] ?? null, function ($q, $v) {
                 // Recherche par élève (nom, prénom, matricule)
                 $q->whereHas('inscription.eleve', function ($eleve) use ($v) {
@@ -43,9 +51,10 @@ class DossierRecouvrementRepository extends BaseRepository
             ->withQueryString();
     }
 
-    public function compterParStatut(): array
+    public function compterParStatut(?int $anneeId = null): array
     {
         $rows = $this->activeQuery()
+            ->when($anneeId, fn ($q, $v) => $q->where('annee_id', $v))
             ->selectRaw('statut, COUNT(*) as total')
             ->groupBy('statut')
             ->pluck('total', 'statut')
@@ -60,9 +69,10 @@ class DossierRecouvrementRepository extends BaseRepository
         ];
     }
 
-    public function montantsEnCours(): array
+    public function montantsEnCours(?int $anneeId = null): array
     {
         $rows = $this->activeQuery()
+            ->when($anneeId, fn ($q, $v) => $q->where('annee_id', $v))
             ->whereIn('statut', [DossierStatut::EN_COURS->value, DossierStatut::ECHEANCIER->value, DossierStatut::CONTENTIEUX->value])
             ->selectRaw('SUM(montant_initial_du - montant_recouvre) as total_restant')
             ->first();
@@ -77,21 +87,24 @@ class DossierRecouvrementRepository extends BaseRepository
         return $this->activeQuery()
             ->with([
                 'responsable:id,name',
-                'inscription:id,eleve_id,classe_id,espace_id',
+                'inscription:id,eleve_id,classe_id,niveau_id,espace_id',
                 'inscription.eleve:id,nom,prenom,matricule',
                 'inscription.classe:id,libelle',
-                'relances' => fn ($q) => $q->orderByDesc('date_relance'),
+                'inscription.niveau:id,libelle',
+                'echeances',
+                'paiementCloture:id,reference,date_paiement,montant',
+                'relances' => fn ($q) => $q->orderByDesc('date_relance')->orderByDesc('id'),
                 'relances.auteur:id,name',
             ])
             ->findOrFail($id);
     }
 
-    /** Dossiers ouverts pour un élève/inscription donnés (unicité). */
-    public function dossierOuvertPour(int $inscriptionId, string $nature): ?DossierRecouvrement
+    /** Le dossier ouvert d'un élève (un seul par élève ; la nature, si donnée, le restreint). */
+    public function dossierOuvertPour(int $inscriptionId, ?string $nature = null): ?DossierRecouvrement
     {
         return $this->activeQuery()
             ->where('inscription_id', $inscriptionId)
-            ->where('nature', $nature)
+            ->when($nature, fn ($q, $v) => $q->where('nature', $v))
             ->whereNotIn('statut', [DossierStatut::SOLDE->value, DossierStatut::IRRECOUVRABLE->value])
             ->first();
     }

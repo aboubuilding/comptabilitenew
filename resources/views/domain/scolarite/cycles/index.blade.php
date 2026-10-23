@@ -24,29 +24,25 @@
         /* Jetons propres à cette page uniquement — school-red, gold, ff...
            viennent déjà de layouts/app.blade.php, non redéclarés ici. */
         .cycles-page {
-            --cycles-bg-soft: #faf6ee;
-            --cycles-border: #ece4d6;
+            --cycles-bg-soft: var(--eim-cream);
+            --cycles-border: var(--eim-border);
         }
 
         .cycles-card { border: none; border-radius: 16px; overflow: hidden; }
         .cycles-card .card-header-cycles { border-bottom: 1px solid var(--cycles-border); }
 
         .filtre-label {
-            font-size: .8rem; font-weight: 600; color: #5b6b7a;
+            font-size: .8rem; font-weight: 600; color: var(--eim-ink-soft);
             text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px;
         }
         .filtre-label i { color: var(--school-red); margin-right: 4px; }
         .filtre-input { border-radius: 10px; border: 1px solid var(--cycles-border); padding: .55rem .9rem; }
-        .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
-        .search-wrapper { position: relative; }
-        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aa7b2; font-size: .85rem; }
         .search-input { padding-left: 34px !important; }
 
         .btn-filtrer {
             background: var(--school-red); color: #fff; border: none; border-radius: 10px;
             padding: .55rem 1rem; font-weight: 600; transition: all .2s ease;
         }
-        .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; }
 
         .compteur-badge {
             display: inline-block; background: var(--cycles-bg-soft); color: var(--school-red);
@@ -57,9 +53,8 @@
         .btn-nouveau {
             background: linear-gradient(135deg, var(--school-red-dark), var(--school-red));
             color: #fff; border: none; border-radius: 10px; padding: .6rem 1.2rem; font-weight: 600;
-            box-shadow: 0 4px 14px rgba(200,30,58,.25); transition: all .2s ease;
+            box-shadow: 0 4px 14px rgba(227,30,36,.25); transition: all .2s ease;
         }
-        .btn-nouveau:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,30,58,.35); color: #fff; }
 
         .table-cycles thead tr { background: var(--cycles-bg-soft); }
         .table-cycles thead th {
@@ -68,15 +63,13 @@
         }
         .table-cycles thead th i { margin-right: 6px; color: var(--school-gold-dark); }
         .table-cycles tbody td { padding: .85rem 1rem; border-bottom: 1px solid var(--cycles-border); font-size: .92rem; }
-        .table-cycles tbody tr:hover { background: #fdfaf5; }
+        .table-cycles tbody tr:hover { background: var(--eim-hover); }
         .table-cycles tbody tr:last-child td { border-bottom: none; }
 
         /* Bouton d'action "..." et menu déroulant : classes .btn-action /
            .dropdown-menu-actions, définies globalement dans
            layouts/app.blade.php — rien à redéclarer ici. */
 
-        .empty-state { padding: 3rem 1rem; text-align: center; color: #9aa7b2; }
-        .empty-state i { font-size: 2.2rem; margin-bottom: .75rem; display: block; color: #d8c8ae; }
 
         .modal-cycles { border: none; border-radius: 16px; overflow: hidden; }
         .modal-header-cycles {
@@ -87,15 +80,10 @@
 
         .form-section { background: var(--cycles-bg-soft); border: 1px solid var(--cycles-border); border-radius: 12px; padding: 1rem 1.1rem; }
         .form-section .form-control { border-radius: 8px; border: 1px solid var(--cycles-border); }
-        .form-section .form-control:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.1); }
+        .form-section .form-control:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(227,30,36,.1); }
 
-        .btn-annuler { background: #fff; border: 1px solid var(--cycles-border); color: #5b6b7a; border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
+        .btn-annuler { background: #fff; border: 1px solid var(--cycles-border); color: var(--eim-ink-soft); border-radius: 8px; font-weight: 500; padding: .5rem 1.1rem; }
         .btn-annuler:hover { background: var(--cycles-bg-soft); }
-        .btn-enregistrer {
-            background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color: #fff;
-            border: none; border-radius: 8px; font-weight: 600; padding: .5rem 1.3rem;
-        }
-        .btn-enregistrer:hover { color: #fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
     </style>
 @endsection
 
@@ -110,24 +98,19 @@
                              la liste ne montre que les cycles actifs. --}}
                         <form method="GET" class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <label class="form-label filtre-label"><i class="fas fa-search"></i>Recherche</label>
-                                <div class="search-wrapper">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input type="text" name="search" class="form-control filtre-input search-input"
-                                           placeholder="Libellé..." value="{{ request('search') }}">
-                                </div>
+                                <x-libelle class="filtre-label"><i class="fas fa-search"></i>Recherche</x-libelle>
+                                <x-recherche name="search" placeholder="Libellé..." value="{{ request('search') }}" />
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-filtrer w-100"><i class="fas fa-filter"></i> Filtrer</button>
+                                <x-bouton variante="filtrer" type="submit" class="w-100"><i class="fas fa-filter"></i> Filtrer</x-bouton>
                             </div>
                             <div class="col-md-4 text-end">
-                                <span class="compteur-badge">{{ $cycles->total() }} cycle(s)</span>
+                                <x-compteur>{{ $cycles->total() }} cycle(s)</x-compteur>
                             </div>
                         </form>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-cycles table-hover align-middle mb-0">
+                        <x-tableau class="table-cycles table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th><i class="fas fa-tag"></i>Libellé</th>
@@ -141,12 +124,7 @@
                                             <td>{{ $cycle->libelle }}</td>
                                             <td>{{ $cycle->created_at?->format('d/m/Y') }}</td>
                                             <td class="text-center">
-                                                <div class="dropdown">
-                                                    <button class="btn-action dropdown-toggle" type="button"
-                                                            data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                                <x-actions>
                                                         @can('structure.gerer')
                                                         <li>
                                                             <button type="button" class="dropdown-item btn-edit-cycle"
@@ -158,40 +136,20 @@
                                                         @endcan
                                                         <li><hr class="dropdown-divider"></li>
                                                         @can('structure.gerer')
-                                                        <li>
-                                                            <form action="{{ route('scolarite.cycles.destroy', $cycle) }}"
-                                                                  method="POST" class="form-confirm-delete"
-                                                                  data-confirm-title="Supprimer ce cycle ?"
-                                                                  data-confirm-text="Il n'apparaîtra plus dans la liste.">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger">
-                                                                    <i class="fas fa-trash"></i> Supprimer
-                                                                </button>
-                                                            </form>
-                                                        </li>
+                                                        <x-actions.supprimer :action="route('scolarite.cycles.destroy', $cycle)" data-confirm-title="Supprimer ce cycle ?" data-confirm-text="Il n'apparaîtra plus dans la liste.">Supprimer</x-actions.supprimer>
                                                         @endcan
-                                                    </ul>
-                                                </div>
+                                                    </x-actions>
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="3">
-                                                <div class="empty-state">
-                                                    <i class="fas fa-layer-group"></i>
-                                                    <p class="mb-0">Aucun cycle ne correspond à ces critères.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <x-vide colspan="3" icone="fas fa-layer-group" :paragraphe="false"><p class="mb-0">Aucun cycle ne correspond à ces critères.</p></x-vide>
                                     @endforelse
                                 </tbody>
-                            </table>
-                        </div>
+                            </x-tableau>
                     </div>
                 </div>
                 <div class="mt-3">
-                    {{ $cycles->appends(request()->query())->links() }}
+                    <x-pagination :liste="$cycles->appends(request()->query())" />
                 </div>
             </div>
         </div>
@@ -199,34 +157,23 @@
         {{-- Modale unique, réutilisée pour l'ajout ET la modification —
              plus de champ etat, on crée/modifie toujours un cycle actif. --}}
         @can('structure.gerer')
-        <div class="modal fade" id="cycleModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content modal-cycles">
-                    <form id="cycle-form">
-                        @csrf
-                        <input type="hidden" name="_method" id="cycle-method" value="POST">
-                        <div class="modal-header modal-header-cycles">
-                            <h5 class="modal-title" id="cycle-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouveau cycle</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="form-section">
-                                <div class="mb-0">
-                                    <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                    <input type="text" name="libelle" id="cycle-libelle" class="form-control"
-                                           placeholder="Ex : Primaire, Secondaire...">
-                                    <div class="text-danger small mt-1" id="cycle-libelle-error"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-enregistrer"><i class="fas fa-save me-1"></i>Enregistrer</button>
-                        </div>
-                    </form>
+        <x-modale id="cycleModal" data-bs-backdrop="static" aria-hidden="true" dialogue="" contenu-class="modal-cycles" entete-class="modal-header-cycles" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="cycle-form">@csrf
+                        <input type="hidden" name="_method" id="cycle-method" value="POST"></x-slot:formulaire>
+            <x-slot:titre id="cycle-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouveau cycle</x-slot:titre>
+            <x-section>
+                <div class="mb-0">
+                    <x-libelle requis>Libellé</x-libelle>
+                    <input type="text" name="libelle" id="cycle-libelle" class="form-control"
+                           placeholder="Ex : Primaire, Secondaire...">
+                    <div class="text-danger small mt-1" id="cycle-libelle-error"></div>
                 </div>
-            </div>
-        </div>
+            </x-section>
+            <x-slot:pied>
+                <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+                <x-bouton type="submit"><i class="fas fa-save me-1"></i>Enregistrer</x-bouton>
+            </x-slot:pied>
+        </x-modale>
         @endcan
     </div>
 @endsection

@@ -28,7 +28,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" action="{{ route('rh.asurances.index') }}" class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="recherche" class="form-control filtre-input"
                        value="{{ $filtres['recherche'] ?? '' }}"
                        placeholder="Assureur ou n° de police...">
@@ -43,8 +43,7 @@
 
     {{-- Tableau --}}
     <div class="main-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <x-tableau class="table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Assureur</th>
@@ -67,16 +66,12 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <span class="badge-statut bg-info">
+                                <x-badge class="bg-info">
                                     {{ $asurance->assures_count }} assuré{{ $asurance->assures_count > 1 ? 's' : '' }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-action" data-bs-toggle="dropdown">
-                                        <i class="fa fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('assurances.gerer')
                                         <li>
                                             <button type="button" class="dropdown-item btn-edit-asurance"
@@ -86,44 +81,23 @@
                                         </li>
                                         @endcan
                                         @can('assurances.gerer')
-                                        <li>
-                                            <form action="{{ route('rh.asurances.destroy', $asurance) }}"
-                                                  method="POST" class="form-confirm-delete">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fa fa-trash"></i> Désactiver
-                                                </button>
-                                            </form>
-                                        </li>
+                                        <x-actions.supprimer :action="route('rh.asurances.destroy', $asurance)" icone="fa fa-trash" />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state text-center py-4">
-                                    <i class="fa fa-building-shield fa-2x text-muted"></i>
-                                    <p class="mt-2 mb-0">Aucune assurance dans le catalogue.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="5" icone="fa fa-building-shield fa-2x text-muted" :paragraphe="false" class="text-center py-4"><p class="mt-2 mb-0">Aucune assurance dans le catalogue.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
         <div class="p-3">
-            {{ $asurances->links('vendor.pagination.custom') }}
+            <x-pagination :liste="$asurances" />
         </div>
     </div>
 
     {{-- Modale unique --}}
-    <div class="modal fade" id="modalAsurance" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" id="modalAsuranceContent"></div>
-        </div>
-    </div>
+    <x-modale id="modalAsurance" aria-hidden="true" dialogue="modal-lg modal-dialog-centered" contenu-id="modalAsuranceContent" />
 
 @endsection
 

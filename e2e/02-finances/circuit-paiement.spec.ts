@@ -21,59 +21,52 @@ async function ouvrirFichePaiement(page: Page): Promise<void> {
   await ouvrirSaisiePaiement(page, MATRICULE);
 }
 
-test.describe('Circuit du paiement : souscription → paiement → encaissement → clôture → écart', () => {
-  test('sans souscription, l\'écran Paiements ne propose aucun engagement et renvoie vers la souscription', async ({ page }) => {
+test.describe('Circuit du paiement : dû de l\'inscription → paiement → encaissement → clôture → écart', () => {
+  test('la scolarité vient de l\'inscription, remise comprise : le dû existe sans souscription ni paiement', async ({ page }) => {
     await seConnecter(page, 'comptable');
     await ouvrirFichePaiement(page);
 
-    await expect(page.locator('.engagement-row.exists')).toHaveCount(0);
-    await expect(page.locator('.engagement-row.missing').first()).toContainText('Aucun engagement souscrit');
-    await expect(page.locator('.engagement-row.missing .engagement-link').first()).toBeVisible();
-    await expect(page.locator('#btn-submit')).toBeDisabled();
-  });
-
-  test('le Comptable souscrit le frais de scolarité avec une remise : le dû apparaît aussitôt', async ({ page }) => {
-    await seConnecter(page, 'comptable');
-    await page.goto('/finances/souscriptions');
-
-    await page.locator('[data-bs-target="#souscModal"]').click();
-    const modale = page.locator('#souscModal');
-    const frais = await modale.locator('[name=frais_ecole_id] option', { hasText: 'Scolarité CP' }).getAttribute('value');
-    await modale.locator('[name=frais_ecole_id]').selectOption(frais!);
-    await modale.locator('.select2-selection').click();
-    await page.locator('.select2-search__field').fill('Ama');
-    await page.locator('.select2-results__option', { hasText: MATRICULE }).click();
-    await modale.locator('[name=taux_remise]').fill('10');
-    await modale.locator('button[type=submit]').click();
-    await attendreToast(page);
-
-    // 469 000 − 10 % = 422 100
-    const ligne = page.locator('tbody tr').filter({ hasText: ELEVE });
-    await expect(ligne).toContainText('Scolarité CP');
-    await expect(ligne).toContainText('469 000');
-    await expect(ligne).toContainText('422 100');
-
-    // Le dû est visible sur l'écran Paiements sans qu'aucun paiement n'existe
-    await ouvrirFichePaiement(page);
+    // 469 000 − 20 % de remise accordée à l'inscription = 375 200
     const engagement = page.locator('.engagement-row.exists').first();
-    await expect(engagement).toContainText('422 100,00');
+    await expect(engagement).toContainText('375 200,00');
     await expect(engagement).toContainText('reste dû');
   });
 
-  test('la Direction arbitre le taux de remise', async ({ page }) => {
-    await seConnecter(page, 'directeur');
+  test('l\'écran Souscriptions ne porte que les services : la scolarité n\'y est pas proposée', async ({ page }) => {
+    await seConnecter(page, 'comptable');
     await page.goto('/finances/souscriptions');
 
-    const ligne = page.locator('tbody tr').filter({ hasText: ELEVE });
-    await ligne.locator('.btn-action').click();
-    await ligne.locator('.btn-edit-remise').click();
-    await page.locator('#remise-taux').fill('20');
-    await page.locator('#remise-form button[type=submit]').click();
-    await attendreToast(page);
+    for (const colonne of ['Élève', 'Souscription', 'Montant', 'Règlement', 'Actions']) {
+      await expect(page.locator('#table-souscriptions thead th').filter({ hasText: colonne })).toHaveCount(1);
+    }
+    await expect(page.locator('#table-souscriptions thead th')).toHaveCount(5);
 
-    // 469 000 − 20 % = 375 200
-    await expect(page.locator('tbody tr').filter({ hasText: ELEVE })).toContainText('375 200');
-    // La Direction arbitre mais ne crée pas de souscription
+    await page.locator('[data-bs-target="#souscModal"]').click();
+    const modale = page.locator('#souscModal');
+    await expect(modale.locator('[name=frais_ecole_id] option', { hasText: 'Cantine CP' })).toHaveCount(1);
+    await expect(modale.locator('[name=frais_ecole_id] option', { hasText: 'Scolarité CP' })).toHaveCount(0);
+
+    // Le tableau de bord n'est pas montré au Comptable
+    await expect(page.locator('#tableau-de-bord')).toHaveCount(0);
+  });
+
+  test('le tableau de bord des souscriptions est réservé à la Direction et à l\'Administrateur', async ({ page }) => {
+    for (const profil of ['directeur', 'admin'] as const) {
+      await seConnecter(page, profil);
+      await page.goto('/finances/souscriptions');
+
+      const tableau = page.locator('#tableau-de-bord');
+      await expect(tableau.locator('.service-card')).toHaveCount(4);
+      for (const service of ['cantine', 'transport', 'événement', 'activité']) {
+        await expect(tableau).toContainText(`souscription(s) ${service}`);
+      }
+      await expect(tableau.locator('.service-card').first()).toContainText('Montant attendu');
+      await expect(tableau.locator('.service-card').first()).toContainText('Reste à percevoir');
+    }
+
+    // La Direction consulte mais ne crée pas de souscription
+    await seConnecter(page, 'directeur');
+    await page.goto('/finances/souscriptions');
     await expect(page.locator('[data-bs-target="#souscModal"]')).toHaveCount(0);
   });
 
@@ -118,10 +111,12 @@ test.describe('Circuit du paiement : souscription → paiement → encaissement 
     await seConnecter(page, 'caissier');
     await page.goto('/finances/encaissements');
 
-    // Pas de bouton d'ouverture de caisse sur cet écran ; « Nouvel encaissement » est inactif
+    // Pas de bouton d'ouverture de caisse sur cet écran ; sans caisse ouverte, pas d'onglet « Caisse ouverte »
+    // (ni « Nouvel encaissement », ni journal) : le caissier arrive sur « Mes encaissements »
     await expect(page.locator('#caisse-fermee')).toBeVisible();
     await expect(page.getByRole('link', { name: /Ouvrir une caisse/ })).toHaveCount(0);
-    await expect(page.locator('#btn-nouvel-encaissement')).toBeDisabled();
+    await expect(page.locator('#onglet-caisse, #btn-nouvel-encaissement, #btn-journal-caisse')).toHaveCount(0);
+    await expect(page.locator('#onglet-mes')).toHaveClass(/active/);
 
     await page.locator('#onglet-attente').click();
     const ligne = page.locator('#table-attente tbody tr').filter({ hasText: ELEVE });
@@ -143,8 +138,10 @@ test.describe('Circuit du paiement : souscription → paiement → encaissement 
     await seConnecter(page, 'caissier');
     await page.goto('/finances/caisses');
 
-    // Les compteurs de caisses sont réservés à l'Administrateur
+    // Le tableau de bord est réservé à l'Administrateur et à la Direction ; le caissier voit « Mes caisses »
     await expect(page.locator('#compteur-caisses')).toHaveCount(0);
+    await expect(page.locator('#onglet-mes-caisses')).toHaveClass(/active/);
+    await expect(page.locator('#onglet-toutes-caisses')).toHaveCount(0);
 
     await page.locator('[data-bs-target="#caisseModal"]').click();
     const modale = page.locator('#caisseModal');
@@ -169,15 +166,22 @@ test.describe('Circuit du paiement : souscription → paiement → encaissement 
     await expect(page.locator('#toast-container .toast-error').last()).toContainText('déjà une caisse ouverte');
   });
 
-  test('l\'Administrateur voit les compteurs de l\'année et peut confier une caisse ou la prendre lui-même', async ({ page }) => {
+  test('l\'Administrateur voit le tableau de bord des caisses et peut confier une caisse ou la prendre lui-même', async ({ page }) => {
     await seConnecter(page, 'admin');
     await page.goto('/finances/caisses');
 
-    await expect(page.locator('#compteur-caisses')).toContainText('Caisses créées');
-    await expect(page.locator('#compteur-ouvertes')).toContainText('Caisses ouvertes');
-    await expect(page.locator('#compteur-fermees')).toContainText('Caisses fermées');
-    const ouvertes = Number((await page.locator('#compteur-ouvertes .stat-value').innerText()).trim());
+    // Tableau de bord : caisses de l'année (ouvertes, clôturées), et caisses ouvertes / clôturées du mois, de la semaine, du jour
+    await expect(page.locator('#compteur-caisses')).toContainText('caisse(s)');
+    await expect(page.locator('#compteur-statuts')).toContainText(/\d+ ouverte\(s\) · .*\d+ clôturée\(s\)/);
+    const ouvertes = Number(/(\d+) ouverte/.exec(await page.locator('#compteur-statuts').innerText())![1]);
     expect(ouvertes).toBeGreaterThanOrEqual(1);
+    for (const periode of ['mois', 'semaine', 'jour']) {
+      await expect(page.locator(`#total-${periode}`)).toContainText(/\d+ ouverte\(s\) · \d+ clôturée\(s\)/);
+    }
+    // Deux onglets ; « Toutes les caisses » par défaut, filtrable par caissier
+    await expect(page.locator('#onglet-toutes-caisses')).toHaveClass(/active/);
+    await expect(page.locator('#onglet-mes-caisses')).toBeVisible();
+    await expect(page.locator('#filtre-caissier-caisses')).toBeVisible();
 
     await page.locator('[data-bs-target="#caisseModal"]').click();
     const responsable = page.locator('#caisseModal [name=responsable_id]');
@@ -207,13 +211,13 @@ test.describe('Circuit du paiement : souscription → paiement → encaissement 
     await expect(modale.locator('#enc-ecart')).toContainText(/Monnaie à rendre : 11\s800/);
     await modale.locator('#enc-valider').click();
 
-    // Fenêtre fermée, notification, retour sur « Mes encaissements du jour »
-    await expect(page).toHaveURL(/onglet=jour/);
+    // Fenêtre fermée, notification, retour sur « Caisse ouverte »
+    await expect(page).toHaveURL(/onglet=caisse/);
     await attendreToast(page, 'Encaissement effectué');
     await expect(page.locator('#toast-container .toast-item').last()).toContainText(/11\s800/);
     await expect(page.locator('#encaisserModal')).toBeHidden();
 
-    const jour = page.locator('#table-jour tbody tr').filter({ hasText: ELEVE });
+    const jour = page.locator('#table-caisse tbody tr').filter({ hasText: ELEVE });
     await expect(jour).toHaveCount(1);
     await expect(jour).toContainText(CAISSE);
     await expect(jour).toContainText(/388\s200/);
@@ -277,7 +281,8 @@ test.describe('Circuit du paiement : souscription → paiement → encaissement 
   });
 
   test('le journal de caisse se consulte et s\'exporte pendant que la session est ouverte', async ({ page }) => {
-    await seConnecter(page, 'comptable');
+    // « Toutes les caisses » : Direction et Administrateur
+    await seConnecter(page, 'directeur');
     await page.goto('/finances/caisses');
     const ligne = page.locator('tbody tr').filter({ hasText: CAISSE });
     await ligne.locator('.btn-action').click();

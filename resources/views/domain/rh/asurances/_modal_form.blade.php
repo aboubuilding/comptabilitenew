@@ -12,29 +12,29 @@
     @endif
 
     <div class="modal-body">
-        <div class="form-section">
+        <x-section>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nom de l'assureur <span class="text-danger">*</span></label>
+                    <x-libelle requis>Nom de l'assureur</x-libelle>
                     <input type="text" name="nom_assureur" class="form-control"
                            value="{{ old('nom_assureur', $asurance->nom_assureur ?? '') }}"
                            maxlength="255" required>
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">N° de police <span class="text-danger">*</span></label>
+                    <x-libelle requis>N° de police</x-libelle>
                     <input type="text" name="police_assurance" class="form-control"
                            value="{{ old('police_assurance', $asurance->police_assurance ?? '') }}"
                            maxlength="255" required>
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Montant annuel (FCFA)</label>
+                    <x-libelle>Montant annuel (FCFA)</x-libelle>
                     <input type="number" step="0.01" min="0" name="montant_annuel" class="form-control"
                            value="{{ old('montant_annuel', $asurance->montant_annuel ?? '') }}">
                 </div>
             </div>
-        </div>
+        </x-section>
     </div>
 
     <div class="modal-footer">

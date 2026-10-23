@@ -14,9 +14,16 @@ class StoreLigneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'libelle'       => ['required', 'string', 'max:150'],
-            'prix_minimal'  => ['nullable', 'numeric', 'min:0'],
-            'prix_plafond'  => ['nullable', 'numeric', 'min:0', 'gte:prix_minimal'],
+            'libelle'      => ['required', 'string', 'max:150'],
+            'chauffeur_id' => ['nullable', 'exists:chauffeurs,id'],
+            'voiture_id'   => ['nullable', 'exists:voitures,id'],
+            'date_debut'   => ['nullable', 'date'],
+            'date_fin'     => ['nullable', 'date', 'after_or_equal:date_debut'],
         ];
+    }
+
+    public function attributes(): array
+    {
+        return ['date_debut' => 'début de la période', 'date_fin' => 'fin de la période'];
     }
 }

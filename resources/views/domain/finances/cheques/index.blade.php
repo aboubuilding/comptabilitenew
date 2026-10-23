@@ -12,48 +12,38 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.cheques.export', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.cheques.export', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
-    @can('cheques.gerer')
-        <button type="button" class="btn btn-nouveau" data-bs-toggle="modal" data-bs-target="#chequeModal">
-            <i class="fas fa-plus-circle me-1"></i> Nouveau chèque
-        </button>
-    @endcan
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .cheques-page { --cheques-bg-soft: #faf6ee; --cheques-border: #ece4d6; }
+    .contenu-paiement .bloc-info { background:var(--eim-cream); border:1px solid var(--eim-border); border-radius:10px; padding:.55rem .8rem; height:100%; }
+    .contenu-paiement .bloc-titre { font-size:.68rem; text-transform:uppercase; font-weight:700; color:var(--school-muted); }
+    .contenu-paiement .cell-sub { font-size:.74rem; color:var(--school-muted); line-height:1.35; }
+    .contenu-paiement .reference { font-family:monospace; font-size:.8rem; background:var(--eim-cream); color:var(--school-red); padding:2px 8px; border-radius:6px; font-weight:700; }
+    .contenu-paiement .nature { display:inline-block; background:var(--eim-cream); color:var(--school-red); font-weight:600; font-size:.7rem; padding:.12rem .5rem; border-radius:999px; border:1px solid var(--eim-border); }
+    .contenu-paiement .num { font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+    #lignes-paiement thead th { font-size:.7rem; text-transform:uppercase; color:var(--school-red); background:var(--eim-cream); }
+    .cheques-page { --cheques-bg-soft: var(--eim-cream); --cheques-border: var(--eim-border); }
     .text-xs { font-size: .72rem; }
     .text-sm { font-size: .8rem; }
 
-    .stat-card { background:#fff; border:1px solid var(--cheques-border); border-radius:12px; padding:1.1rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(122,15,28,.04); transition: transform .2s; }
-    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card { background:#fff; border:1px solid var(--cheques-border); border-radius:12px; padding:1.1rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(142,18,22,.04); transition: transform .2s; }
     .stat-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; }
-    .stat-icon.blue   { background: rgba(37,99,235,.10); color:#2563eb; }
-    .stat-icon.green  { background: rgba(28,122,77,.10); color:#1c7a4d; }
-    .stat-icon.red    { background: rgba(200,30,58,.10); color: var(--school-red); }
-    .stat-icon.gold   { background: rgba(212,169,77,.18); color: var(--school-gold-dark); }
     .stat-info .stat-value { font-size:1.2rem; font-weight:700; line-height:1.2; color: var(--school-ink); }
     .stat-info .stat-label { font-size:.78rem; color: var(--school-muted); margin:0; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .main-card .card-header { border-bottom:1px solid var(--cheques-border) !important; }
 
     .filtre-input { border-radius:10px; border:1px solid var(--cheques-border); padding:.55rem .9rem; font-size:.88rem; }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
 
     .btn-filtrer { background: var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-filtrer:hover { background: var(--school-red-dark); color:#fff; }
 
     .compteur-badge { display:inline-block; background: var(--cheques-bg-soft); color: var(--school-red); font-weight:600; font-size:.85rem; padding:.45rem .9rem; border-radius:999px; border:1px solid var(--cheques-border); }
 
-    .btn-nouveau { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:10px; padding:.6rem 1.2rem; font-weight:600; box-shadow:0 4px 14px rgba(200,30,58,.25); }
     .btn-nouveau:hover { color:#fff; transform:translateY(-2px); }
     .btn-outline-scolarite { border:1px solid var(--cheques-border); color: var(--school-ink); background:#fff; font-size:.82rem; }
     .btn-outline-scolarite:hover { background: var(--cheques-bg-soft); border-color: var(--school-red); color: var(--school-red); }
@@ -62,7 +52,7 @@
     .table-cheques thead th { color: var(--school-red); font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--cheques-border); padding:.9rem 1rem; white-space:nowrap; }
     .table-cheques thead th i { color: var(--school-gold-dark); }
     .table-cheques tbody td { padding:.9rem 1rem; border-bottom:1px solid var(--cheques-border); font-size:.9rem; color: var(--school-ink); vertical-align:middle; }
-    .table-cheques tbody tr:hover { background:#fdfaf5; }
+    .table-cheques tbody tr:hover { background:var(--eim-hover); }
 
     .cheque-numero { font-weight:700; color: var(--school-ink); display:block; font-size:.92rem; }
     .cheque-emetteur { font-size:.75rem; color: var(--school-muted); }
@@ -70,14 +60,14 @@
 
     .badge-cheque { display:inline-flex; align-items:center; gap:6px; font-size:.75rem; font-weight:600; padding:.4em .85em; border-radius:999px; }
     .badge-cheque-emis     { background:#dbeafe; color:#1d4ed8; }
-    .badge-cheque-encaisse { background:#e3f7ec; color:#1c7a4d; }
+    .badge-cheque-encaisse { background:#e3f7ec; color:var(--eim-success); }
     .badge-cheque-rejete   { background:#fdecea; color: var(--school-red); }
     .badge-dot { width:6px; height:6px; border-radius:50%; }
     .badge-cheque-emis .badge-dot     { background:#1d4ed8; }
-    .badge-cheque-encaisse .badge-dot { background:#1c7a4d; }
+    .badge-cheque-encaisse .badge-dot { background:var(--eim-success); }
     .badge-cheque-rejete .badge-dot   { background: var(--school-red); }
 
-    .empty-state { padding: 3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding: 3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     .modal-cheques { border:none; border-radius:16px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.15); }
@@ -86,9 +76,8 @@
     .form-section-title { font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--school-red); margin-bottom:.75rem; display:flex; align-items:center; gap:6px; }
     .form-section .form-label { font-size:.82rem; font-weight:600; color: var(--school-ink); }
     .form-section .form-control, .form-section .form-select { border-radius:8px; border:1px solid var(--cheques-border); padding:.55rem .75rem; font-size:.88rem; }
-    .form-section .form-control:focus, .form-section .form-select:focus { border-color: var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); }
 
-    .btn-annuler { background:#fff; border:1px solid var(--cheques-border); color:#5b6b7a; border-radius:8px; font-weight:500; padding:.55rem 1.2rem; font-size:.88rem; }
+    .btn-annuler { background:#fff; border:1px solid var(--cheques-border); color:var(--eim-ink-soft); border-radius:8px; font-weight:500; padding:.55rem 1.2rem; font-size:.88rem; }
     .btn-annuler:hover { background: var(--cheques-bg-soft); }
     .btn-enregistrer { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.55rem 1.4rem; font-size:.88rem; }
     .btn-enregistrer:hover { color:#fff; }
@@ -101,53 +90,25 @@
     {{-- Cartes stats --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-clock"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['emis'] }}</div>
-                    <div class="stat-label">En attente</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-clock" couleur="blue" libelle="En attente">{{ $compteurs['emis'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['encaisse'] }}</div>
-                    <div class="stat-label">Encaissés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check-circle" couleur="green" libelle="Encaissés">{{ $compteurs['encaisse'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $compteurs['rejete'] }}</div>
-                    <div class="stat-label">Rejetés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-times-circle" couleur="red" libelle="Rejetés">{{ $compteurs['rejete'] }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-coins"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($montantAttente, 0, ',', ' ') }}</div>
-                    <div class="stat-label">Montant en attente</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-coins" couleur="gold" libelle="Montant en attente">{{ number_format($montantAttente, 0, ',', ' ') }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Numéro, émetteur..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Numéro, émetteur..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-2">
                     <select name="statut" class="form-select filtre-input">
@@ -178,22 +139,19 @@
                            value="{{ $filters['date_fin'] ?? '' }}" placeholder="Au">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-filtrer w-100" title="Filtrer">
+                    <x-bouton variante="filtrer" type="submit" class="w-100" title="Filtrer">
                         <i class="fas fa-filter"></i>
-                    </button>
+                    </x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-cheques align-middle mb-0">
+            <x-tableau class="table-cheques align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-4"><i class="fas fa-hashtag me-2"></i>Numéro</th>
-                            <th><i class="fas fa-user me-2"></i>Émetteur</th>
-                            <th><i class="fas fa-university me-2"></i>Banque</th>
-                            <th><i class="fas fa-calendar me-2"></i>Émission</th>
+                            <th class="ps-4"><i class="fas fa-hashtag me-2"></i>Numéro · Émission</th>
+                            <th><i class="fas fa-user me-2"></i>Émetteur · Banque</th>
                             <th><i class="fas fa-toggle-on me-2"></i>Statut</th>
                             <th class="text-end"><i class="fas fa-coins me-2"></i>Montant</th>
                             <th class="text-center pe-4" style="width:80px;">Actions</th>
@@ -205,10 +163,12 @@
                             <td class="ps-4">
                                 <span class="cheque-numero">{{ $cheque->numero }}</span>
                                 <span class="cheque-emetteur">#{{ $cheque->id }}</span>
+                                <div class="text-xs text-muted"><i class="far fa-calendar me-1"></i>{{ optional($cheque->date_emission)->format('d/m/Y') ?? '—' }}</div>
                             </td>
-                            <td class="text-sm">{{ $cheque->emetteur }}</td>
-                            <td class="text-sm">{{ $cheque->banque?->nom ?? '—' }}</td>
-                            <td class="text-sm">{{ optional($cheque->date_emission)->format('d/m/Y') ?? '—' }}</td>
+                            <td class="text-sm">
+                                <div>{{ $cheque->emetteur }}</div>
+                                <div class="text-xs text-muted"><i class="fas fa-university me-1"></i>{{ $cheque->banque?->nom ?? '—' }}</div>
+                            </td>
                             <td>
                                 @php $s = $cheque->statut; @endphp
                                 <span class="badge-cheque badge-cheque-{{ $s?->css() }}">
@@ -219,12 +179,18 @@
                                 {{ number_format((float) $cheque->montant, 2, ',', ' ') }}
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                @php $paiementLie = $cheque->paiement_id ?: $cheque->paiement_lie; @endphp
+                                <x-actions>
+                                        @if ($paiementLie)
+                                            <li>
+                                                <button type="button" class="dropdown-item btn-voir-paiement"
+                                                        data-url="{{ route('finances.cheques.paiement', $cheque->id) }}"
+                                                        data-numero="{{ $cheque->numero }}">
+                                                    <i class="fas fa-eye"></i> Voir le paiement
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        @endif
                                         @if ($cheque->isEnAttente())
                                             @can('cheques.rapprocher')
                                                 <li>
@@ -256,143 +222,66 @@
                                                 </span>
                                             </li>
                                         @endif
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state">
-                                    <i class="fas fa-money-check-alt"></i>
-                                    <p class="mb-0 fw-medium">Aucun chèque enregistré.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="5" icone="fas fa-money-check-alt" :paragraphe="false"><p class="mb-0 fw-medium">Aucun chèque enregistré.</p></x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
     <div class="mt-4">
-        {{ $cheques->appends(request()->query())->links('vendor.pagination.custom') }}
+        <x-pagination :liste="$cheques->appends(request()->query())" />
     </div>
 
-    {{-- Modale nouveau chèque --}}
-    @can('cheques.gerer')
-    <div class="modal fade" id="chequeModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-cheques">
-                <form id="cheque-form" method="POST" action="{{ route('finances.cheques.store') }}">
-                    @csrf
-                    <div class="modal-header modal-header-cheques">
-                        <h5 class="modal-title">
-                            <i class="fas fa-money-check me-2"></i>Nouveau chèque
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-
-                    <div class="modal-body p-4">
-                        <div class="form-section mb-3">
-                            <div class="form-section-title"><i class="fas fa-info-circle"></i> Émetteur &amp; banque</div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Numéro du chèque <span class="text-danger">*</span></label>
-                                    <input type="text" name="numero" class="form-control" maxlength="100">
-                                    <div class="text-danger text-xs mt-1" id="numero-error"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Émetteur <span class="text-danger">*</span></label>
-                                    <input type="text" name="emetteur" class="form-control" maxlength="150">
-                                    <div class="text-danger text-xs mt-1" id="emetteur-error"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Banque <span class="text-danger">*</span></label>
-                                    <select name="banque_id" class="form-select">
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach ($banques as $b)
-                                            <option value="{{ $b->id }}">{{ $b->nom }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="text-danger text-xs mt-1" id="banque_id-error"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Montant <span class="text-danger">*</span></label>
-                                    <input type="number" name="montant" step="0.01" min="0.01" class="form-control">
-                                    <div class="text-danger text-xs mt-1" id="montant-error"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Date d'émission <span class="text-danger">*</span></label>
-                                    <input type="date" name="date_emission" class="form-control"
-                                           value="{{ now()->toDateString() }}">
-                                    <div class="text-danger text-xs mt-1" id="date_emission-error"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer">
-                            <i class="fas fa-save me-1"></i> Enregistrer
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endcan
+    {{-- Contenu du paiement qui a abouti au chèque --}}
+    <x-modale id="paiementModal" aria-hidden="true" dialogue="modal-dialog-centered modal-lg" corps-id="paiement-contenu" croix-blanche>
+        <x-slot:titre><i class="fas fa-receipt me-2"></i>Paiement du chèque n° <span id="paiement-cheque"></span></x-slot:titre>
+        <x-slot:pied>
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Fermer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
 
     {{-- Modale rapprochement (encaissé / rejeté) --}}
     @can('cheques.rapprocher')
-    <div class="modal fade" id="rapprocheModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-cheques">
-                <form id="rapproche-form" method="POST" action="">
-                    @csrf
-                    <input type="hidden" name="statut" id="rapproche-statut" value="">
-                    <div class="modal-header modal-header-cheques">
-                        <h5 class="modal-title" id="rapproche-title">Rapprochement</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3"
-                             style="background: var(--cheques-bg-soft); border-radius:10px;">
-                            <div>
-                                <div class="text-muted text-xs">Chèque</div>
-                                <div class="fw-semibold" id="rapproche-numero">—</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="text-muted text-xs">Montant</div>
-                                <div class="fw-bold fs-6" id="rapproche-montant">—</div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="mb-3" id="date-encaissement-bloc">
-                                <label class="form-label">Date d'encaissement</label>
-                                <input type="date" name="date_encaissement" class="form-control"
-                                       value="{{ now()->toDateString() }}">
-                            </div>
-                            <div class="mb-0 d-none" id="motif-rejet-bloc">
-                                <label class="form-label">Motif du rejet <span class="text-danger">*</span></label>
-                                <textarea name="motif_rejet" rows="2" class="form-control"></textarea>
-                                <div class="text-danger text-xs mt-1" id="motif_rejet-error"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer" id="rapproche-submit">
-                            <i class="fas fa-check me-1"></i> Confirmer
-                        </button>
-                    </div>
-                </form>
+    <x-modale id="rapprocheModal" data-bs-backdrop="static" aria-hidden="true" contenu-class="modal-cheques" entete-class="modal-header-cheques" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="rapproche-form" method="POST" action="">@csrf
+                    <input type="hidden" name="statut" id="rapproche-statut" value=""></x-slot:formulaire>
+        <x-slot:titre id="rapproche-title">Rapprochement</x-slot:titre>
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3"
+             style="background: var(--cheques-bg-soft); border-radius:10px;">
+            <div>
+                <div class="text-muted text-xs">Chèque</div>
+                <div class="fw-semibold" id="rapproche-numero">—</div>
+            </div>
+            <div class="text-end">
+                <div class="text-muted text-xs">Montant</div>
+                <div class="fw-bold fs-6" id="rapproche-montant">—</div>
             </div>
         </div>
-    </div>
+
+        <x-section>
+            <div class="mb-3" id="date-encaissement-bloc">
+                <x-libelle>Date d'encaissement</x-libelle>
+                <input type="date" name="date_encaissement" class="form-control"
+                       value="{{ now()->toDateString() }}">
+            </div>
+            <div class="mb-0 d-none" id="motif-rejet-bloc">
+                <x-libelle requis>Motif du rejet</x-libelle>
+                <textarea name="motif_rejet" rows="2" class="form-control"></textarea>
+                <div class="text-danger text-xs mt-1" id="motif_rejet-error"></div>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit" id="rapproche-submit">
+                <i class="fas fa-check me-1"></i> Confirmer
+            </x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 </div>
 @endsection
@@ -400,32 +289,15 @@
 @push('js')
 <script>
 $(function () {
-    // =========== Création chèque ===========
-    const $chequeForm = $('#cheque-form');
-    if ($chequeForm.length) {
-        $chequeForm.on('submit', function (e) {
-            e.preventDefault();
-            clearErrors($chequeForm);
-
-            $.ajax({
-                url: $chequeForm.attr('action'),
-                method: 'POST',
-                data: $chequeForm.serialize(),
-                headers: { 'Accept': 'application/json' },
-                success: function (res) {
-                    $('#chequeModal').modal('hide');
-                    window.showToastThenReload(res.message || 'Chèque enregistré.', 'success');
-                },
-                error: function (xhr) {
-                    if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                        showErrors(xhr.responseJSON.errors);
-                    } else {
-                        window.showToast("Une erreur est survenue.", 'error');
-                    }
-                }
-            });
-        });
-    }
+    // =========== Contenu du paiement d'un chèque ===========
+    $(document).on('click', '.btn-voir-paiement', function () {
+        $('#paiement-cheque').text($(this).data('numero'));
+        $('#paiement-contenu').html('<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i></div>');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('paiementModal')).show();
+        $.get($(this).data('url'))
+            .done(html => $('#paiement-contenu').html(html))
+            .fail(xhr => $('#paiement-contenu').html('<div class="text-danger">' + (xhr.responseJSON?.message || "Impossible d'afficher ce paiement.") + '</div>'));
+    });
 
     // =========== Rapprochement ===========
     const $rapprocheForm = $('#rapproche-form');

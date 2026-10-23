@@ -10,13 +10,13 @@
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 9.5px;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin: 0;
         }
 
         /* ===== En-tête ===== */
         .header {
-            border-bottom: 3px solid #C81E3A;
+            border-bottom: 2px solid #D4A94D;
             padding-bottom: 8px;
             margin-bottom: 12px;
         }
@@ -26,18 +26,18 @@
         .header-brand {
             font-size: 15px;
             font-weight: bold;
-            color: #C81E3A;
+            color: #E31E24;
             letter-spacing: .5px;
         }
         .header-sub {
             font-size: 8.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin-top: 2px;
         }
         .header-meta {
             text-align: right;
             font-size: 8px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             line-height: 1.5;
         }
 
@@ -45,12 +45,12 @@
         .doc-title {
             font-size: 13px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin: 0 0 3px;
         }
         .doc-subtitle {
             font-size: 9px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             margin-bottom: 10px;
         }
 
@@ -61,8 +61,8 @@
             margin-bottom: 10px;
         }
         .session-bar td {
-            border: 1px solid #ece4d6;
-            background: #faf6ee;
+            border: 1px solid #EADFCB;
+            background: #FBF4E6;
             padding: 6px 10px;
             font-size: 8.5px;
             vertical-align: top;
@@ -70,18 +70,18 @@
         .session-bar .label {
             font-size: 7px;
             text-transform: uppercase;
-            color: #6f7e8c;
+            color: #5A4A4A;
             letter-spacing: .5px;
             display: block;
         }
         .session-bar .value {
             font-size: 10px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin-top: 1px;
         }
-        .session-bar .value.green { color: #1c7a4d; }
-        .session-bar .value.red   { color: #C81E3A; }
+        .session-bar .value.green { color: #1F7A4D; }
+        .session-bar .value.red   { color: #E31E24; }
         .session-bar .value.blue  { color: #1d4ed8; }
 
         /* ===== Badge statut de la caisse ===== */
@@ -92,8 +92,8 @@
             font-size: 8px;
             font-weight: bold;
         }
-        .badge-caisse.ouverte  { background: #e3f7ec; color: #1c7a4d; }
-        .badge-caisse.cloturee { background: #eceff2; color: #5b6b7a; }
+        .badge-caisse.ouverte  { background: #e3f7ec; color: #1F7A4D; }
+        .badge-caisse.cloturee { background: #eceff2; color: #5A4A4A; }
 
         /* ===== Cartes de synthèse ===== */
         .stats {
@@ -104,7 +104,7 @@
         }
         .stats td {
             background: #ffffff;
-            border: 1px solid #ece4d6;
+            border: 1px solid #EADFCB;
             border-radius: 6px;
             padding: 7px 10px;
             width: 25%;
@@ -112,23 +112,23 @@
         .stats .label {
             font-size: 7px;
             text-transform: uppercase;
-            color: #6f7e8c;
+            color: #5A4A4A;
             letter-spacing: .5px;
         }
         .stats .value {
             font-size: 11px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin-top: 2px;
         }
-        .stats .value.entrees   { color: #1c7a4d; }
-        .stats .value.sorties   { color: #C81E3A; }
-        .stats .value.theorique { color: #7A0F22; }
+        .stats .value.entrees   { color: #1F7A4D; }
+        .stats .value.sorties   { color: #E31E24; }
+        .stats .value.theorique { color: #B3171C; }
 
         /* ===== Bloc clôture (si la session est fermée) ===== */
         .cloture-block {
             background: #fafbfc;
-            border: 1px solid #ece4d6;
+            border: 1px solid #EADFCB;
             border-radius: 6px;
             padding: 8px 10px;
             margin-bottom: 10px;
@@ -136,23 +136,23 @@
         .cloture-block .title {
             font-size: 9px;
             font-weight: bold;
-            color: #1f2d3a;
+            color: #2B1E1E;
             margin-bottom: 6px;
         }
         .cloture-block table { width: 100%; }
         .cloture-block td { padding: 2px 6px; font-size: 8.5px; vertical-align: top; }
-        .cloture-block td .label { color: #6f7e8c; font-size: 7.5px; display: block; }
-        .cloture-block td .value { font-weight: bold; color: #1f2d3a; }
-        .cloture-block td .value.red   { color: #C81E3A; }
-        .cloture-block td .value.green { color: #1c7a4d; }
+        .cloture-block td .label { color: #5A4A4A; font-size: 7.5px; display: block; }
+        .cloture-block td .value { font-weight: bold; color: #2B1E1E; }
+        .cloture-block td .value.red   { color: #E31E24; }
+        .cloture-block td .value.green { color: #1F7A4D; }
 
         .motif-ecart {
             background: #fdf2f2;
-            border-left: 3px solid #C81E3A;
+            border-left: 3px solid #E31E24;
             padding: 6px 9px;
             margin-top: 6px;
             font-size: 8.5px;
-            color: #7A0F22;
+            color: #B3171C;
         }
 
         /* ===== Tableau journal ===== */
@@ -162,7 +162,7 @@
             font-size: 8.5px;
         }
         table.journal thead th {
-            background: #1f2d3a;
+            background: #2B1E1E;
             color: #ffffff;
             font-size: 7.5px;
             text-transform: uppercase;
@@ -176,7 +176,7 @@
 
         table.journal tbody td {
             padding: 5px 6px;
-            border-bottom: 1px solid #ece4d6;
+            border-bottom: 1px solid #EADFCB;
             vertical-align: top;
         }
         table.journal tbody tr:nth-child(even) { background: #fafaf7; }
@@ -191,43 +191,48 @@
             font-weight: bold;
             white-space: nowrap;
         }
-        .badge-entree { background: #e3f7ec; color: #1c7a4d; }
-        .badge-sortie { background: #fdecea; color: #C81E3A; }
+        .badge-entree { background: #e3f7ec; color: #1F7A4D; }
+        .badge-sortie { background: #fdecea; color: #E31E24; }
 
         .montant { font-weight: bold; }
-        .montant.entree { color: #1c7a4d; }
-        .montant.sortie { color: #C81E3A; }
-        .texte-petit { font-size: 7.5px; color: #6f7e8c; }
+        .montant.entree { color: #1F7A4D; }
+        .montant.sortie { color: #E31E24; }
+        .texte-petit { font-size: 7.5px; color: #5A4A4A; }
 
         /* ===== Pied de tableau (totaux) ===== */
         table.journal tfoot td {
             padding: 6px 6px;
             font-size: 9px;
             font-weight: bold;
-            background: #faf6ee;
-            border-top: 2px solid #C81E3A;
+            background: #FBF4E6;
+            border-top: 2px solid #E31E24;
         }
         table.journal tfoot td.right { text-align: right; font-variant-numeric: tabular-nums; }
-        table.journal tfoot .final-label { text-align: right; color: #7A0F22; text-transform: uppercase; font-size: 8.5px; }
-        table.journal tfoot .final-value { text-align: right; color: #7A0F22; font-size: 11px; }
+        table.journal tfoot .final-label { text-align: right; color: #B3171C; text-transform: uppercase; font-size: 8.5px; }
+        table.journal tfoot .final-value { text-align: right; color: #B3171C; font-size: 11px; }
 
         /* ===== Pied de page ===== */
         .footer {
             margin-top: 16px;
             padding-top: 6px;
-            border-top: 1px solid #ece4d6;
+            border-top: 1px solid #EADFCB;
             font-size: 7.5px;
-            color: #6f7e8c;
+            color: #5A4A4A;
             text-align: center;
         }
 
         .empty {
             text-align: center;
             padding: 30px 0;
-            color: #9aa7b2;
+            color: #7A6A6A;
             font-style: italic;
         }
-        .section-titre { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #C81E3A; letter-spacing: .5px; margin: 12px 0 5px; }
+        .header-logo { width: 20mm; padding-right: 8px; }
+        .header-logo img { width: 19mm; height: 19mm; }
+        .caissier-bloc { border: 1px solid #EADFCB; border-left: 4px solid #E31E24; background: #FBF4E6; padding: 7px 12px; margin-bottom: 8px; }
+        .caissier-bloc .label { font-size: 7.5px; text-transform: uppercase; color: #5A4A4A; letter-spacing: .5px; }
+        .caissier-bloc .nom { font-size: 16px; font-weight: bold; color: #B3171C; margin-top: 2px; }
+        .section-titre { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #E31E24; letter-spacing: .5px; margin: 12px 0 5px; }
         table.totaux-type { margin-bottom: 6px; }
     </style>
 </head>
@@ -239,9 +244,17 @@
 @endphp
 
 {{-- ============ EN-TÊTE ============ --}}
+@php
+    // Logo de l'école, intégré au PDF
+    $cheminLogo = collect([public_path('images/logo/eim-compta-sceau.png'), public_path('images/logo-mariam.png')])->first(fn ($c) => is_file($c));
+    $logo = $cheminLogo ? 'data:image/png;base64,' . base64_encode(file_get_contents($cheminLogo)) : null;
+@endphp
 <div class="header">
     <table class="header-table">
         <tr>
+            @if ($logo)
+                <td class="header-logo"><img src="{{ $logo }}" alt="EIM Compta – École Internationale Mariam"></td>
+            @endif
             <td>
                 <div class="header-brand">ÉCOLE INTERNATIONALE MARIAM</div>
                 <div class="header-sub">Plateforme de gestion scolaire et budgétaire</div>
@@ -249,7 +262,7 @@
             <td class="header-meta">
                 <div><strong>Document généré le</strong> {{ $genereLe->format('d/m/Y à H:i') }}</div>
                 @if($generePar)
-                    <div>par {{ $generePar->name }}</div>
+                    <div>par {{ $generePar->nom_complet ?: $generePar->name }}</div>
                 @endif
             </td>
         </tr>
@@ -263,26 +276,24 @@
     <span class="badge-caisse {{ $isOuverte ? 'ouverte' : 'cloturee' }}">
         {{ $caisse->statut?->label() }}
     </span>
-    &nbsp;·&nbsp;
-    {{ $journal['mouvements']->count() }} mouvement(s)
+</div>
+
+{{-- ============ CAISSIER ============ --}}
+<div class="caissier-bloc">
+    <div class="label">Caissier responsable</div>
+    <div class="nom" id="nom-caissier">{{ $caisse->caissier?->nom_complet ?? '—' }}</div>
 </div>
 
 {{-- ============ BANDEAU D'IDENTITÉ ============ --}}
 <table class="session-bar">
     <tr>
-        <td style="width: 33%;">
-            <span class="label">Caissier responsable</span>
-            <span class="value">
-                {{ $caisse->caissier?->name ?? '—' }}
-            </span>
-        </td>
-        <td style="width: 34%;">
+        <td style="width: 50%;">
             <span class="label">Ouverture</span>
             <span class="value">
                 {{ optional($caisse->date_ouverture)->format('d/m/Y à H:i') ?? '—' }}
             </span>
         </td>
-        <td style="width: 33%;">
+        <td style="width: 50%;">
             <span class="label">Clôture</span>
             <span class="value">
                 {{ optional($caisse->date_cloture)->format('d/m/Y à H:i') ?? '— en cours —' }}
@@ -314,7 +325,7 @@
 </table>
 
 {{-- ============ TOTAUX ENCAISSÉS PAR TYPE DE PAIEMENT ============ --}}
-<div class="section-titre">Totaux des paiements encaissés par type de paiement</div>
+<div class="section-titre">Encaissements — totaux par type</div>
 @if($totauxParType->isEmpty() && $nbManuelles === 0)
     <div class="empty" style="margin-bottom: 10px;">Aucun paiement encaissé dans cette caisse.</div>
 @else
@@ -351,6 +362,37 @@
     </table>
 @endif
 
+{{-- ============ DÉCAISSEMENTS PAR TYPE ============ --}}
+<div class="section-titre">Décaissements — totaux par type</div>
+@if($decaissementsParType->isEmpty())
+    <div class="empty" style="margin-bottom: 10px;">Aucun décaissement dans cette caisse.</div>
+@else
+    <table class="journal totaux-type" id="decaissements-par-type">
+        <thead>
+            <tr>
+                <th style="width: 55%;">Type de décaissement</th>
+                <th style="width: 20%;" class="center">Mouvements</th>
+                <th style="width: 25%;" class="right">Montant décaissé</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($decaissementsParType as $total)
+                <tr>
+                    <td><strong>{{ $total['libelle'] }}</strong></td>
+                    <td class="center">{{ $total['nb'] }}</td>
+                    <td class="right montant sortie">{{ number_format($total['montant'], 2, ',', ' ') }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2" class="final-label">TOTAL DÉCAISSÉ</td>
+                <td class="final-value">{{ number_format($decaissementsParType->sum('montant'), 2, ',', ' ') }}</td>
+            </tr>
+        </tfoot>
+    </table>
+@endif
+
 {{-- ============ BLOC CLÔTURE (si session fermée) ============ --}}
 @if(!$isOuverte)
     <div class="cloture-block">
@@ -375,7 +417,7 @@
                 </td>
                 <td style="width: 28%;">
                     <span class="label">Validée par</span>
-                    <span class="value">{{ $caisse->valideur?->name ?? '— en attente —' }}</span>
+                    <span class="value">{{ $caisse->valideur?->nom_complet ?? '— en attente —' }}</span>
                 </td>
             </tr>
         </table>
@@ -386,71 +428,6 @@
             </div>
         @endif
     </div>
-@endif
-
-{{-- ============ TABLEAU DU JOURNAL ============ --}}
-<div class="section-titre">Journal chronologique des mouvements</div>
-@if($journal['mouvements']->isEmpty())
-    <div class="empty">Aucun mouvement enregistré dans cette session.</div>
-@else
-    <table class="journal">
-        <thead>
-            <tr>
-                <th style="width: 10%;">Date</th>
-                <th style="width: 30%;">Libellé</th>
-                <th style="width: 13%;" class="center">Type</th>
-                <th style="width: 15%;">Bénéficiaire</th>
-                <th style="width: 10%;" class="right">Entrée</th>
-                <th style="width: 10%;" class="right">Sortie</th>
-                <th style="width: 12%;">Utilisateur</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($journal['mouvements'] as $m)
-                @php $type = $m->type_mouvement; @endphp
-                <tr>
-                    <td>{{ optional($m->date_mouvement)->format('d/m/Y') }}</td>
-                    <td>
-                        <strong>{{ $m->libelle }}</strong>
-                        @if($m->motif)
-                            <div class="texte-petit">{{ \Str::limit($m->motif, 70) }}</div>
-                        @endif
-                    </td>
-                    <td class="center">
-                        <span class="badge badge-{{ $type?->isEntree() ? 'entree' : 'sortie' }}">
-                            {{ $type?->label() ?? '—' }}
-                        </span>
-                    </td>
-                    <td class="texte-petit">{{ $m->beneficiaire ?? '—' }}</td>
-                    <td class="right montant entree">
-                        {{ $type?->isEntree() ? number_format((float) $m->montant, 2, ',', ' ') : '' }}
-                    </td>
-                    <td class="right montant sortie">
-                        {{ $type && ! $type->isEntree() ? number_format((float) $m->montant, 2, ',', ' ') : '' }}
-                    </td>
-                    <td class="texte-petit">
-                        {{ $m->utilisateur?->name ?? '—' }}
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4" class="final-label">Totaux</td>
-                <td class="right" style="color: #1c7a4d;">
-                    +{{ number_format($journal['totalEntrees'], 2, ',', ' ') }}
-                </td>
-                <td class="right" style="color: #C81E3A;">
-                    −{{ number_format($journal['totalSorties'], 2, ',', ' ') }}
-                </td>
-                <td></td>
-            </tr>
-            <tr>
-                <td colspan="6" class="final-label">SOLDE THÉORIQUE</td>
-                <td class="final-value">{{ number_format($journal['soldeTheorique'], 2, ',', ' ') }}</td>
-            </tr>
-        </tfoot>
-    </table>
 @endif
 
 {{-- ============ PIED DE PAGE ============ --}}

@@ -231,7 +231,7 @@ class CaissesTest extends DomainTestCase
         $this->assertStringContainsString('pdf', $pdf->headers->get('content-type'));
 
         $contenu = $html->render();
-        $this->assertStringContainsString('Totaux des paiements encaissés par type de paiement', $contenu);
+        $this->assertStringContainsString('Encaissements — totaux par type', $contenu);
         $this->assertStringContainsString(\App\Domain\Finances\Types\TypeDetail::FRAIS_SCOLAIRE->label(), $contenu);
         $this->assertStringContainsString('225 000,00', $contenu);
         $this->assertStringContainsString(\App\Domain\Finances\Types\TypeDetail::CANTINE->label(), $contenu);
@@ -293,7 +293,7 @@ class CaissesTest extends DomainTestCase
             ->assertJsonPath('message', "Ce caissier a déjà une caisse ouverte. Clôturez-la avant d'en ouvrir une nouvelle.");
     }
 
-    public function test_les_compteurs_de_caisses_de_l_annee_sont_reserves_a_l_administrateur(): void
+    public function test_les_compteurs_de_caisses_de_l_annee_sont_reserves_a_l_administrateur_et_a_la_direction(): void
     {
         // Année en cours : une caisse ouverte, une clôturée ; année précédente : une caisse
         $this->ouvrir();
@@ -303,12 +303,16 @@ class CaissesTest extends DomainTestCase
 
         $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Administrateur));
         $page = $this->get('/finances/caisses?annee_id=' . $this->annee->id)->assertOk()->assertDontSee('Caisse ancienne');
-        $this->assertSame(['total' => 2, 'ouvertes' => 1, 'fermees' => 1], $page->viewData('compteurs'));
-        $page->assertSee('id="compteur-caisses"', false)->assertSee('Caisses fermées');
+        $this->assertSame(['total' => 2, 'ouvertes' => 1, 'fermees' => 1], array_intersect_key($page->viewData('compteurs'), array_flip(['total', 'ouvertes', 'fermees'])));
+        $page->assertSee('id="compteur-caisses"', false)->assertSee('1 clôturée(s)');
 
         // L'année choisie en haut de page change la liste et les compteurs
         $page = $this->get('/finances/caisses?annee_id=' . $precedente->id)->assertOk()->assertSee('Caisse ancienne');
-        $this->assertSame(['total' => 1, 'ouvertes' => 1, 'fermees' => 0], $page->viewData('compteurs'));
+        $this->assertSame(['total' => 1, 'ouvertes' => 1, 'fermees' => 0], array_intersect_key($page->viewData('compteurs'), array_flip(['total', 'ouvertes', 'fermees'])));
+
+        // La Direction aussi
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Directeur));
+        $this->get('/finances/caisses?annee_id=' . $this->annee->id)->assertOk()->assertSee('id="compteur-caisses"', false);
 
         // Les autres profils n'ont pas ces chiffres
         $this->actingAs($this->caissier);
@@ -335,5 +339,124 @@ class CaissesTest extends DomainTestCase
         $this->get('/finances/caisses?annee_id=' . $this->annee->id)->assertOk()->assertSee('data-bs-target="#caisseModal"', false);
         $this->postJson('/finances/caisses', ['libelle' => 'Caisse du jour', 'solde_initial' => 0])->assertOk();
         $this->assertDatabaseHas('caisses', ['libelle' => 'Caisse du jour', 'annee_id' => $this->annee->id]);
+    }
+
+    public function test_mes_caisses_pour_le_caissier_toutes_les_caisses_pour_l_administrateur_et_la_direction(): void
+    {
+        $this->ouvrir();
+        $collegue = $this->creerUtilisateur(RoleUtilisateur::Caissier, ['nom' => 'COLLEGUE', 'prenom' => 'Yao']);
+        $this->creerCaisseOuverte($collegue, 0, ['libelle' => 'Caisse du collègue']);
+
+        // Caissier : un seul onglet, ses caisses
+        $this->actingAs($this->caissier);
+        $page = $this->get('/finances/caisses')->assertOk()
+            ->assertSee('id="onglet-mes-caisses"', false)->assertDontSee('id="onglet-toutes-caisses"', false)
+            ->assertSee('Caisse 1')->assertDontSee('Caisse du collègue');
+        $this->assertSame('mes', $page->viewData('onglet'));
+        // Demander « toutes » ou filtrer sur un collègue ne change rien
+        $this->get('/finances/caisses?onglet=toutes&responsable_id=' . $collegue->id)->assertOk()
+            ->assertSee('Caisse 1')->assertDontSee('Caisse du collègue');
+
+        // Direction : toutes les caisses (elle n'en ouvre pas : pas de « Mes caisses »)
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Directeur));
+        $page = $this->get('/finances/caisses')->assertOk()
+            ->assertSee('id="onglet-toutes-caisses"', false)->assertDontSee('id="onglet-mes-caisses"', false)
+            ->assertSee('Caisse 1')->assertSee('Caisse du collègue');
+        $this->assertSame('toutes', $page->viewData('onglet'));
+
+        // Administrateur : les deux onglets, « Toutes les caisses » par défaut
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Administrateur));
+        $page = $this->get('/finances/caisses')->assertOk()
+            ->assertSee('id="onglet-mes-caisses"', false)->assertSee('id="onglet-toutes-caisses"', false);
+        $this->assertSame('toutes', $page->viewData('onglet'));
+
+        // Comptable : ni l'un ni l'autre
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Comptable));
+        $this->get('/finances/caisses')->assertOk()->assertSee('id="aucun-onglet-caisses"', false)->assertDontSee('Caisse 1');
+    }
+
+    public function test_le_filtre_caissier_propose_ceux_qui_ont_reellement_encaisse(): void
+    {
+        $caisse = $this->ouvrir();
+        $collegue = $this->creerUtilisateur(RoleUtilisateur::Caissier, ['nom' => 'COLLEGUE', 'prenom' => 'Yao']);
+        $caisseCollegue = $this->creerCaisseOuverte($collegue, 0, ['libelle' => 'Caisse du collègue']);
+        $this->creerUtilisateur(RoleUtilisateur::Caissier, ['nom' => 'JAMAIS', 'prenom' => 'Encaisse']);
+        $paiementId = \Illuminate\Support\Facades\DB::table('paiements')->insertGetId(['reference' => 'PAI-CAISSE-1', 'montant' => 10000, 'annee_id' => $this->annee->id, 'etat' => 1]);
+        \Illuminate\Support\Facades\DB::table('details')->insert([
+            'paiement_id' => $paiementId, 'montant' => 10000, 'type_paiement' => 2, 'annee_id' => $this->annee->id,
+            'statut_paiement' => \App\Domain\Finances\Types\PaiementStatut::ENCAISSE->value, 'date_encaissement' => now(),
+            'caisse_id' => $caisseCollegue->id, 'caissier_id' => $collegue->id, 'etat' => 1,
+        ]);
+
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Directeur));
+        $page = $this->get('/finances/caisses?onglet=toutes')->assertOk()->assertSee('id="filtre-caissier-caisses"', false);
+        $this->assertSame([$collegue->id], $page->viewData('caissiers')->pluck('id')->all(), 'Seuls ceux qui ont encaissé.');
+        $page->assertDontSee('JAMAIS Encaisse');
+
+        $this->get('/finances/caisses?onglet=toutes&responsable_id=' . $collegue->id)->assertOk()
+            ->assertSee('Caisse du collègue')->assertDontSee('>Caisse 1<', false);
+
+        // Le filtre suit l'année de l'en-tête : sur une autre année, ce caissier n'a rien encaissé
+        $autreAnnee = $this->creerAnnee(['libelle' => '2025-2026']);
+        $ancien = $this->creerUtilisateur(RoleUtilisateur::Caissier, ['nom' => 'ANCIEN', 'prenom' => 'Kossi']);
+        \Illuminate\Support\Facades\DB::table('details')->insert([
+            'paiement_id' => $paiementId, 'montant' => 5000, 'type_paiement' => 2, 'annee_id' => $autreAnnee->id,
+            'statut_paiement' => \App\Domain\Finances\Types\PaiementStatut::ENCAISSE->value, 'date_encaissement' => now(),
+            'caissier_id' => $ancien->id, 'etat' => 1,
+        ]);
+        $this->assertSame([$collegue->id], $this->get('/finances/caisses?onglet=toutes')->viewData('caissiers')->pluck('id')->all());
+        $this->assertSame([$ancien->id], $this->get('/finances/caisses?onglet=toutes&annee_id=' . $autreAnnee->id)->viewData('caissiers')->pluck('id')->all());
+
+        unset($caisse);
+    }
+
+    public function test_le_tableau_de_bord_compte_les_caisses_ouvertes_et_cloturees_par_periode(): void
+    {
+        // Aujourd'hui : deux ouvertes, dont une déjà clôturée ; le mois dernier : une ouverte et clôturée
+        $this->ouvrir();
+        $this->creerCaisseOuverte($this->creerUtilisateur(RoleUtilisateur::Caissier), 0, ['statut' => CaisseStatut::CLOTUREE->value, 'date_cloture' => now()]);
+        $this->creerCaisseOuverte($this->creerUtilisateur(RoleUtilisateur::Caissier), 0, [
+            'statut' => CaisseStatut::CLOTUREE->value,
+            'date_ouverture' => now()->subMonthNoOverflow()->startOfMonth(), 'date_cloture' => now()->subMonthNoOverflow()->startOfMonth()->addHours(8),
+        ]);
+
+        $this->actingAs($this->creerUtilisateur(RoleUtilisateur::Directeur));
+        $page = $this->get('/finances/caisses')->assertOk();
+        $compteurs = $page->viewData('compteurs');
+
+        $this->assertSame(3, $compteurs['total']);
+        $this->assertSame(1, $compteurs['ouvertes']);
+        $this->assertSame(2, $compteurs['fermees']);
+        foreach (['jour', 'semaine', 'mois'] as $periode) {
+            $this->assertSame(2, $compteurs['periodes'][$periode]['ouvertes'], $periode);
+            $this->assertSame(1, $compteurs['periodes'][$periode]['cloturees'], $periode);
+        }
+        $page->assertSee('id="total-jour"', false)->assertSee('2 ouverte(s) · 1 clôturée(s)')->assertDontSee(' F</div>', false);
+    }
+
+    public function test_le_pdf_du_journal_ne_garde_que_les_totaux_par_type_avec_le_logo_et_le_caissier(): void
+    {
+        $this->caissier->update(['nom' => 'AMEGAN', 'prenom' => 'Kodjo']);
+        $caisse = $this->ouvrir(10000);
+        $this->mouvement($caisse, MouvementType::ENTREE_MANUELLE, 2000);
+        $this->mouvement($caisse, MouvementType::SORTIE_MANUELLE, 1500);
+        $this->mouvement($caisse, MouvementType::SORTIE_MANUELLE, 500);
+
+        // Le PDF se télécharge ; son contenu : logo, caissier en grand, totaux par type, sans le détail des mouvements
+        $vue = null;
+        \Illuminate\Support\Facades\View::composer('domain.finances.caisses.print', function ($v) use (&$vue) {
+            $vue = $v;
+        });
+        $this->actingAs($this->caissier);
+        $this->get(route('finances.caisses.exportPdf', $caisse->id))->assertOk()->assertHeader('content-type', 'application/pdf');
+        $html = $vue->render();
+
+        $this->assertStringContainsString('data:image/png;base64,', $html);
+        $this->assertStringContainsString('<div class="nom" id="nom-caissier">AMEGAN Kodjo</div>', $html);
+        $this->assertStringContainsString('Encaissements — totaux par type', $html);
+        $this->assertStringContainsString('Décaissements — totaux par type', $html);
+        $this->assertStringContainsString('Sortie manuelle', $html);
+        $this->assertStringContainsString('2 000,00', $html, 'Total des deux sorties manuelles.');
+        $this->assertStringNotContainsString('Journal chronologique', $html);
     }
 }

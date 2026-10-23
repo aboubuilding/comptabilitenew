@@ -11,7 +11,7 @@
         <div class="row g-3">
             {{-- Bloc message --}}
             <div class="col-md-12">
-                <label class="form-label">Modèle (optionnel)</label>
+                <x-libelle>Modèle (optionnel)</x-libelle>
                 <select name="modele_id" class="form-select" id="select-modele">
                     <option value="">— Aucun —</option>
                     @foreach($modeles as $modele)
@@ -26,13 +26,13 @@
             </div>
 
             <div class="col-md-12">
-                <label class="form-label">Sujet <span class="text-danger">*</span></label>
+                <x-libelle requis>Sujet</x-libelle>
                 <input type="text" name="sujet" class="form-control"
                        value="{{ old('sujet', $message->sujet ?? '') }}" required>
             </div>
 
             <div class="col-md-12">
-                <label class="form-label">Corps <span class="text-danger">*</span></label>
+                <x-libelle requis>Corps</x-libelle>
                 <textarea name="corps" rows="8" class="form-control" required>{{ old('corps', $message->corps ?? '') }}</textarea>
                 <small class="text-muted">
                     Variables : {{ implode(', ', array_keys(\App\Domain\Administration\Models\ModeleMessage::variablesParDefaut())) }}
@@ -44,7 +44,7 @@
                 <div class="col-md-12"><hr><h6 class="mb-2"><i class="fa fa-users"></i> Ciblage</h6></div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Type de ciblage</label>
+                    <x-libelle>Type de ciblage</x-libelle>
                     <select name="ciblage_type" class="form-select" id="ciblage_type" required>
                         <option value="libre">Adresses libres</option>
                         <option value="classe">Par classe</option>
@@ -54,13 +54,13 @@
                 </div>
 
                 <div class="col-md-8 ciblage-bloc" data-type="libre">
-                    <label class="form-label">Adresses email (une par ligne)</label>
+                    <x-libelle>Adresses email (une par ligne)</x-libelle>
                     <textarea name="emails_libres_text" class="form-control" rows="3"
                               placeholder="parent1@example.com&#10;parent2@example.com"></textarea>
                 </div>
 
                 <div class="col-md-8 ciblage-bloc d-none" data-type="classe">
-                    <label class="form-label">Classe</label>
+                    <x-libelle>Classe</x-libelle>
                     <select name="classe_id" class="form-select">
                         <option value="">— Sélectionner —</option>
                         @foreach (\App\Domain\Scolarite\Models\Classe::actif()->where('annee_id', app(\App\Support\AnneeScolaireContext::class)->id())->orderBy('libelle')->get(['id', 'libelle']) as $classe)
@@ -71,7 +71,7 @@
                 </div>
 
                 <div class="col-md-8 ciblage-bloc d-none" data-type="niveau">
-                    <label class="form-label">Niveau</label>
+                    <x-libelle>Niveau</x-libelle>
                     <select name="niveau_id" class="form-select">
                         <option value="">— Sélectionner —</option>
                         @foreach (\App\Domain\Scolarite\Models\Niveau::actif()->orderBy('numero_ordre')->get(['id', 'libelle']) as $niveau)
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="col-md-8 ciblage-bloc d-none" data-type="tiers">
-                    <label class="form-label">Contacts tiers</label>
+                    <x-libelle>Contacts tiers</x-libelle>
                     <select name="tiers_ids[]" class="form-select" multiple>
                         @foreach($tiers as $t)
                             <option value="{{ $t->id }}">{{ $t->nom }} — {{ $t->email }}</option>

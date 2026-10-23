@@ -10,36 +10,36 @@
     <div class="modal-body">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Nom <span class="text-danger">*</span></label>
+                <x-libelle requis>Nom</x-libelle>
                 <input type="text" name="nom" class="form-control"
                        value="{{ old('nom', $user->nom ?? '') }}" required>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                <x-libelle requis>Prénom</x-libelle>
                 <input type="text" name="prenom" class="form-control"
                        value="{{ old('prenom', $user->prenom ?? '') }}" required>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Login <span class="text-danger">*</span></label>
+                <x-libelle requis>Login</x-libelle>
                 <input type="text" name="login" class="form-control"
                        value="{{ old('login', $user->login ?? '') }}" required>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Email</label>
+                <x-libelle>Email</x-libelle>
                 <input type="email" name="email" class="form-control"
                        value="{{ old('email', $user->email ?? '') }}">
             </div>
             <div class="col-md-6">
-                <label class="form-label">
+                <x-libelle>
                     Mot de passe
                     @if($user) <small class="text-muted">(laisser vide pour ne pas modifier)</small>
                     @else <span class="text-danger">*</span> @endif
-                </label>
+                </x-libelle>
                 <input type="password" name="mot_passe" class="form-control"
                        {{ $user ? '' : 'required' }} autocomplete="new-password">
             </div>
             <div class="col-md-6">
-                <label class="form-label">Profil <span class="text-danger">*</span></label>
+                <x-libelle requis>Profil</x-libelle>
                 <select name="role_id" class="form-select" required>
                     <option value="">— Sélectionner —</option>
                     @foreach($roles as $role)
@@ -51,7 +51,7 @@
                 </select>
             </div>
             <div class="col-12">
-                <label class="form-label">Profils complémentaires</label>
+                <x-libelle>Profils complémentaires</x-libelle>
                 <div class="text-muted small mb-2">
                     Un utilisateur peut cumuler plusieurs profils (par exemple Comptable et Caissier) : il a alors les droits de chacun.
                 </div>
@@ -72,14 +72,14 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Photo</label>
+                <x-libelle>Photo</x-libelle>
                 <input type="file" name="photo" class="form-control" accept="image/*">
                 @if($user?->photo)
                     <small class="text-muted">Photo actuelle : {{ basename($user->photo) }}</small>
                 @endif
             </div>
             <div class="col-md-6">
-                <label class="form-label">Statut</label>
+                <x-libelle>Statut</x-libelle>
                 <select name="etat" class="form-select">
                     <option value="1" @selected(old('etat', $user->etat ?? 1) == 1)>Actif</option>
                     <option value="0" @selected(old('etat', $user->etat ?? 1) == 0)>Inactif</option>

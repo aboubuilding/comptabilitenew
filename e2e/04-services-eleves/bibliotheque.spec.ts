@@ -162,7 +162,11 @@ test.describe('4.3 Bibliothèque', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Services aux Élèves' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord bibliothèque' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord bibliothèque' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord bibliothèque' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
     await expect(page.locator('main')).toContainText('Roman');
 

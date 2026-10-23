@@ -6,7 +6,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; color:#222; line-height:1.5;">
     <div style="max-width:600px; margin:0 auto; padding:20px;">
-        <h2 style="color:#8B0000;">{{ $sujet }}</h2>
+        <h2 style="color:#8E1216;">{{ $sujet }}</h2>
         <div>{!! nl2br(e($corps)) !!}</div>
         <hr style="margin:24px 0; border:none; border-top:1px solid #eee;">
         <p style="font-size:12px; color:#888;">

@@ -18,21 +18,20 @@
             </option>
         @endforeach
     </select>
-    <a href="{{ route('logistique.dashboard', ['magasin_id' => $magasinActif->id]) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('logistique.dashboard', ['magasin_id' => $magasinActif->id]) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-chart-line me-1"></i> Dashboard
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .pos-page { --p-border:#ece4d6; --p-bg-soft:#faf6ee; }
+    .pos-page { --p-border:var(--eim-border); --p-bg-soft:var(--eim-cream); }
     .text-xs { font-size:.72rem; }
 
     .pos-grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:1rem; }
     @media (max-width: 992px) { .pos-grid { grid-template-columns: 1fr; } }
 
-    .pos-card { background:#fff; border:1px solid var(--p-border); border-radius:14px; overflow:hidden; box-shadow:0 4px 18px rgba(122,15,28,.05); }
+    .pos-card { background:#fff; border:1px solid var(--p-border); border-radius:14px; overflow:hidden; box-shadow:0 4px 18px rgba(142,18,22,.05); }
     .pos-card .card-header { padding:.85rem 1.15rem; border-bottom:1px solid var(--p-border); display:flex; justify-content:space-between; align-items:center; }
     .pos-card .card-header h6 { margin:0; font-size:.92rem; font-weight:700; color:var(--school-ink); display:flex; align-items:center; gap:8px; }
     .pos-card .card-header i { color:var(--school-gold-dark); }
@@ -41,10 +40,10 @@
     /* Recherche */
     .search-pos { position:relative; }
     .search-pos input { padding-left:38px; border-radius:10px; border:1px solid var(--p-border); font-size:.95rem; padding-top:.65rem; padding-bottom:.65rem; }
-    .search-pos input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(200,30,58,.12); outline:none; }
-    .search-pos .icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; }
+    .search-pos input:focus { border-color:var(--school-red); box-shadow:0 0 0 .2rem rgba(227,30,36,.12); outline:none; }
+    .search-pos .icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#7A6A6A; }
 
-    .search-results { position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff; border:1px solid var(--p-border); border-radius:10px; max-height:380px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(122,15,28,.12); }
+    .search-results { position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff; border:1px solid var(--p-border); border-radius:10px; max-height:380px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(142,18,22,.12); }
     .search-results:empty { display:none; }
     .result-item { display:flex; align-items:center; gap:.75rem; padding:.65rem 1rem; cursor:pointer; border-bottom:1px solid #f5f1e8; }
     .result-item:last-child { border-bottom:none; }
@@ -70,7 +69,7 @@
     .panier-table tbody td.act { width:30px; text-align:center; }
     .btn-del { background:transparent; border:none; color:var(--school-red); cursor:pointer; }
 
-    .panier-vide { padding:2.5rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .panier-vide { padding:2.5rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .panier-vide i { font-size:2.5rem; color:#d8c8ae; margin-bottom:.5rem; display:block; }
 
     /* Totaux */
@@ -79,7 +78,7 @@
     .total-row.grand { font-size:1.35rem; font-weight:700; padding-top:.65rem; margin-top:.4rem; border-top:1px solid var(--p-border); color:var(--school-red-dark); font-variant-numeric:tabular-nums; }
 
     .btn-encaisser {
-        background:linear-gradient(135deg, #1c7a4d, #2ecc71);
+        background:linear-gradient(135deg, var(--eim-success), #2ecc71);
         color:#fff; border:none; border-radius:10px;
         padding:1rem 1.5rem; font-weight:700; font-size:1rem; width:100%;
         box-shadow:0 4px 14px rgba(28,122,77,.28);
@@ -167,7 +166,7 @@
                     </div>
 
                     <div class="mt-3">
-                        <label class="form-label small fw-semibold">Client externe (optionnel)</label>
+                        <x-libelle class="small fw-semibold">Client externe (optionnel)</x-libelle>
                         <select id="client-id" class="form-select form-select-sm">
                             <option value="">— Client anonyme —</option>
                             @foreach ($clients as $c)
@@ -177,7 +176,7 @@
                     </div>
 
                     <div class="mt-2">
-                        <label class="form-label small fw-semibold">Élève (optionnel)</label>
+                        <x-libelle class="small fw-semibold">Élève (optionnel)</x-libelle>
                         <select id="inscription-id" class="form-select form-select-sm">
                             <option value="">— Aucun élève —</option>
                             @foreach ($inscriptions as $inscription)

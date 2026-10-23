@@ -12,32 +12,32 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('logistique.bons.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('logistique.bons.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
-    <button onclick="window.print()" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" onclick="window.print()" class="btn-sm rounded-pill px-3">
         <i class="fas fa-print me-1"></i> Imprimer
-    </button>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .show-page { --sp-bg-soft:#faf6ee; --sp-border:#ece4d6; }
+    .show-page { --sp-bg-soft:var(--eim-cream); --sp-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
     .main-card .card-header { border-bottom:1px solid var(--sp-border) !important; }
 
     /* Bandeau bon */
     .bon-banner {
         border-radius:16px; padding:1.25rem 1.5rem;
         display:flex; align-items:center; gap:1.25rem;
-        box-shadow: 0 8px 24px rgba(122,15,28,.15);
+        box-shadow: 0 8px 24px rgba(142,18,22,.15);
         margin-bottom:1.25rem;
         color:#fff;
     }
-    .bon-banner.entree    { background: linear-gradient(135deg, #1c7a4d, #2ecc71); }
+    .bon-banner.entree    { background: linear-gradient(135deg, var(--eim-success), #2ecc71); }
     .bon-banner.sortie    { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); }
     .bon-banner.transfert { background: linear-gradient(135deg, #2563eb, #3b82f6); }
 
@@ -65,7 +65,7 @@
     .table-lignes thead tr { background:var(--sp-bg-soft); }
     .table-lignes thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.7rem .9rem; border-bottom:1px solid var(--sp-border); }
     .table-lignes tbody td { padding:.7rem .9rem; border-bottom:1px solid var(--sp-border); font-size:.85rem; vertical-align:middle; }
-    .table-lignes tbody tr:hover { background:#fdfaf5; }
+    .table-lignes tbody tr:hover { background:var(--eim-hover); }
     .table-lignes tfoot td { padding:.75rem .9rem; font-size:.9rem; font-weight:700; background:var(--sp-bg-soft); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
     .num.grand { color:var(--school-red-dark); font-weight:700; font-size:.95rem; }
@@ -81,16 +81,16 @@
         display:flex; align-items:center; justify-content:center;
         font-size:.8rem; flex-shrink:0;
     }
-    .mouvement-icon.entree     { background:#e3f7ec; color:#1c7a4d; }
+    .mouvement-icon.entree     { background:#e3f7ec; color:var(--eim-success); }
     .mouvement-icon.sortie     { background:#fdecea; color:var(--school-red); }
     .mouvement-icon.ajustement { background:#fdf4e0; color:var(--school-gold-dark); }
     .mouvement-libelle { font-size:.85rem; font-weight:600; color:var(--school-ink); }
     .mouvement-date { font-size:.72rem; color:var(--school-muted); }
     .mouvement-qte { font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; margin-left:auto; }
-    .mouvement-qte.positif { color:#1c7a4d; }
+    .mouvement-qte.positif { color:var(--eim-success); }
     .mouvement-qte.negatif { color:var(--school-red); }
 
-    .empty-state { padding:2.5rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:2.5rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2rem; margin-bottom:.5rem; display:block; color:#d8c8ae; }
 
     @media print {
@@ -129,7 +129,7 @@
     <div class="row g-3">
         {{-- Colonne gauche : informations du bon --}}
         <div class="col-lg-5">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i>
@@ -194,15 +194,15 @@
                         </div>
                     @endif
                     @if ($bon->commentaire)
-                        <div class="mt-3 p-2 rounded" style="background:#faf6ee;font-size:.85rem;color:#4a5560;">
+                        <div class="mt-3 p-2 rounded" style="background:var(--eim-cream);font-size:.85rem;color:var(--eim-ink-soft);">
                             <strong>Commentaire :</strong> {{ $bon->commentaire }}
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-carte>
 
             {{-- Mouvements générés --}}
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-exchange-alt me-1" style="color:var(--school-gold-dark);"></i>
@@ -212,10 +212,7 @@
                 </div>
                 <div class="card-body p-0">
                     @if ($bon->mouvements->isEmpty())
-                        <div class="empty-state">
-                            <i class="fas fa-inbox"></i>
-                            <p class="mb-0">Aucun mouvement généré.</p>
-                        </div>
+                        <x-vide icone="fas fa-inbox" :paragraphe="false"><p class="mb-0">Aucun mouvement généré.</p></x-vide>
                     @else
                         @foreach ($bon->mouvements as $m)
                             @php $t = $m->type_mouvement; @endphp
@@ -236,12 +233,12 @@
                         @endforeach
                     @endif
                 </div>
-            </div>
+            </x-carte>
         </div>
 
         {{-- Colonne droite : lignes du bon --}}
         <div class="col-lg-7">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-list me-1" style="color:var(--school-gold-dark);"></i>
@@ -251,13 +248,9 @@
                 </div>
                 <div class="card-body p-0">
                     @if ($bon->details->isEmpty())
-                        <div class="empty-state">
-                            <i class="fas fa-box-open"></i>
-                            <p class="mb-0">Aucune ligne.</p>
-                        </div>
+                        <x-vide icone="fas fa-box-open" :paragraphe="false"><p class="mb-0">Aucune ligne.</p></x-vide>
                     @else
-                        <div class="table-responsive">
-                            <table class="table table-lignes mb-0">
+                        <x-tableau class="table-lignes mb-0">
                                 <thead>
                                     <tr>
                                         <th class="ps-4">Produit</th>
@@ -300,11 +293,10 @@
                                         </tr>
                                     </tfoot>
                                 @endif
-                            </table>
-                        </div>
+                            </x-tableau>
                     @endif
                 </div>
-            </div>
+            </x-carte>
         </div>
     </div>
 </div>

@@ -13,7 +13,8 @@ class Relance extends Model
     protected $table = 'relances';
 
     protected $fillable = [
-        'dossier_recouvrement_id', 'type_relance', 'date_relance', 'contenu',
+        'dossier_recouvrement_id', 'inscription_id', 'type_relance', 'date_relance', 'contenu',
+        'destinataire', 'statut_envoi', 'lot',
         'montant_du_moment', 'resultat', 'date_prochaine_relance',
         'utilisateur_id', 'message_id', 'annee_id', 'etat',
     ];
@@ -29,6 +30,22 @@ class Relance extends Model
     public function dossier(): BelongsTo
     {
         return $this->belongsTo(DossierRecouvrement::class, 'dossier_recouvrement_id');
+    }
+
+    /** Élève relancé (avec ou sans dossier). */
+    public function inscription(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domain\Scolarite\Models\Inscription::class, 'inscription_id');
+    }
+
+    public function libelleStatutEnvoi(): string
+    {
+        return match ($this->statut_envoi) {
+            'envoye'            => 'Envoyé',
+            'echec'             => 'Échec',
+            'sans_destinataire' => 'Sans destinataire',
+            default             => 'À envoyer',
+        };
     }
 
     public function auteur(): BelongsTo

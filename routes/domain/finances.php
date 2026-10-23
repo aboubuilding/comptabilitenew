@@ -15,7 +15,6 @@ use App\Http\Controllers\Domain\Finances\PrevisionController;
 use App\Http\Controllers\Domain\Finances\RecouvrementController;
 use App\Http\Controllers\Domain\Finances\RegleVentilationController;
 use App\Http\Controllers\Domain\Finances\SouscriptionController;
-use App\Http\Controllers\Domain\Finances\TrancheController;
 use App\Http\Controllers\Domain\Finances\VentilationController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +46,9 @@ Route::prefix('frais-ecoles')->name('frais-ecoles.')->group(function () {
     Route::get('/export',          [FraisEcoleController::class, 'export']) ->name('export');
     // /export-pdf est déclaré AVANT /{frais}, sinon il est pris pour un identifiant.
     Route::get('/export-pdf', [FraisEcoleController::class, 'exportPdf'])->name('exportPdf');
+    // Alimente les produits, activités ou événements à partir des frais de l'année de l'en-tête
+    Route::post('/synchroniser/{cible}', [FraisEcoleController::class, 'synchroniser'])
+        ->whereIn('cible', ['produits', 'activites', 'evenements'])->name('synchroniser');
     Route::get('/{frais}/edit', [FraisEcoleController::class, 'edit'])->name('edit')->whereNumber('frais');
     Route::get('/{frais}', [FraisEcoleController::class, 'show'])->name('show')->whereNumber('frais');
     
@@ -56,8 +58,19 @@ Route::prefix('frais-ecoles')->name('frais-ecoles.')->group(function () {
 /* ---------- 2.1 Plans d'échéancier ---------- */
 Route::prefix('plan-echeanciers')->name('plan-echeanciers.')->group(function () {
     Route::get('/',                [PlanEcheancierController::class, 'index'])  ->name('index');
+    // Conversion des anciennes tranches (déclarées AVANT /{plan})
+    Route::get('/conversion-tranches',  [PlanEcheancierController::class, 'apercuConversion']) ->name('conversion.apercu');
+    Route::post('/conversion-tranches', [PlanEcheancierController::class, 'convertirTranches'])->name('conversion.executer');
+    // Élèves non à jour à une date, tous échéanciers en cours confondus (AVANT /{plan})
+    Route::get('/non-a-jour',            [PlanEcheancierController::class, 'nonAJour'])         ->name('non-a-jour');
+    Route::get('/non-a-jour/export',     [PlanEcheancierController::class, 'nonAJourExport'])   ->name('non-a-jour.export');
+    Route::get('/non-a-jour/export-pdf', [PlanEcheancierController::class, 'nonAJourExportPdf'])->name('non-a-jour.exportPdf');
+    // Élèves à jour / en retard à chaque échéance d'un plan
+    Route::get('/{plan}/eleves',        [PlanEcheancierController::class, 'eleves'])->whereNumber('plan')->name('eleves');
+    Route::get('/{plan}/eleves/export',     [PlanEcheancierController::class, 'elevesExport'])->whereNumber('plan')->name('eleves.export');
+    Route::get('/{plan}/eleves/export-pdf', [PlanEcheancierController::class, 'elevesExportPdf'])->whereNumber('plan')->name('eleves.exportPdf');
     Route::post('/',               [PlanEcheancierController::class, 'store'])  ->name('store');
-    Route::get('/{plan}',          [PlanEcheancierController::class, 'show'])   ->name('show');
+    Route::get('/{plan}',          [PlanEcheancierController::class, 'show'])   ->whereNumber('plan')->name('show');
     Route::put('/{plan}',          [PlanEcheancierController::class, 'update']) ->name('update');
     Route::delete('/{plan}',       [PlanEcheancierController::class, 'destroy'])->name('destroy');
 });
@@ -69,14 +82,13 @@ Route::prefix('souscriptions')->name('souscriptions.')->group(function () {
     Route::put('/{souscription}',      [SouscriptionController::class, 'update']) ->name('update');
     Route::delete('/{souscription}',   [SouscriptionController::class, 'destroy'])->name('destroy');
     Route::get('/export',              [SouscriptionController::class, 'export']) ->name('export');
+    Route::get('/export-pdf',          [SouscriptionController::class, 'exportPdf'])->name('exportPdf');
+    Route::post('/synchroniser',       [SouscriptionController::class, 'synchroniser'])->name('synchroniser');
+    Route::get('/{souscription}/paiements', [SouscriptionController::class, 'paiements'])->whereNumber('souscription')->name('paiements');
 });
 
-Route::prefix('tranches')->name('tranches.')->group(function () {
-    Route::get('/',              [TrancheController::class, 'index'])  ->name('index');
-    Route::post('/',             [TrancheController::class, 'store'])  ->name('store');
-    Route::put('/{tranche}',     [TrancheController::class, 'update']) ->name('update');
-    Route::delete('/{tranche}',  [TrancheController::class, 'destroy'])->name('destroy');
-});
+// Les tranches sont remplacées par les plans d'échéancier : l'ancienne adresse y renvoie.
+Route::redirect('/tranches', '/finances/plan-echeanciers')->middleware('permission:frais.voir')->name('tranches.index');
     /* ==========================================================
      | 2.2 — Paiements (saisie par le Comptable)
      |========================================================== */
@@ -117,6 +129,17 @@ Route::prefix('encaissements')->name('encaissements.')->group(function () {
     Route::get('/{detail}/recu',                          [EncaissementController::class, 'recuPdf'])             ->name('recu');
 });
     /* ==========================================================
+     | 2.3 bis — Décaissements (sorties de caisse des dépenses validées)
+     |========================================================== */
+    Route::prefix('decaissements')->name('decaissements.')->group(function () {
+        Route::get('/',                             [\App\Http\Controllers\Domain\Finances\DecaissementController::class, 'index'])    ->name('index');
+        Route::post('/depense/{depense}/decaisser', [\App\Http\Controllers\Domain\Finances\DecaissementController::class, 'decaisser'])->name('decaisser')
+            ->whereNumber('depense');
+        Route::post('/depense/{depense}/justificatif', [\App\Http\Controllers\Domain\Finances\DecaissementController::class, 'justificatif'])->name('justificatif')
+            ->whereNumber('depense');
+    });
+
+    /* ==========================================================
      | 2.4 — Caisses (ouverture / clôture / journal)
      |========================================================== */
     Route::prefix('caisses')->name('caisses.')->group(function () {
@@ -150,6 +173,8 @@ Route::prefix('encaissements')->name('encaissements.')->group(function () {
         Route::put('/{banque}',             [BanqueController::class, 'update'])   ->name('update');
         Route::delete('/{banque}',          [BanqueController::class, 'destroy'])  ->name('destroy');
         Route::get('/{banque}/export-pdf',  [BanqueController::class, 'exportPdf'])->name('exportPdf');
+        Route::get('/{banque}/paiements/{paiement}', [BanqueController::class, 'paiement'])->name('paiement')
+            ->whereNumber(['banque', 'paiement']);
 
         // --- Rapprochement bancaire (imbriqué dans une banque) ---
         Route::prefix('{banque}/rapprochement')->name('rapprochement.')->group(function () {
@@ -166,6 +191,7 @@ Route::prefix('encaissements')->name('encaissements.')->group(function () {
         Route::post('/',                    [ChequeController::class, 'store'])     ->name('store');
         Route::get('/export',               [ChequeController::class, 'export'])    ->name('export');
         Route::post('/{cheque}/rapprocher', [ChequeController::class, 'rapprocher'])->name('rapprocher');
+        Route::get('/{cheque}/paiement',    [ChequeController::class, 'paiement'])  ->name('paiement')->whereNumber('cheque');
     });
 
     /* ==========================================================
@@ -177,6 +203,7 @@ Route::prefix('encaissements')->name('encaissements.')->group(function () {
         Route::post('/',                    [DepenseController::class, 'store'])   ->name('store');
         Route::get('/export',               [DepenseController::class, 'export'])  ->name('export');
         Route::get('/export-pdf',           [DepenseController::class, 'exportPdf'])->name('exportPdf');
+        Route::post('/generer-depuis-decaissements', [DepenseController::class, 'genererDepuisDecaissements'])->name('generer-depuis-decaissements');
         Route::put('/{depense}',            [DepenseController::class, 'update'])  ->name('update');
         Route::delete('/{depense}',         [DepenseController::class, 'destroy']) ->name('destroy');
         Route::post('/{depense}/valider',   [DepenseController::class, 'valider']) ->name('valider');
@@ -239,6 +266,7 @@ Route::prefix('previsions')->name('previsions.')->group(function () {
     Route::get('/',               [PrevisionController::class, 'index'])  ->name('index');
     Route::post('/',              [PrevisionController::class, 'store'])  ->name('store');
     Route::put('/{prevision}',    [PrevisionController::class, 'update']) ->name('update');
+    Route::get('/{prevision}/depenses', [PrevisionController::class, 'depenses'])->name('depenses')->whereNumber('prevision');
     Route::delete('/{prevision}', [PrevisionController::class, 'destroy'])->name('destroy');
 });
 
@@ -255,7 +283,10 @@ Route::prefix('recouvrement')->name('recouvrement.')->group(function () {
     Route::get('/',              [RecouvrementController::class, 'index'])      ->name('index');
     Route::get('/export',        [RecouvrementController::class, 'export'])     ->name('export');
     Route::post('/recalculer',   [RecouvrementController::class, 'recalculer']) ->name('recalculer');
-    Route::get('/{dossier}',     [RecouvrementController::class, 'show'])       ->name('show');
+    Route::get('/planification', [RecouvrementController::class, 'planification'])->name('planification');
+    Route::post('/relances',     [RecouvrementController::class, 'relancerParMessage'])->name('relances');
+    Route::post('/relances/envoyer', [RecouvrementController::class, 'envoyerRelances'])->name('relances.envoyer');
+    Route::get('/{dossier}',     [RecouvrementController::class, 'show'])       ->name('show')->whereNumber('dossier');
     Route::post('/{dossier}/relancer', [RecouvrementController::class, 'storeRelance'])->name('relancer');
     Route::post('/{dossier}/statut',   [RecouvrementController::class, 'changerStatut'])->name('statut');
 });

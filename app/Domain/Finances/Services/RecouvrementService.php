@@ -13,13 +13,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Reconstruit les situations de recouvrement à partir des données sources
- * (inscriptions, souscriptions, abonnements, details d'encaissement...).
+ * Recouvrement : les dossiers des élèves en retard sur les plans d'échéancier.
  *
- * Deux modes :
- *  - recalculerTout()       : reconstruit la photo du jour pour toutes les
- *                             inscriptions actives (appelé par le job nocturne).
- *  - recalculerUne()        : recalcule une seule inscription + nature.
+ *  - recalculerTout() : pour l'année, chaque élève qui n'a pas réglé une
+ *    échéance dont la date butoir est passée a un dossier ouvert (montant
+ *    échu, payé, restant) ; un élève revenu à jour voit son dossier soldé.
+ *    Lancé par le bouton « Recalculer » et chaque nuit à 2 h.
+ *  - recalculerUne()  : photo d'une seule inscription + nature (engagements).
  */
 class RecouvrementService
 {
@@ -33,49 +33,130 @@ class RecouvrementService
     ) {}
 
     /**
-     * Reconstruit la photo du jour pour toutes les inscriptions actives.
-     * Écrase les enregistrements existants pour la même date.
+     * Dossiers de recouvrement de l'année : un dossier par élève qui doit une
+     * échéance échue (date passée, non couverte) — scolarité des plans
+     * d'échéancier, mois de cantine ou de transport. Le dossier liste ses
+     * échéances réclamées et le montant réclamé ; il est repris à chaque
+     * recalcul. Quand l'élève est revenu à jour, son dossier est clôturé et
+     * garde le paiement qui l'a soldé. Relançable sans doublon.
+     *
+     * @return array{echus:int, dossiers_ouverts:int, dossiers_maj:int, dossiers_soldes:int, retard:float}
      */
-    public function recalculerTout(?int $anneeId = null): array
+    public function recalculerTout(?int $anneeId = null, ?\DateTimeInterface $jour = null): array
     {
         $anneeId ??= app(AnneeScolaireContext::class)->id();
-        $dateCalcul = now()->toDateString();
+        $jour = \Illuminate\Support\Carbon::instance($jour ?? now())->startOfDay();
+        $dateCalcul = $jour->toDateString();
 
-        $inscriptionsActives = $this->inscriptionsActives($anneeId);
+        $eleves = app(EcheancesEleveService::class)->elevesNonAJour((int) $anneeId, $jour);
+        $stats = [
+            'echus' => $eleves->count(), 'dossiers_ouverts' => 0, 'dossiers_maj' => 0, 'dossiers_soldes' => 0,
+            'retard' => round($eleves->sum('reste'), 2),
+        ];
 
-        $stats = ['situations' => 0, 'dossiers_ouverts' => 0, 'dossiers_maj' => 0];
+        DB::transaction(function () use ($eleves, $anneeId, $jour, $dateCalcul, &$stats) {
+            $enRetard = [];
 
-        DB::transaction(function () use ($inscriptionsActives, $anneeId, $dateCalcul, &$stats) {
-            foreach ($inscriptionsActives as $inscription) {
-                // Les engagements de l'inscription sont lus une fois pour toutes ses natures
-                $dus = $this->engagements->duParNature($inscription->id);
+            foreach ($eleves as $eleve) {
+                $inscriptionId = (int) $eleve['inscription_id'];
+                $enRetard[] = $inscriptionId;
+                $natures = $eleve['natures'];
+                $naturePrincipale = in_array('scolarite', $natures, true) ? 'scolarite' : $natures[0];
 
-                foreach ($this->naturesApplicables($inscription) as $nature) {
-                    $situation = $this->recalculerSituation(
-                        inscriptionId: $inscription->id,
-                        nature: $nature,
-                        anneeId: $anneeId,
-                        dateCalcul: $dateCalcul,
-                        montantDu: $dus[$nature] ?? null,
+                // Photo du jour, par nature
+                foreach (collect($eleve['echeances'])->groupBy('nature') as $nature => $echeances) {
+                    $premiere = $echeances->min(fn ($e) => $e['date']);
+                    SituationRecouvrement::updateOrCreate(
+                        ['inscription_id' => $inscriptionId, 'nature' => $nature, 'date_calcul' => $dateCalcul],
+                        ['montant_du' => round($echeances->sum('montant'), 2), 'montant_paye' => round($echeances->sum('paye'), 2),
+                         'retard' => round($echeances->sum('reste'), 2),
+                         'jours_retard' => $premiere ? (int) $premiere->copy()->startOfDay()->diffInDays($jour) : 0,
+                         'annee_id' => $anneeId, 'etat' => 1]
                     );
-
-                    if (! $situation) continue;
-
-                    $stats['situations']++;
-
-                    // Ouvre / met à jour le dossier si seuil atteint
-                    if ($this->doitOuvrirDossier($situation)) {
-                        $resultat = $this->ouvrirOuMajDossier($inscription->id, $nature, $situation, $anneeId);
-                        if ($resultat === 'ouvert') $stats['dossiers_ouverts']++;
-                        if ($resultat === 'maj')    $stats['dossiers_maj']++;
-                    }
                 }
+
+                // Un seul dossier par élève (toutes natures)
+                $dossier = $this->dossiers->dossierOuvertPour($inscriptionId);
+                $valeurs = ['montant_initial_du' => $eleve['montant'], 'montant_recouvre' => $eleve['paye'], 'nature' => $naturePrincipale];
+                if (! $dossier) {
+                    $dossier = $this->dossiers->create($valeurs + [
+                        'inscription_id' => $inscriptionId,
+                        'statut'         => DossierStatut::EN_COURS->value,
+                        'date_ouverture' => $dateCalcul,
+                        'annee_id'       => $anneeId,
+                    ]);
+                    $stats['dossiers_ouverts']++;
+                } elseif (abs((float) $dossier->montant_initial_du - $eleve['montant']) > 0.01
+                    || abs((float) $dossier->montant_recouvre - $eleve['paye']) > 0.01) {
+                    $this->dossiers->update($dossier->id, $valeurs);
+                    $stats['dossiers_maj']++;
+                }
+
+                // Échéances réclamées : reprises à chaque recalcul
+                DB::table('dossier_recouvrement_echeances')->where('dossier_recouvrement_id', $dossier->id)->delete();
+                DB::table('dossier_recouvrement_echeances')->insert(array_map(fn ($e) => [
+                    'dossier_recouvrement_id' => $dossier->id,
+                    'nature'        => $e['nature'],
+                    'libelle'       => $e['libelle'],
+                    'date_echeance' => $e['date']?->toDateString(),
+                    'montant'       => $e['montant'],
+                    'montant_paye'  => $e['paye'],
+                    'reste'         => $e['reste'],
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ], $eleve['echeances']));
+            }
+
+            // Élèves revenus à jour : dossier clôturé, avec le paiement qui l'a soldé
+            $aSolder = DossierRecouvrement::query()
+                ->where('etat', 1)
+                ->where('annee_id', $anneeId)
+                ->whereNotIn('statut', [DossierStatut::SOLDE->value, DossierStatut::IRRECOUVRABLE->value])
+                ->when($enRetard !== [], fn ($q) => $q->whereNotIn('inscription_id', $enRetard))
+                ->get();
+            foreach ($aSolder as $dossier) {
+                $this->dossiers->update($dossier->id, [
+                    'montant_recouvre'    => $dossier->montant_initial_du,
+                    'statut'              => DossierStatut::SOLDE->value,
+                    'date_cloture'        => $dateCalcul,
+                    'motif_cloture'       => 'À jour de ses échéances au recalcul',
+                    'paiement_cloture_id' => $this->paiementDeCloture($dossier),
+                ]);
+                DB::table('dossier_recouvrement_echeances')->where('dossier_recouvrement_id', $dossier->id)
+                    ->update(['montant_paye' => DB::raw('montant'), 'reste' => 0, 'updated_at' => now()]);
+                $stats['dossiers_soldes']++;
             }
         });
 
         Log::info('Recouvrement recalculé', $stats + ['date' => $dateCalcul, 'annee_id' => $anneeId]);
 
         return $stats;
+    }
+
+    /**
+     * Paiement qui a soldé le dossier : le dernier encaissement de l'élève sur
+     * les natures réclamées (depuis l'ouverture du dossier, à défaut le dernier).
+     */
+    private function paiementDeCloture(DossierRecouvrement $dossier): ?int
+    {
+        $types = DB::table('dossier_recouvrement_echeances')->where('dossier_recouvrement_id', $dossier->id)
+            ->distinct()->pluck('nature')
+            ->map(fn ($n) => ['scolarite' => \App\Domain\Finances\Types\TypeDetail::FRAIS_SCOLAIRE, 'cantine' => \App\Domain\Finances\Types\TypeDetail::CANTINE,
+                              'bus' => \App\Domain\Finances\Types\TypeDetail::BUS][$n]->value ?? null)
+            ->filter()->values()->all();
+
+        $requete = fn () => DB::table('details as d')
+            ->where('d.inscription_id', $dossier->inscription_id)
+            ->where('d.etat', 1)
+            ->where('d.statut_paiement', \App\Domain\Finances\Types\PaiementStatut::ENCAISSE->value)
+            ->when($types !== [], fn ($q) => $q->whereIn('d.type_paiement', $types))
+            ->whereNotNull('d.paiement_id')
+            ->orderByRaw('COALESCE(d.date_encaissement, d.date_paiement, d.created_at) DESC')->orderByDesc('d.id');
+
+        $depuis = $dossier->date_ouverture?->toDateString();
+
+        return ($depuis ? $requete()->whereRaw('COALESCE(d.date_encaissement, d.date_paiement, DATE(d.created_at)) >= ?', [$depuis])->value('d.paiement_id') : null)
+            ?? $requete()->value('d.paiement_id');
     }
 
     /** Recalcule une seule situation (inscription + nature). */

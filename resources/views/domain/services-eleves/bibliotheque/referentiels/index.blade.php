@@ -11,15 +11,15 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.bibliotheque.livres.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-book me-1"></i> Catalogue
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .ref-page { --r-bg-soft:#faf6ee; --r-border:#ece4d6; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
+    .ref-page { --r-bg-soft:var(--eim-cream); --r-border:var(--eim-border); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
     .nav-tabs-custom { border-bottom:1px solid var(--r-border); padding:0 1.25rem; }
     .nav-tabs-custom .nav-link { border:none; color:var(--school-muted); font-weight:600; font-size:.88rem; padding:.85rem 1rem; border-bottom:2px solid transparent; }
     .nav-tabs-custom .nav-link.active { color:var(--school-red); border-bottom-color:var(--school-red); }
@@ -29,7 +29,7 @@
         padding:.75rem 1rem; border-bottom:1px solid var(--r-border);
         transition:background .15s;
     }
-    .ref-item:hover { background:#fdfaf5; }
+    .ref-item:hover { background:var(--eim-hover); }
     .ref-item:last-child { border-bottom:none; }
     .ref-item-label { font-weight:600; color:var(--school-ink); }
     .ref-item-count { font-size:.75rem; color:var(--school-muted); }
@@ -60,7 +60,7 @@
 
 @section('contenu')
 <div class="ref-page">
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white p-0 border-bottom-0">
             <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -117,6 +117,6 @@
                 </div>
             </div>
         </div>
-    </div>
+    </x-carte>
 </div>
 @endsection

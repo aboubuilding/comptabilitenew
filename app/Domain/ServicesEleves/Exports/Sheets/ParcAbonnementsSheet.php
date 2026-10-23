@@ -25,7 +25,7 @@ class ParcAbonnementsSheet implements FromCollection, WithHeadings, WithTitle, S
     {
         return [
             'Élève', 'Matricule', 'Classe', 'Zone', 'Véhicule', 'Ligne',
-            'Sens', 'Point d\'arrêt', 'Mensuel', 'Nb mois', 'Total dû',
+            'Sens', 'Position GPS', 'Mensuel', 'Nb mois', 'Total dû',
             'Statut', 'Début', 'Fin',
         ];
     }
@@ -52,7 +52,7 @@ class ParcAbonnementsSheet implements FromCollection, WithHeadings, WithTitle, S
                 $a->voiture?->plaque,
                 $a->ligne?->libelle,
                 $a->sens?->label(),
-                $a->point_arret,
+                $a->aUnePosition() ? "{$a->latitude}, {$a->longitude}" : '',
                 (float) $a->montant_mensuel,
                 $a->nombre_mois,
                 (float) $a->montant_total_du,

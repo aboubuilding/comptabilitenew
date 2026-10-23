@@ -9,43 +9,40 @@ import { actionDeLigne, attendreToast, confirmer, expect, seConnecter, test } fr
  */
 const ligneDe = (page: Page, texte: string | RegExp) => page.locator('tbody tr').filter({ hasText: texte });
 
-test.describe('2.9 Prévisions budgétaires', () => {
-  test('le Comptable saisit une prévision de dépense rattachée à un centre, puis la modifie', async ({ page }) => {
+test.describe('2.9 Lignes budgétaires', () => {
+  test('le Comptable crée une ligne budgétaire (libellé et montant global seulement), puis la modifie', async ({ page }) => {
     await seConnecter(page, 'comptable');
     await page.goto('/finances/previsions');
 
-    for (const colonne of ['Libellé', 'Type', 'Période', 'Prévisionnel', 'Réalisé', 'Écart']) {
+    for (const colonne of ['Ligne budgétaire', 'Montant global', 'Dépenses', 'Reste']) {
       await expect(page.locator('thead th').filter({ hasText: colonne }).first()).toBeVisible();
     }
 
     await page.locator('#btnNouvellePrevision').click();
+    // Ni type (dépense / recette), ni dates
+    await expect(page.locator('#previsionModal [name=type], #previsionModal [name=date_debut], #previsionModal [name=date_fin]')).toHaveCount(0);
     await page.locator('#prev-libelle').fill('Denrées cantine T1');
-    await page.locator('#prev-type').selectOption({ label: 'Dépense' });
     await page.locator('#prev-montant').fill('900000');
-    await page.locator('#prev-centre').selectOption({ label: 'CANT — Cantine' });
-    await page.locator('#prev-debut').fill('2026-09-15');
-    await page.locator('#prev-fin').fill('2026-12-20');
+    await page.locator('#prev-centre').selectOption({ label: 'CANT — Cantine' });   // facultatif
     await page.locator('#prev-form button[type=submit]').click();
     await attendreToast(page);
 
     let ligne = ligneDe(page, 'Denrées cantine T1');
-    await expect(ligne).toContainText('Dépense');
-    await expect(ligne).toContainText('CANT');
-    await expect(ligne).toContainText('15/09/2026 → 20/12/2026');
-    await expect(ligne).toContainText('900 000,00');
+    await expect(ligne).toContainText(/900\s000 F/);
+    await expect(ligne).toContainText('CANT — Cantine');
 
     await actionDeLigne(page, 'Denrées cantine T1', 'Modifier');
     await expect(page.locator('#prev-libelle')).toHaveValue('Denrées cantine T1');
-    await expect(page.locator('#prev-debut')).toHaveValue('2026-09-15');
+    await expect(page.locator('#prev-centre option:checked')).toHaveText('CANT — Cantine');
     await page.locator('#prev-montant').fill('950000');
     await page.locator('#prev-form button[type=submit]').click();
     await attendreToast(page);
 
     ligne = ligneDe(page, 'Denrées cantine T1');
-    await expect(ligne).toContainText('950 000,00');
+    await expect(ligne).toContainText(/950\s000 F/);
   });
 
-  test('une prévision sans libellé ni montant est refusée', async ({ page }) => {
+  test('une ligne budgétaire sans libellé ni montant est refusée', async ({ page }) => {
     await seConnecter(page, 'comptable');
     await page.goto('/finances/previsions');
     await page.locator('#btnNouvellePrevision').click();
@@ -56,33 +53,83 @@ test.describe('2.9 Prévisions budgétaires', () => {
     await expect(page.locator('#montant_previsionnel-error')).not.toBeEmpty();
   });
 
-  test('la Direction saisit une prévision de recette et supprime une prévision', async ({ page }) => {
+  test('une dépense « sur ligne budgétaire » exige sa ligne, et ne lui est imputée qu\'une fois décaissée', async ({ page }) => {
+    await seConnecter(page, 'comptable');
+    await page.goto('/finances/depenses');
+    await page.locator('#btnNouvelleDepense').click();
+    const formulaire = page.locator('#depense-form');
+    await formulaire.locator('[name=libelle]').fill('Riz et huile');
+    await formulaire.locator('[name=beneficiaire]').fill('Marché de Hédzranawoé');
+    await formulaire.locator('[name=montant]').fill('40000');
+
+    // Hors ligne par défaut ; « sur ligne budgétaire » fait apparaître la ligne, obligatoire
+    await expect(formulaire.locator('#imputation-hors-ligne')).toBeChecked();
+    await expect(formulaire.locator('#bloc-ligne-budgetaire')).toBeHidden();
+    await formulaire.locator('#imputation-ligne').check();
+    await expect(formulaire.locator('#bloc-ligne-budgetaire')).toBeVisible();
+    await expect(formulaire.locator('[name=ligne_budgetaire_id]')).toHaveAttribute('required', '');
+    const ligneBudget = await formulaire.locator('[name=ligne_budgetaire_id] option', { hasText: 'Denrées cantine T1' }).getAttribute('value');
+    await formulaire.locator('[name=ligne_budgetaire_id]').selectOption(ligneBudget!);
+    await formulaire.locator('button[type=submit]').click();
+    await attendreToast(page);
+    await expect(ligneDe(page, 'Riz et huile')).toContainText('Ligne : Denrées cantine T1');
+
+    // Pas encore décaissée : rien n'est imputé à la ligne
+    await page.goto('/finances/previsions');
+    let ligne = ligneDe(page, 'Denrées cantine T1');
+    await expect(ligne).toContainText(/40\s000 F en attente de décaissement/);
+    await expect(ligne).toContainText(/950\s000 F/);   // reste intact
+
+    // Le Caissier la décaisse depuis sa caisse ouverte
+    await seConnecter(page, 'caissier');
+    await page.goto('/finances/caisses');
+    if ((await page.locator('tbody tr').filter({ hasText: 'Ouverte' }).count()) === 0) {
+      await page.locator('[data-bs-target="#caisseModal"]').click();
+      const modale = page.locator('#caisseModal');
+      await modale.locator('[name=libelle]').fill('Caisse lignes budgétaires');
+      await modale.locator('[name=solde_initial]').fill('100000');
+      await modale.locator('button[type=submit]').click();
+      await attendreToast(page);
+    }
+    await page.goto('/finances/decaissements?onglet=attente');
+    await page.locator('#table-attente tbody tr').filter({ hasText: 'Riz et huile' }).locator('.btn-decaisser').click();
+    await page.locator('#dec-valider').click();
+    await attendreToast(page, 'Décaissement enregistré');
+
+    // Décaissée : imputée à la ligne, avec la caisse du décaissement
+    await seConnecter(page, 'comptable');
+    await page.goto('/finances/previsions');
+    ligne = ligneDe(page, 'Denrées cantine T1');
+    await expect(ligne).toContainText(/40\s000 F/);
+    await expect(ligne).toContainText(/910\s000 F/);   // reste
+    await expect(ligne).not.toContainText('en attente de décaissement');
+    await actionDeLigne(page, 'Denrées cantine T1', 'Voir les dépenses');
+    const fenetre = page.locator('#depensesLigneModal #depenses-ligne');
+    await expect(fenetre).toContainText('Riz et huile');
+    await expect(fenetre).toContainText('Décaissée');
+    await expect(fenetre).not.toContainText('Pas encore décaissée');
+  });
+
+  test('la Direction crée et supprime une ligne budgétaire', async ({ page }) => {
     await seConnecter(page, 'directeur');
     await page.goto('/finances/previsions');
 
     await page.locator('#btnNouvellePrevision').click();
-    await page.locator('#prev-libelle').fill('Écolages T1');
-    await page.locator('#prev-type').selectOption({ label: 'Recette' });
-    await page.locator('#prev-montant').fill('5000000');
+    await page.locator('#prev-libelle').fill('Sorties pédagogiques');
+    await page.locator('#prev-montant').fill('500000');
     await page.locator('#prev-form button[type=submit]').click();
     await attendreToast(page);
-    await expect(ligneDe(page, 'Écolages T1')).toContainText('Recette');
+    await expect(ligneDe(page, 'Sorties pédagogiques')).toContainText(/500\s000 F/);
 
-    // Filtre par type
-    await page.locator('form[method=GET] select[name=type]').selectOption({ label: 'Recette' });
-    await page.locator('form[method=GET] button[type=submit]').click();
-    await expect(page.locator('tbody')).toContainText('Écolages T1');
-    await expect(page.locator('tbody')).not.toContainText('Denrées cantine T1');
-
-    const ligne = ligneDe(page, 'Écolages T1');
+    const ligne = ligneDe(page, 'Sorties pédagogiques');
     await ligne.locator('.btn-action').click();
     await ligne.locator('form button[type=submit]').click();
     await confirmer(page);
     await attendreToast(page);
-    await expect(page.locator('tbody')).not.toContainText('Écolages T1');
+    await expect(page.locator('tbody')).not.toContainText('Sorties pédagogiques');
   });
 
-  test('le Contrôleur de gestion consulte les prévisions sans pouvoir les modifier', async ({ page }) => {
+  test('le Contrôleur de gestion consulte les lignes budgétaires sans pouvoir les modifier', async ({ page }) => {
     await seConnecter(page, 'controleur');
     await page.goto('/finances/previsions');
 
@@ -156,7 +203,7 @@ test.describe('2.7 Comptabilité analytique', () => {
       await expect(page.locator('thead th').filter({ hasText: colonne }).first()).toBeVisible();
     }
     // Le centre Cantine figure au rapport même sans écriture, avec son budget
-    // (une prévision de dépense de 950 000 → budget net de −950 000).
+    // (la ligne budgétaire « Denrées cantine T1 » de 950 000 lui est rattachée → budget net de −950 000).
     const cantine = ligneDe(page, 'Cantine');
     await expect(cantine).toBeVisible();
     await expect(cantine).toContainText('950 000');
@@ -174,7 +221,11 @@ test.describe('2.7 Comptabilité analytique', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Finances' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord analytique' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord analytique' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord analytique' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
     await expect(page.locator('main')).toContainText(/Recettes|Dépenses|Résultat/);
 
@@ -192,42 +243,44 @@ test.describe('2.8 Recouvrement', () => {
   const ELEVE = 'KOFFI Kossi';
   const MATRICULE = 'E2E0002';
 
-  test('un impayé ancien ouvre automatiquement un dossier au recalcul', async ({ page }) => {
-    // Engagement : le Comptable souscrit l'écolage (469 000) pour un élève inscrit depuis 45 jours
-    await seConnecter(page, 'comptable');
-    await page.goto('/finances/souscriptions');
-    await page.locator('[data-bs-target="#souscModal"]').click();
-    const modale = page.locator('#souscModal');
-    const frais = await modale.locator('[name=frais_ecole_id] option', { hasText: 'Scolarité CP' }).getAttribute('value');
-    await modale.locator('[name=frais_ecole_id]').selectOption(frais!);
-    await modale.locator('.select2-selection').click();
-    await page.locator('.select2-search__field').fill('Kossi');
-    await page.locator('.select2-results__option', { hasText: MATRICULE }).click();
-    await modale.locator('button[type=submit]').click();
-    await attendreToast(page);
+  test('le recalcul ouvre un dossier pour chaque élève en retard sur une échéance échue', async ({ page }) => {
+    // Échéancier de la scolarité du CP : T1 (200 000) échue depuis 30 jours, T2 à venir
 
-    // Recalcul des situations par le Chargé de recouvrement
+    // Recalcul par le Chargé de recouvrement, sur l'année de l'en-tête (plus de sélecteur d'année)
     await seConnecter(page, 'recouvrement');
     await page.goto('/finances/recouvrement');
-    page.once('dialog', (dialogue) => dialogue.accept());
+    await expect(page.locator('#annee-recouvrement')).toBeVisible();
+    await expect(page.locator('form[method=GET] select[name=annee_id]')).toHaveCount(0);
+    // Confirmation puis bilan dans des fenêtres SweetAlert
     await page.locator('#btnRecalculer').click();
-    await attendreToast(page);
+    await expect(page.locator('.swal2-popup')).toContainText('Recalculer le recouvrement');
+    await confirmer(page);
+    await expect(page.locator('.swal2-popup')).toContainText('Recouvrement recalculé');
+    await expect(page.locator('.swal2-popup')).toContainText(/élève\(s\) en retard/);
+    await confirmer(page);
 
-    for (const colonne of ['Élève', 'Nature', 'Initial', 'Recouvré', 'Restant', 'Statut', 'Dernière relance']) {
-      await expect(page.locator('thead th').filter({ hasText: colonne }).first()).toBeVisible();
+    // Cinq colonnes, sans identifiant de dossier ; niveau et classe de l'élève ; échéances réclamées
+    await expect(page.locator('#table-dossiers thead th')).toHaveCount(5);
+    for (const colonne of ['Élève', 'Échéances réclamées', 'Montant réclamé', 'Statut', 'Actions']) {
+      await expect(page.locator('#table-dossiers thead th').filter({ hasText: colonne }).first()).toBeVisible();
     }
+    await expect(page.locator('#onglet-tous')).toHaveClass(/active/);
+    await expect(page.locator('#onglet-clotures')).toBeVisible();
+    await expect(page.locator('#onglet-relances')).toBeVisible();
 
     const dossier = ligneDe(page, ELEVE);
     await expect(dossier).toContainText(MATRICULE);
-    await expect(dossier).toContainText('CP A');
-    await expect(dossier).toContainText('469 000,00');
+    await expect(dossier).toContainText('CP · CP A');
+    await expect(dossier).toContainText('T1');
+    await expect(dossier).toContainText(/200\s000 F/);   // seule T1 est échue
     await expect(dossier).toContainText('En cours');
-    await expect(dossier).toContainText('Aucune');
+    await expect(dossier).toContainText('Aucune relance');
 
     // Recalculer une seconde fois ne crée pas de doublon
-    page.once('dialog', (dialogue) => dialogue.accept());
     await page.locator('#btnRecalculer').click();
-    await attendreToast(page);
+    await confirmer(page);
+    await expect(page.locator('.swal2-popup')).toContainText('0 dossier(s) ouvert(s)');
+    await confirmer(page);
     await expect(ligneDe(page, ELEVE)).toHaveCount(1);
   });
 
@@ -241,7 +294,7 @@ test.describe('2.8 Recouvrement', () => {
 
     await page.locator('input[name=search]').fill('inconnu-xyz');
     await page.locator('form[method=GET] button[type=submit]').click();
-    await expect(page.locator('tbody')).toContainText('Aucun dossier');
+    await expect(page.locator('tbody')).toContainText('Pas de dossiers');
   });
 
   test('le Chargé de recouvrement enregistre une relance avec son canal, sa date et son résultat', async ({ page }) => {
@@ -277,6 +330,75 @@ test.describe('2.8 Recouvrement', () => {
     await page.goto('/finances/recouvrement');
     await expect(ligneDe(page, ELEVE)).toContainText('01/10/2026');
     await expect(ligneDe(page, ELEVE)).toContainText('Promesse de paiement');
+  });
+
+  test('relance groupée par email depuis la liste, visible dans l\'historique des relances', async ({ page }) => {
+    await seConnecter(page, 'recouvrement');
+    await page.goto('/finances/recouvrement');
+
+    // Sélection de deux dossiers, puis « Relance groupée »
+    await page.locator('#table-dossiers .selection-dossier').nth(0).check();
+    await page.locator('#table-dossiers .selection-dossier').nth(1).check();
+    await expect(page.locator('#barre-selection')).toBeVisible();
+    await expect(page.locator('#nb-selection')).toHaveText('2');
+    await page.locator('#btn-relance-groupee').click();
+    const fenetre = page.locator('#relanceMessageModal');
+    await expect(fenetre.locator('#relance-nombre')).toHaveText('2');
+    await expect(fenetre.locator('#relance-message')).toHaveValue(/\{eleve\}/);
+    await fenetre.locator('#relance-canal-email').check();
+    await fenetre.locator('#relance-valider').click();
+    await attendreToast(page, /2 relance\(s\) enregistrée\(s\)/);
+
+    // Historique : l'appel du scénario précédent et les deux emails
+    await page.goto('/finances/recouvrement?onglet=relances&canal=email');
+    await expect(page.locator('#table-relances tbody tr')).toHaveCount(2);
+    await expect(page.locator('#table-relances tbody')).toContainText('Email');
+
+    // Envoi réel : désactivé en développement, messages et statuts conservés
+    await expect(page.locator('#envoi-desactive')).toBeVisible();
+    await page.locator('#tout-selectionner-relances').check();
+    await page.locator('#btn-envoyer-relances').click();
+    await confirmer(page);
+    await expect(page.locator('.swal2-popup')).toContainText('Envoi non disponible');
+    await confirmer(page);
+    await expect(page.locator('#table-relances tbody')).not.toContainText('Envoyé');
+  });
+
+  test('la planification montre les échéances à venir et relance préventivement par SMS', async ({ page }) => {
+    await seConnecter(page, 'recouvrement');
+    await page.goto('/finances/recouvrement');
+    await page.locator('#lien-planification').click();
+    await expect(page.locator('.page-title-main')).toContainText('Planification des relances');
+
+    // T2 de la scolarité du CP tombe dans 90 jours : qui ne sera pas à jour dans 100 jours, au CP, sur la T2
+    await expect(page.locator('#table-calendrier')).toHaveCount(0);
+    const dans = (jours: number) => new Date(Date.now() + jours * 86400000).toISOString().slice(0, 10);
+    await page.locator('#pl-jour').fill(dans(100));
+    await page.locator('#pl-nature').selectOption({ label: 'Écolage' });
+    await page.locator('#pl-niveau').selectOption({ label: 'CP' });
+    await page.locator('#pl-libelle').fill('T2');
+    await page.locator('#filtres-planification button[type=submit]').click();
+    const liste = page.locator('#table-non-a-jour tbody');
+    await expect(liste).toContainText(ELEVE);
+    await expect(liste).toContainText('T2');
+
+    // « Des élèves choisis » : Select2 parmi les élèves de la simulation
+    await page.locator('#btn-relance-ciblee').click();
+    await expect(page.locator('#relanceCibleeModal')).toBeVisible();
+    await expect(page.locator('#relance-eleves-choisis option').filter({ hasText: ELEVE })).toHaveCount(1);
+    await page.locator('#relanceCibleeModal .btn-annuler').click();
+
+    await liste.locator('tr').filter({ hasText: ELEVE }).locator('.btn-relancer-un').click();
+    const fenetre = page.locator('#relanceMessageModal');
+    await fenetre.locator('#relance-canal-sms').check();
+    await expect(fenetre.locator('#relance-message')).toHaveValue(/EIM/);
+    await fenetre.locator('#relance-valider').click();
+    await attendreToast(page, /1 relance\(s\) enregistrée\(s\)/);
+
+    await page.goto('/finances/recouvrement?onglet=relances&canal=sms');
+    await expect(page.locator('#table-relances tbody')).toContainText(ELEVE);
+    // L'élève a déjà un dossier ouvert : la relance s'y rattache ; le message cite l'échéance T2
+    await expect(page.locator('#table-relances tbody tr').filter({ hasText: ELEVE }).first()).toContainText('T2');
   });
 
   test('la Direction consulte le dossier et le fait passer en échéancier', async ({ page }) => {

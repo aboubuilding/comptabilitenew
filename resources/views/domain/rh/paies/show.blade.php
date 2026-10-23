@@ -12,23 +12,22 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('rh.paies.index') }}" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('rh.paies.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
-    <button type="button" onclick="window.print()" class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" type="button" onclick="window.print()" class="btn-sm rounded-pill px-3">
         <i class="fas fa-print me-1"></i> Imprimer
-    </button>
-    <a href="{{ route('rh.paies.exportPdf', $paie) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('rh.paies.exportPdf', $paie) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-pdf me-1"></i> PDF
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
     .bulletin-card {
         background:#fff; border-radius:16px;
-        box-shadow: 0 10px 30px rgba(122,15,28,.06);
+        box-shadow: 0 10px 30px rgba(142,18,22,.06);
         overflow:hidden; margin-bottom:1rem;
     }
     .bulletin-header {
@@ -49,7 +48,7 @@
     .bulletin-row.total .label,
     .bulletin-row.total .value { font-size:1.05rem; font-weight:800; color:var(--school-red-dark); padding-top:.75rem; border-top:2px solid var(--school-red); margin-top:.5rem; }
     .bulletin-row.net .label,
-    .bulletin-row.net .value { font-size:1.25rem; font-weight:800; color:#1c7a4d; padding-top:.75rem; border-top:2px solid #1c7a4d; margin-top:.5rem; }
+    .bulletin-row.net .value { font-size:1.25rem; font-weight:800; color:var(--eim-success); padding-top:.75rem; border-top:2px solid var(--eim-success); margin-top:.5rem; }
 
     .badge-statut {
         display:inline-flex; align-items:center; gap:6px;
@@ -57,7 +56,6 @@
         font-size:.72rem; font-weight:600;
         background:rgba(255,255,255,.18); color:#fff;
     }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
 
     /* Bloc mode de paiement */
     .mode-block {
@@ -77,14 +75,14 @@
         margin-top:1rem;
     }
     .retrait-block.ok {
-        background:#e3f7ec; border-left-color:#1c7a4d; color:#1c7a4d;
+        background:#e3f7ec; border-left-color:var(--eim-success); color:var(--eim-success);
     }
 
     /* Bloc observations */
     .observations-block {
-        background:#faf6ee; border-radius:8px;
+        background:var(--eim-cream); border-radius:8px;
         padding:.85rem 1rem; margin-top:1rem;
-        font-size:.85rem; color:#4a5560;
+        font-size:.85rem; color:var(--eim-ink-soft);
     }
 
     @media print {
@@ -113,9 +111,8 @@
                             Référence : {{ $paie->reference ?? '#' . $paie->id }}
                         </div>
                     </div>
-                    <span class="badge-statut">
-                        <span class="badge-dot"></span>{{ $paie->statut?->label() }}
-                    </span>
+                    <x-badge point>{{ $paie->statut?->label() }}
+                    </x-badge>
                 </div>
             </div>
 
@@ -320,9 +317,9 @@
                 <div class="bulletin-row">
                     <span class="label">Statut</span>
                     <span class="value">
-                        <span class="badge-statut" style="background:var(--school-red);color:#fff;">
+                        <x-badge style="background:var(--school-red);color:#fff;">
                             {{ $paie->statut?->label() }}
-                        </span>
+                        </x-badge>
                     </span>
                 </div>
             </div>
@@ -350,7 +347,7 @@
                           data-confirm-text="Cette action enregistre le paiement effectif.">
                         @csrf
                         <button type="submit" class="btn"
-                                style="background:linear-gradient(135deg,#1c7a4d,#2ecc71);border:none;border-radius:10px;padding:.75rem;color:#fff;font-weight:600;">
+                                style="background:linear-gradient(135deg,var(--eim-success),#2ecc71);border:none;border-radius:10px;padding:.75rem;color:#fff;font-weight:600;">
                             <i class="fas fa-money-bill-wave me-1"></i> Marquer comme payé
                         </button>
                     </form>
@@ -362,7 +359,7 @@
                           data-confirm-text="L'employé a bien récupéré sa paie à la billetterie.">
                         @csrf
                         <button type="submit" class="btn"
-                                style="background:linear-gradient(135deg,#B8860B,#D4A94D);border:none;border-radius:10px;padding:.75rem;color:#fff;font-weight:600;">
+                                style="background:linear-gradient(135deg,var(--eim-gold-deep),var(--eim-gold));border:none;border-radius:10px;padding:.75rem;color:#fff;font-weight:600;">
                             <i class="fas fa-hand-holding-usd me-1"></i> Confirmer le retrait
                         </button>
                     </form>
@@ -383,42 +380,27 @@
 {{-- ============ MODALE ANNULATION ============ --}}
 @can('paie.gerer')
     @if (! $paie->statut?->isVerrouille())
-        <div class="modal fade" id="annulerPaieShowModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-                    <form action="{{ route('rh.paies.annuler', $paie) }}" method="POST">
-                        @csrf
-                        <div class="modal-header"
-                             style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;">
-                            <h5 class="modal-title">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Annuler le bulletin
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <p class="mb-3">
-                                Annuler le bulletin
-                                <strong>{{ $paie->reference ?? ('#' . $paie->id) }}</strong> ?
-                            </p>
-                            <div>
-                                <label class="form-label small fw-semibold">
-                                    Motif <span class="text-danger">*</span>
-                                </label>
-                                <textarea name="motif" rows="3" class="form-control" required minlength="5"
-                                          placeholder="Expliquez la raison de l'annulation..."></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light px-4 py-3">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn"
-                                    style="background:var(--school-red-dark);color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
-                                <i class="fas fa-times me-1"></i> Confirmer
-                            </button>
-                        </div>
-                    </form>
-                </div>
+        <x-modale id="annulerPaieShowModal" aria-hidden="true" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-style="background:linear-gradient(135deg,var(--school-red-deep),var(--school-red-dark));color:#fff;" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire action="{{ route('rh.paies.annuler', $paie) }}" method="POST">@csrf</x-slot:formulaire>
+            <x-slot:titre><i class="fas fa-exclamation-triangle me-2"></i>Annuler le bulletin</x-slot:titre>
+            <p class="mb-3">
+                Annuler le bulletin
+                <strong>{{ $paie->reference ?? ('#' . $paie->id) }}</strong> ?
+            </p>
+            <div>
+                <x-libelle class="small fw-semibold" requis>
+                    Motif</x-libelle>
+                <textarea name="motif" rows="3" class="form-control" required minlength="5"
+                          placeholder="Expliquez la raison de l'annulation..."></textarea>
             </div>
-        </div>
+            <x-slot:pied class="bg-light px-4 py-3">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn"
+                        style="background:var(--school-red-dark);color:#fff;border:none;border-radius:8px;font-weight:600;padding:.55rem 1.4rem;">
+                    <i class="fas fa-times me-1"></i> Confirmer
+                </button>
+            </x-slot:pied>
+        </x-modale>
     @endif
 @endcan
 @endsection

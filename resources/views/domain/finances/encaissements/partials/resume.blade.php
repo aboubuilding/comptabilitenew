@@ -12,7 +12,7 @@
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
         <div>
             <span class="reference">{{ $paiement->reference }}</span>
-            <span class="badge-statut {{ $paiement->statut_paiement?->css() }} ms-1"><span class="badge-dot"></span>{{ $paiement->statut_paiement?->label() }}</span>
+            <x-badge class="{{ $paiement->statut_paiement?->css() }} ms-1" point>{{ $paiement->statut_paiement?->label() }}</x-badge>
             <div class="text-muted small mt-1">
                 Saisi le {{ optional($paiement->date_paiement)->format('d/m/Y') ?? '—' }} par {{ $paiement->comptable?->nom_complet ?: '—' }}
             </div>
@@ -31,7 +31,7 @@
             <div class="resume-bloc">
                 <div class="resume-titre">Élève</div>
                 <div class="fw-semibold resume-eleve">{{ $eleve ? $eleve->nom . ' ' . $eleve->prenom : '—' }}</div>
-                <div class="text-muted">{{ $eleve->matricule ?? '' }}@if ($paiement->inscription?->classe) · {{ $paiement->inscription->classe->libelle }}@endif</div>
+                <div class="text-muted niveau-classe">{{ $eleve->matricule ?? '' }}@if ($paiement->inscription?->niveau) · Niveau {{ $paiement->inscription->niveau->libelle }}@endif @if ($paiement->inscription?->classe) · Classe {{ $paiement->inscription->classe->libelle }}@endif</div>
             </div>
         </div>
         <div class="col-md-6">
@@ -52,7 +52,7 @@
                 <tr>
                     <td><span class="nature">{{ $d->type_paiement?->label() ?? '—' }}</span> {{ $d->libelle }}</td>
                     <td class="text-end fw-semibold text-nowrap">{{ $fmt($d->montant) }}</td>
-                    <td><span class="badge-statut {{ $d->statut_paiement?->css() }}"><span class="badge-dot"></span>{{ $d->statut_paiement?->label() }}</span></td>
+                    <td><x-badge class="{{ $d->statut_paiement?->css() }}" point>{{ $d->statut_paiement?->label() }}</x-badge></td>
                     <td class="small text-muted">
                         @if ($d->statut_paiement === $encaisse)
                             {{ optional($d->date_encaissement)->format('d/m/Y') }}

@@ -12,26 +12,23 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.analytique.rapports.index', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.analytique.rapports.index', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-table me-1"></i> Vue tableau
-    </a>
-    <a href="{{ route('finances.analytique.rapports.exportPdf', request()->query()) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('finances.analytique.rapports.exportPdf', request()->query()) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-pdf me-1"></i> PDF
-    </a>
+    </x-bouton>
 
-    <a href="{{ route('finances.analytique.exportExcel', request()->query()) }}"
-   class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.analytique.exportExcel', request()->query()) }}" class="btn-sm rounded-pill px-3">
     <i class="fas fa-file-excel me-1"></i> Excel multi-feuilles
-</a>
+</x-bouton>
 @endsection
 
 @section('css')
 <style>
     /* Jetons propres à cette page — les couleurs de marque restent celles
        de layouts/app.blade.php. */
-    .dashboard-page { --dash-bg-soft: #faf6ee; --dash-border: #ece4d6; }
+    .dashboard-page { --dash-bg-soft: var(--eim-cream); --dash-border: var(--eim-border); }
 
     /* Cartes synthèse */
     .stat-card {
@@ -39,27 +36,22 @@
         border-radius: 12px; padding: 1.15rem 1.25rem;
         display: flex; align-items: center; gap: 1rem;
         transition: transform .2s, box-shadow .2s;
-        box-shadow: 0 2px 8px rgba(122,15,28,.04);
+        box-shadow: 0 2px 8px rgba(142,18,22,.04);
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(122,15,28,.08); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(142,18,22,.08); }
     .stat-icon {
         width: 48px; height: 48px; border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.15rem; flex-shrink: 0;
     }
-    .stat-icon.green  { background: rgba(28,122,77,.10);  color: #1c7a4d; }
-    .stat-icon.red    { background: rgba(200,30,58,.10);  color: var(--school-red); }
-    .stat-icon.gold   { background: rgba(212,169,77,.18); color: var(--school-gold-dark); }
-    .stat-icon.blue   { background: rgba(37,99,235,.10);  color: #2563eb; }
     .stat-info .stat-value { font-size: 1.3rem; font-weight: 700; color: var(--school-ink); line-height: 1.2; }
     .stat-info .stat-label { font-size: .75rem; color: var(--school-muted); margin: 0; }
-    .stat-info .stat-sub   { font-size: .7rem; color: var(--school-muted); margin-top: 2px; }
 
     /* Cartes graphiques */
     .chart-card {
         background: #fff; border: 1px solid var(--dash-border);
         border-radius: 16px; overflow: hidden;
-        box-shadow: 0 4px 18px rgba(122,15,28,.05);
+        box-shadow: 0 4px 18px rgba(142,18,22,.05);
     }
     .chart-card .card-header {
         background: #fff; border-bottom: 1px solid var(--dash-border);
@@ -86,15 +78,13 @@
         border-radius: 8px; border: 1px solid var(--dash-border);
         padding: .5rem .75rem; font-size: .85rem;
     }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
     .btn-filtrer {
         background: var(--school-red); color: #fff; border: none;
         border-radius: 8px; padding: .5rem 1.1rem; font-weight: 600; font-size: .85rem;
     }
-    .btn-filtrer:hover { background: var(--school-red-dark); color: #fff; }
     .btn-reset {
         background: #fff; border: 1px solid var(--dash-border);
-        color: #5b6b7a; border-radius: 8px; padding: .5rem 1rem; font-size: .85rem;
+        color: var(--eim-ink-soft); border-radius: 8px; padding: .5rem 1rem; font-size: .85rem;
     }
 
     /* Liste compacte résultat par centre (sous les graphiques) */
@@ -109,13 +99,13 @@
         border-bottom: 1px solid var(--dash-border);
     }
     .mini-table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-    .mini-table .num.positif { color: #1c7a4d; }
+    .mini-table .num.positif { color: var(--eim-success); }
     .mini-table .num.negatif { color: var(--school-red); }
 
     /* État vide */
     .empty-chart {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        height: 100%; color: #9aa7b2; text-align: center;
+        height: 100%; color: #7A6A6A; text-align: center;
     }
     .empty-chart i { font-size: 2.5rem; color: #d8c8ae; margin-bottom: .75rem; }
 </style>
@@ -147,9 +137,9 @@
                        value="{{ $filters['date_fin'] ?? '' }}" placeholder="Au">
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-filtrer flex-fill">
+                <x-bouton variante="filtrer" type="submit" class="flex-fill">
                     <i class="fas fa-filter me-1"></i> Appliquer
-                </button>
+                </x-bouton>
                 <a href="{{ route('finances.analytique.rapports.dashboard') }}"
                    class="btn btn-reset" title="Réinitialiser">
                     <i class="fas fa-undo"></i>
@@ -161,47 +151,18 @@
     {{-- Cartes synthèse --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-arrow-down"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($totaux['recettes'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Recettes cumulées</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-arrow-down" couleur="green" libelle="Recettes cumulées">{{ number_format($totaux['recettes'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-arrow-up"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($totaux['depenses'], 0, ',', ' ') }}</div>
-                    <div class="stat-label">Dépenses cumulées</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-arrow-up" couleur="red" libelle="Dépenses cumulées">{{ number_format($totaux['depenses'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon {{ $totaux['resultat'] >= 0 ? 'green' : 'red' }}">
-                    <i class="fas fa-balance-scale"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value {{ $totaux['resultat'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $totaux['resultat'] >= 0 ? '+' : '' }}{{ number_format($totaux['resultat'], 0, ',', ' ') }}
-                    </div>
-                    <div class="stat-label">Résultat net</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-balance-scale" couleur="{{ $totaux['resultat'] >= 0 ? 'green' : 'red' }}" valeur-class="{{ $totaux['resultat'] >= 0 ? 'text-success' : 'text-danger' }}" libelle="Résultat net">{{ $totaux['resultat'] >= 0 ? '+' : '' }}{{ number_format($totaux['resultat'], 0, ',', ' ') }}</x-stat>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-bullseye"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($totaux['taux_realisation'], 1, ',', ' ') }} %</div>
-                    <div class="stat-label">Taux de réalisation</div>
-                    <div class="stat-sub">
+            <x-stat icone="fas fa-bullseye" couleur="gold" libelle="Taux de réalisation">{{ number_format($totaux['taux_realisation'], 1, ',', ' ') }} %<x-slot:complement><div class="stat-sub">
                         Budget : {{ number_format($totaux['budget'], 0, ',', ' ') }}
-                    </div>
-                </div>
-            </div>
+                    </div></x-slot:complement></x-stat>
         </div>
     </div>
 
@@ -260,7 +221,7 @@
                 <div class="card-header">
                     <h6><i class="fas fa-chart-bar"></i> Résultat net par centre</h6>
                     <span class="text-muted text-xs">
-                        <span style="color:#1c7a4d;">●</span> Excédentaire &nbsp;
+                        <span style="color:var(--eim-success);">●</span> Excédentaire &nbsp;
                         <span style="color:var(--school-red);">●</span> Déficitaire
                     </span>
                 </div>
@@ -291,8 +252,7 @@
                     </a>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table mini-table mb-0">
+                    <x-tableau class="mini-table mb-0">
                             <thead>
                                 <tr>
                                     <th>Centre</th>
@@ -320,8 +280,7 @@
                                 </tr>
                             @endforelse
                             </tbody>
-                        </table>
-                    </div>
+                        </x-tableau>
                 </div>
             </div>
         </div>
@@ -339,21 +298,21 @@ $(function () {
 
     // ========== Palette cohérente avec la charte ==========
     const COLORS = {
-        recettes: '#1c7a4d',
-        depenses: '#C81E3A',
-        positif:  '#1c7a4d',
-        negatif:  '#C81E3A',
-        border:   '#ece4d6',
-        ink:      '#1f2d3a',
-        muted:    '#6f7e8c',
-        gold:     '#B8860B',
+        recettes: '#1F7A4D',
+        depenses: '#E31E24',
+        positif:  '#1F7A4D',
+        negatif:  '#E31E24',
+        border:   '#EADFCB',
+        ink:      '#2B1E1E',
+        muted:    '#5A4A4A',
+        gold:     '#8A6516',
     };
 
     // Palette pour le donut (répartition des recettes)
     const DOUGHNUT_COLORS = [
-        '#C81E3A', '#B8860B', '#1c7a4d', '#1d4ed8',
-        '#7A0F22', '#D4A94D', '#4A0C19', '#2563eb',
-        '#a64c1f', '#5b6b7a',
+        '#E31E24', '#8A6516', '#1F7A4D', '#1d4ed8',
+        '#B3171C', '#D4A94D', '#8E1216', '#2563eb',
+        '#a64c1f', '#5A4A4A',
     ];
 
     // Formatage monétaire FR

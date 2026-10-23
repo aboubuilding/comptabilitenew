@@ -39,7 +39,7 @@
     <div class="main-card p-3 mb-3">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small">Cycle</label>
+                <x-libelle class="small">Cycle</x-libelle>
                 <select name="cycle_id" class="form-select filtre-input">
                     <option value="">Tous les cycles</option>
                     @foreach ($cyclesOptions as $cycle)
@@ -48,7 +48,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label small">Niveau</label>
+                <x-libelle class="small">Niveau</x-libelle>
                 <select name="niveau_id" class="form-select filtre-input">
                     <option value="">Tous les niveaux</option>
                     @foreach ($niveauxOptions as $niveau)
@@ -57,7 +57,7 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label small">Recherche</label>
+                <x-libelle class="small">Recherche</x-libelle>
                 <input type="text" name="search" class="form-control filtre-input" value="{{ request('search') }}" placeholder="Libellé de la classe...">
             </div>
             <div class="col-md-2">
@@ -67,8 +67,7 @@
     </div>
 
     <div class="main-card" style="overflow:hidden;">
-        <div class="table-responsive">
-            <table class="table table-classes align-middle mb-0">
+        <x-tableau class="table-classes align-middle mb-0">
                 <thead>
                     <tr>
                         <th>Classe</th>
@@ -88,11 +87,7 @@
                             <td class="text-muted">{{ $classe->emplacement ?: '—' }}</td>
                             <td class="text-center"><span class="effectif">{{ $classe->effectif }}</span></td>
                             <td class="text-center">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         @can('structure.gerer')
                                             <li>
                                                 <button type="button" class="dropdown-item btn-edit-classe" data-id="{{ $classe->id }}"
@@ -100,79 +95,50 @@
                                                     <i class="fas fa-pen"></i> Modifier
                                                 </button>
                                             </li>
-                                            <li>
-                                                <form action="{{ route('scolarite.classes.destroy', $classe) }}" method="POST" class="form-confirm-delete"
-                                                      data-confirm-title="Désactiver cette classe ?"
-                                                      data-confirm-text="Une classe qui compte des élèves inscrits ne peut pas être désactivée.">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="dropdown-item text-danger">
-                                                        <i class="fas fa-trash"></i> Désactiver
-                                                    </button>
-                                                </form>
-                                            </li>
+                                            <x-actions.supprimer :action="route('scolarite.classes.destroy', $classe)" data-confirm-title="Désactiver cette classe ?" data-confirm-text="Une classe qui compte des élèves inscrits ne peut pas être désactivée." />
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <i class="fas fa-chalkboard"></i>
-                                    <p class="mb-0">Aucune classe pour cette année scolaire.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <x-vide colspan="6" icone="fas fa-chalkboard" :paragraphe="false"><p class="mb-0">Aucune classe pour cette année scolaire.</p></x-vide>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+            </x-tableau>
     </div>
 
-    <div class="mt-3">{{ $classes->links() }}</div>
+    <div class="mt-3"><x-pagination :liste="$classes" /></div>
 
     @can('structure.gerer')
-        <div class="modal fade" id="classeModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
-                    <form id="classe-form">
-                        @csrf
-                        <input type="hidden" name="_method" id="classe-method" value="POST">
-                        <div class="modal-header modal-header-classes">
-                            <h5 class="modal-title" id="classe-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle classe</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <label class="form-label" for="classe-libelle">Libellé <span class="text-danger">*</span></label>
-                                <input type="text" name="libelle" id="classe-libelle" class="form-control" maxlength="255" placeholder="Ex : CP A">
-                                <div class="text-danger small mt-1" id="classe-libelle-error"></div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="classe-niveau">Niveau <span class="text-danger">*</span></label>
-                                <select name="niveau_id" id="classe-niveau" class="form-select">
-                                    <option value="">— Sélectionner —</option>
-                                    @foreach ($niveauxOptions as $niveau)
-                                        <option value="{{ $niveau->id }}">{{ $niveau->libelle }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="text-danger small mt-1" id="classe-niveau_id-error"></div>
-                                <div class="form-text small">Le cycle de la classe est celui de son niveau.</div>
-                            </div>
-                            <div>
-                                <label class="form-label" for="classe-emplacement">Emplacement</label>
-                                <input type="text" name="emplacement" id="classe-emplacement" class="form-control" maxlength="255" placeholder="Ex : Bâtiment A, salle 3">
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light px-4 py-3">
-                            <button type="button" class="btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn-enregistrer"><i class="fas fa-save"></i> Enregistrer</button>
-                        </div>
-                    </form>
-                </div>
+        <x-modale id="classeModal" data-bs-backdrop="static" aria-hidden="true" contenu-style="border:none;border-radius:16px;overflow:hidden;" entete-class="modal-header-classes" corps-class="p-4" croix-blanche>
+            <x-slot:formulaire id="classe-form">@csrf
+                        <input type="hidden" name="_method" id="classe-method" value="POST"></x-slot:formulaire>
+            <x-slot:titre id="classe-modal-title"><i class="fas fa-plus-circle me-2"></i>Nouvelle classe</x-slot:titre>
+            <div class="mb-3">
+                <x-libelle for="classe-libelle" requis>Libellé</x-libelle>
+                <input type="text" name="libelle" id="classe-libelle" class="form-control" maxlength="255" placeholder="Ex : CP A">
+                <div class="text-danger small mt-1" id="classe-libelle-error"></div>
             </div>
-        </div>
+            <div class="mb-3">
+                <x-libelle for="classe-niveau" requis>Niveau</x-libelle>
+                <select name="niveau_id" id="classe-niveau" class="form-select">
+                    <option value="">— Sélectionner —</option>
+                    @foreach ($niveauxOptions as $niveau)
+                        <option value="{{ $niveau->id }}">{{ $niveau->libelle }}</option>
+                    @endforeach
+                </select>
+                <div class="text-danger small mt-1" id="classe-niveau_id-error"></div>
+                <div class="form-text small">Le cycle de la classe est celui de son niveau.</div>
+            </div>
+            <div>
+                <x-libelle for="classe-emplacement">Emplacement</x-libelle>
+                <input type="text" name="emplacement" id="classe-emplacement" class="form-control" maxlength="255" placeholder="Ex : Bâtiment A, salle 3">
+            </div>
+            <x-slot:pied class="bg-light px-4 py-3">
+                <button type="button" class="btn-annuler" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn-enregistrer"><i class="fas fa-save"></i> Enregistrer</button>
+            </x-slot:pied>
+        </x-modale>
     @endcan
 @endsection
 

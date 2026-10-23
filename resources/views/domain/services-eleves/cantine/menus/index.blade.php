@@ -12,29 +12,25 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.cantine.inscriptions.index') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.inscriptions.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-users me-1"></i> Inscriptions
-    </a>
-    <a href="{{ route('services-eleves.cantine.preparations.index') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.preparations.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-fire me-1"></i> Préparations
-    </a>
-    <a href="{{ route('services-eleves.cantine.dashboard') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.dashboard') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-chart-pie me-1"></i> Dashboard
-    </a>
+    </x-bouton>
     @can('cantine.gerer')
-        <button type="button" class="btn btn-nouveau" id="btnNouveauMenu"
-                data-bs-toggle="modal" data-bs-target="#menuModal">
+        <x-bouton variante="nouveau" type="button" id="btnNouveauMenu" data-bs-toggle="modal" data-bs-target="#menuModal">
             <i class="fas fa-plus-circle me-1"></i> Nouveau menu
-        </button>
+        </x-bouton>
     @endcan
 @endsection
 
 @section('css')
 <style>
-    .menus-page { --m-bg-soft:#faf6ee; --m-border:#ece4d6; }
+    .menus-page { --m-bg-soft:var(--eim-cream); --m-border:var(--eim-border); }
     .text-xs { font-size:.72rem; }
     .text-sm { font-size:.8rem; }
 
@@ -42,25 +38,20 @@
     .stat-card {
         background:#fff; border:1px solid var(--m-border); border-radius:12px;
         padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem;
-        box-shadow:0 2px 8px rgba(122,15,28,.04);
+        box-shadow:0 2px 8px rgba(142,18,22,.04);
         transition: transform .2s;
     }
-    .stat-card:hover { transform: translateY(-2px); }
     .stat-icon {
         width:46px; height:46px; border-radius:10px; flex-shrink:0;
         display:flex; align-items:center; justify-content:center; font-size:1.1rem;
     }
-    .stat-icon.blue  { background:rgba(37,99,235,.10);  color:#2563eb; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.green { background:rgba(28,122,77,.10);  color:#1c7a4d; }
-    .stat-icon.red   { background:rgba(200,30,58,.10);  color:var(--school-red); }
     .stat-info .stat-value { font-size:1.15rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.75rem; color:var(--school-muted); margin:0; }
 
     /* Carte principale */
     .main-card {
         border:none; border-radius:16px;
-        box-shadow: 0 10px 30px rgba(122,15,28,.06);
+        box-shadow: 0 10px 30px rgba(142,18,22,.06);
         background:#fff; overflow:hidden;
     }
     .main-card .card-header { border-bottom:1px solid var(--m-border) !important; }
@@ -70,12 +61,7 @@
         border-radius:10px; border:1px solid var(--m-border);
         padding:.55rem .9rem; font-size:.88rem;
     }
-    .filtre-input:focus { border-color: var(--school-red); box-shadow: 0 0 0 .2rem rgba(200,30,58,.12); }
-    .search-wrapper { position:relative; }
-    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9aa7b2; font-size:.85rem; }
-    .search-input { padding-left:36px !important; }
     .btn-filtrer { background: var(--school-red); color:#fff; border:none; border-radius:10px; padding:.55rem 1rem; font-weight:600; font-size:.88rem; }
-    .btn-filtrer:hover { background: var(--school-red-dark); color:#fff; }
     .compteur-badge {
         display:inline-block; background: var(--m-bg-soft); color: var(--school-red);
         font-weight:600; font-size:.85rem; padding:.45rem .9rem; border-radius:999px;
@@ -103,7 +89,7 @@
         padding:.9rem 1rem; border-bottom:1px solid var(--m-border);
         font-size:.9rem; color: var(--school-ink); vertical-align:middle;
     }
-    .table-menus tbody tr:hover { background:#fdfaf5; }
+    .table-menus tbody tr:hover { background:var(--eim-hover); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .num.grand { color: var(--school-red-dark); }
 
@@ -116,7 +102,7 @@
         background: var(--m-bg-soft); color: var(--school-red);
     }
 
-    .empty-state { padding:3.5rem 1rem; text-align:center; color:#9aa7b2; }
+    .empty-state { padding:3.5rem 1rem; text-align:center; color:#7A6A6A; }
     .empty-state i { font-size:2.5rem; margin-bottom:.75rem; display:block; color:#d8c8ae; }
 
     /* Modales */
@@ -143,11 +129,6 @@
         border-radius:8px; border:1px solid var(--m-border);
         padding:.55rem .75rem; font-size:.88rem;
     }
-    .form-section .form-control:focus,
-    .form-section .form-select:focus {
-        border-color: var(--school-red);
-        box-shadow: 0 0 0 .2rem rgba(200,30,58,.12);
-    }
 
     /* Lignes de composition */
     .ligne-produit {
@@ -165,7 +146,7 @@
     }
 
     .btn-annuler {
-        background:#fff; border:1px solid var(--m-border); color:#5b6b7a;
+        background:#fff; border:1px solid var(--m-border); color:var(--eim-ink-soft);
         border-radius:8px; padding:.55rem 1.2rem; font-size:.88rem;
     }
     .btn-enregistrer {
@@ -191,57 +172,25 @@
     {{-- Cartes statistiques --}}
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-book-open"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $menus->total() }}</div>
-                    <div class="stat-label">Menus enregistrés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-book-open" couleur="blue" libelle="Menus enregistrés">{{ $menus->total() }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-calendar-day"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $menus->where('date_service', now()->toDateString())->count() }}</div>
-                    <div class="stat-label">Menus aujourd'hui</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-calendar-day" couleur="gold" libelle="Menus aujourd'hui">{{ $menus->where('date_service', now()->toDateString())->count() }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">
-                        {{ $menus->where('date_service', '>=', now()->startOfWeek())->where('date_service', '<=', now()->endOfWeek())->count() }}
-                    </div>
-                    <div class="stat-label">Cette semaine</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check-circle" couleur="green" libelle="Cette semaine">{{ $menus->where('date_service', '>=', now()->startOfWeek())->where('date_service', '<=', now()->endOfWeek())->count() }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-coins"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">
-                        {{ number_format((float) $menus->sum('cout_total_prevu'), 0, ',', ' ') }}
-                    </div>
-                    <div class="stat-label">Coût prévu cumulé</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-coins" couleur="red" libelle="Coût prévu cumulé">{{ number_format((float) $menus->sum('cout_total_prevu'), 0, ',', ' ') }}</x-stat>
         </div>
     </div>
 
     {{-- Tableau principal --}}
-    <div class="card main-card">
+    <x-carte>
         <div class="card-header bg-white py-3 px-4">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-4">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" class="form-control filtre-input search-input"
-                               placeholder="Rechercher un menu..." value="{{ $filters['search'] ?? '' }}">
-                    </div>
+                    <x-recherche name="search" placeholder="Rechercher un menu..." value="{{ $filters['search'] ?? '' }}" />
                 </div>
                 <div class="col-md-2">
                     <select name="type_repas" class="form-select filtre-input">
@@ -260,20 +209,18 @@
                            value="{{ $filters['date_fin'] ?? '' }}" placeholder="Au">
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-filtrer flex-fill">
+                    <x-bouton variante="filtrer" type="submit" class="flex-fill">
                         <i class="fas fa-filter me-1"></i> Filtrer
-                    </button>
-                    <a href="{{ route('services-eleves.cantine.menus.index') }}"
-                       class="btn btn-outline-scolarite" title="Réinitialiser">
+                    </x-bouton>
+                    <x-bouton variante="contour" href="{{ route('services-eleves.cantine.menus.index') }}" title="Réinitialiser">
                         <i class="fas fa-undo"></i>
-                    </a>
+                    </x-bouton>
                 </div>
             </form>
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-menus align-middle mb-0">
+            <x-tableau class="table-menus align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Libellé</th>
@@ -314,12 +261,7 @@
                                     : '—' }}
                             </td>
                             <td class="text-center pe-4">
-                                <div class="dropdown">
-                                    <button class="btn-action dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-actions dropdown-menu-end">
+                                <x-actions>
                                         <li>
                                             <button type="button" class="dropdown-item btn-detail-menu"
                                                     data-id="{{ $menu->id }}"
@@ -336,154 +278,104 @@
                                                 </button>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form action="{{ route('services-eleves.cantine.menus.destroy', $menu) }}"
-                                                      method="POST" class="form-confirm-delete"
-                                                      data-confirm-title="Supprimer ce menu ?"
-                                                      data-confirm-text="Les préparations liées empêcheront la suppression.">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="dropdown-item text-danger">
-                                                        <i class="fas fa-trash"></i> Supprimer
-                                                    </button>
-                                                </form>
-                                            </li>
+                                            <x-actions.supprimer :action="route('services-eleves.cantine.menus.destroy', $menu)" data-confirm-title="Supprimer ce menu ?" data-confirm-text="Les préparations liées empêcheront la suppression.">Supprimer</x-actions.supprimer>
                                         @endcan
-                                    </ul>
-                                </div>
+                                    </x-actions>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="8">
-                                <div class="empty-state">
-                                    <i class="fas fa-book-open"></i>
-                                    <p class="mb-0">Aucun menu enregistré.</p>
+                        <x-vide colspan="8" icone="fas fa-book-open" :paragraphe="false"><p class="mb-0">Aucun menu enregistré.</p>
                                     @can('cantine.gerer')
                                         <p class="text-muted small mb-0">Cliquez sur « Nouveau menu » pour en créer un.</p>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
+                                    @endcan</x-vide>
                     @endforelse
                     </tbody>
-                </table>
-            </div>
+                </x-tableau>
         </div>
-    </div>
+    </x-carte>
 
     <div class="mt-4">
-        {{ $menus->appends(request()->query())->links('vendor.pagination.custom') }}
+        <x-pagination :liste="$menus->appends(request()->query())" />
     </div>
 
     {{-- Modal création / édition --}}
     @can('cantine.gerer')
-    <div class="modal fade" id="menuModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content modal-menus">
-                <form id="menu-form">
-                    @csrf
-                    <input type="hidden" name="_method" id="menu-method" value="POST">
-                    <div class="modal-header modal-header-menus">
-                        <h5 class="modal-title" id="menu-title">
-                            <i class="fas fa-book-open me-2"></i>Nouveau menu
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                    </div>
-                    <div class="modal-body p-4">
-
-                        <div class="form-section mb-3">
-                            <div class="form-section-title">
-                                <i class="fas fa-info-circle"></i> Informations générales
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Libellé <span class="text-danger">*</span></label>
-                                    <input type="text" name="libelle" id="menu-libelle" class="form-control" maxlength="200" required>
-                                    <div class="text-danger text-xs mt-1" id="libelle-error"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Date de service <span class="text-danger">*</span></label>
-                                    <input type="date" name="date_service" id="menu-date" class="form-control"
-                                           value="{{ now()->toDateString() }}" required>
-                                    <div class="text-danger text-xs mt-1" id="date_service-error"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Type de repas</label>
-                                    <select name="type_repas" id="menu-type" class="form-select">
-                                        @foreach ($types as $v => $l)
-                                            <option value="{{ $v }}">{{ $l }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Magasin source <span class="text-danger">*</span></label>
-                                    <select name="magasin_id" id="menu-magasin" class="form-select" required>
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach ($magasins as $m)
-                                            <option value="{{ $m->id }}">{{ $m->libelle }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="text-danger text-xs mt-1" id="magasin_id-error"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Quantité prévue</label>
-                                    <input type="number" name="quantite_prevue" id="menu-quantite" min="0" value="0" class="form-control">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Description</label>
-                                    <textarea name="description" id="menu-description" rows="2" class="form-control" maxlength="2000"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-section-title">
-                                <i class="fas fa-list"></i> Composition du menu
-                            </div>
-                            <div id="menu-produits"></div>
-                            <button type="button" class="btn btn-outline-scolarite btn-sm mt-2" id="add-produit-menu">
-                                <i class="fas fa-plus me-1"></i> Ajouter un produit
-                            </button>
-                            <div class="alert alert-light border-0 small mt-3 mb-0" style="background:#fff;">
-                                <i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i>
-                                <strong>Coût prévisionnel :</strong>
-                                <span id="menu-cout-prevu" style="color:var(--school-red-dark);font-weight:700;">0,00</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light px-4 py-3">
-                        <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-enregistrer">
-                            <i class="fas fa-save me-1"></i> Enregistrer
-                        </button>
-                    </div>
-                </form>
+    <x-modale id="menuModal" data-bs-backdrop="static" dialogue="modal-dialog-centered modal-lg" contenu-class="modal-menus" entete-class="modal-header-menus" corps-class="p-4" croix-blanche>
+        <x-slot:formulaire id="menu-form">@csrf
+                    <input type="hidden" name="_method" id="menu-method" value="POST"></x-slot:formulaire>
+        <x-slot:titre id="menu-title"><i class="fas fa-book-open me-2"></i>Nouveau menu</x-slot:titre>
+        <x-section titre="Informations générales" icone="fas fa-info-circle" class="mb-3">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <x-libelle requis>Libellé</x-libelle>
+                    <input type="text" name="libelle" id="menu-libelle" class="form-control" maxlength="200" required>
+                    <div class="text-danger text-xs mt-1" id="libelle-error"></div>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle requis>Date de service</x-libelle>
+                    <input type="date" name="date_service" id="menu-date" class="form-control"
+                           value="{{ now()->toDateString() }}" required>
+                    <div class="text-danger text-xs mt-1" id="date_service-error"></div>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle>Type de repas</x-libelle>
+                    <select name="type_repas" id="menu-type" class="form-select">
+                        @foreach ($types as $v => $l)
+                            <option value="{{ $v }}">{{ $l }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle requis>Magasin source</x-libelle>
+                    <select name="magasin_id" id="menu-magasin" class="form-select" required>
+                        <option value="">— Sélectionner —</option>
+                        @foreach ($magasins as $m)
+                            <option value="{{ $m->id }}">{{ $m->libelle }}</option>
+                        @endforeach
+                    </select>
+                    <div class="text-danger text-xs mt-1" id="magasin_id-error"></div>
+                </div>
+                <div class="col-md-4">
+                    <x-libelle>Quantité prévue</x-libelle>
+                    <input type="number" name="quantite_prevue" id="menu-quantite" min="0" value="0" class="form-control">
+                </div>
+                <div class="col-12">
+                    <x-libelle>Description</x-libelle>
+                    <textarea name="description" id="menu-description" rows="2" class="form-control" maxlength="2000"></textarea>
+                </div>
             </div>
-        </div>
-    </div>
+        </x-section>
+
+        <x-section titre="Composition du menu" icone="fas fa-list">
+            <div id="menu-produits"></div>
+            <x-bouton variante="contour" type="button" class="btn-sm mt-2" id="add-produit-menu">
+                <i class="fas fa-plus me-1"></i> Ajouter un produit
+            </x-bouton>
+            <div class="alert alert-light border-0 small mt-3 mb-0" style="background:#fff;">
+                <i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i>
+                <strong>Coût prévisionnel :</strong>
+                <span id="menu-cout-prevu" style="color:var(--school-red-dark);font-weight:700;">0,00</span>
+            </div>
+        </x-section>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Annuler</x-bouton>
+            <x-bouton type="submit">
+                <i class="fas fa-save me-1"></i> Enregistrer
+            </x-bouton>
+        </x-slot:pied>
+    </x-modale>
     @endcan
 
     {{-- Modal détail / composition --}}
-    <div class="modal fade" id="menuDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-menus">
-                <div class="modal-header modal-header-menus">
-                    <h5 class="modal-title">
-                        <i class="fas fa-list me-2"></i>Composition du menu
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body p-4" id="menu-detail-body">
-                    <div class="text-center text-muted py-3">
-                        <i class="fas fa-spinner fa-spin"></i> Chargement...
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-annuler" data-bs-dismiss="modal">Fermer</button>
-                </div>
-            </div>
+    <x-modale id="menuDetailModal" aria-hidden="true" contenu-class="modal-menus" entete-class="modal-header-menus" corps-class="p-4" corps-id="menu-detail-body" croix-blanche>
+        <x-slot:titre><i class="fas fa-list me-2"></i>Composition du menu</x-slot:titre>
+        <div class="text-center text-muted py-3">
+            <i class="fas fa-spinner fa-spin"></i> Chargement...
         </div>
-    </div>
+        <x-slot:pied class="bg-light px-4 py-3">
+            <x-bouton variante="annuler" type="button" data-bs-dismiss="modal">Fermer</x-bouton>
+        </x-slot:pied>
+    </x-modale>
 </div>
 
 {{-- Template ligne produit --}}
@@ -679,7 +571,7 @@ $(function () {
             if (! menu.menu_produits || menu.menu_produits.length === 0) {
                 html += '<div class="text-center text-muted py-3">Aucun produit composé.</div>';
             } else {
-                html += '<div style="border:1px solid #ece4d6;border-radius:10px;overflow:hidden;">';
+                html += '<div style="border:1px solid var(--eim-border);border-radius:10px;overflow:hidden;">';
                 menu.menu_produits.forEach(mp => {
                     html += `<div class="detail-produit">
                         <span class="label">
@@ -689,7 +581,7 @@ $(function () {
                         <span class="value">${fmt(mp.cout_total || 0)}</span>
                     </div>`;
                 });
-                html += `<div class="detail-produit" style="background:#faf6ee;">
+                html += `<div class="detail-produit" style="background:var(--eim-cream);">
                     <span class="label" style="font-weight:700;text-transform:uppercase;font-size:.78rem;color:var(--school-red-dark);">Coût prévisionnel</span>
                     <span class="value">${fmt(menu.cout_total_prevu || 0)}</span>
                 </div>`;

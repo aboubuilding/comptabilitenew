@@ -17,9 +17,9 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
-        $schedule->job(new \App\Jobs\RecalculerSituationsRecouvrement())
+        // Chaque nuit à 2 h : dossiers de recouvrement échus d'après les plans d'échéancier (années ouvertes)
+        $schedule->command('recouvrement:recalculer')
             ->dailyAt('02:00')
-            ->name('recouvrement:recalculer')
             ->withoutOverlapping();
     }
 

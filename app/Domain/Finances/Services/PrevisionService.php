@@ -17,29 +17,29 @@ class PrevisionService
     public function creer(PrevisionData $data): Prevision
     {
         if ($data->montantPrevisionnel <= 0) {
-            throw new RuntimeException("Le montant prévisionnel doit être strictement positif.");
+            throw new RuntimeException("Le montant global doit être strictement positif.");
         }
 
+        // Une ligne budgétaire porte des dépenses : plus de type, ni de période (l'année suffit)
         return DB::transaction(fn () => $this->previsions->create([
             'libelle'              => $data->libelle,
-            'type'                 => $data->type,
+            'type'                 => \App\Domain\Finances\Types\TypePrevision::DEPENSE->value,
             'montant_previsionnel' => $data->montantPrevisionnel,
             'centre_analytique_id' => $data->centreAnalytiqueId,
-            'date_debut'           => $data->dateDebut,
-            'date_fin'             => $data->dateFin,
             'cree_par'             => $data->auteurId,
         ]));
     }
 
     public function modifier(int $id, PrevisionData $data): Prevision
     {
+        if ($data->montantPrevisionnel <= 0) {
+            throw new RuntimeException("Le montant global doit être strictement positif.");
+        }
+
         $this->previsions->update($id, [
             'libelle'              => $data->libelle,
-            'type'                 => $data->type,
             'montant_previsionnel' => $data->montantPrevisionnel,
             'centre_analytique_id' => $data->centreAnalytiqueId,
-            'date_debut'           => $data->dateDebut,
-            'date_fin'             => $data->dateFin,
         ]);
 
         return $this->previsions->findOrFail($id);

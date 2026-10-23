@@ -30,7 +30,7 @@
         @endif
 
         <div class="mb-3">
-            <label class="form-label small text-muted">Élèves concernés</label>
+            <x-libelle class="small text-muted">Élèves concernés</x-libelle>
             <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
                 @foreach($eleves as $e)
                     <div class="d-flex justify-content-between border-bottom py-1">
@@ -44,8 +44,8 @@
             @endforeach
         </div>
 
-        <div class="form-section">
-            <label class="form-label">Classe à affecter</label>
+        <x-section>
+            <x-libelle>Classe à affecter</x-libelle>
             <select name="classe_id" class="form-select" id="select-classe">
                 <option value="">— Aucune classe (retirer l'affectation) —</option>
                 @foreach($classes as $c)
@@ -55,7 +55,7 @@
             <small class="text-muted">
                 Choisir « Aucune classe » retirera l'affectation actuelle des élèves sélectionnés.
             </small>
-        </div>
+        </x-section>
 
     </div>
 

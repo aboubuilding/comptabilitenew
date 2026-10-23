@@ -8,13 +8,13 @@
     @if($method !== 'POST') @method($method) @endif
 
     <div class="modal-body">
-        <div class="form-section">
-            <label class="form-label">Nom de la famille <span class="text-danger">*</span></label>
+        <x-section>
+            <x-libelle requis>Nom de la famille</x-libelle>
             <input type="text" name="nom_famille" class="form-control" maxlength="150"
                    value="{{ old('nom_famille', $espace->nom_famille ?? '') }}"
                    placeholder="Ex : Famille DIOP" required>
             <small class="text-muted">Nom usuel du foyer (apparaît dans les listes et communications).</small>
-        </div>
+        </x-section>
     </div>
 
     <div class="modal-footer">

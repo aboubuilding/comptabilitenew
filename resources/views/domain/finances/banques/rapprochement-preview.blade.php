@@ -13,17 +13,16 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('finances.banques.rapprochement.index', $banque) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('finances.banques.rapprochement.index', $banque) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Importer un autre relevé
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; }
-    .main-card .card-header { border-bottom: 1px solid #ece4d6 !important; }
-    .stat-box { background:#faf6ee; border:1px solid #ece4d6; border-radius:12px; padding:.9rem 1rem; }
+    .main-card { border:none; border-radius:16px; box-shadow: 0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; }
+    .main-card .card-header { border-bottom: 1px solid var(--eim-border) !important; }
+    .stat-box { background:var(--eim-cream); border:1px solid var(--eim-border); border-radius:12px; padding:.9rem 1rem; }
     .stat-box .stat-value { font-size:1.4rem; font-weight:700; color: var(--school-ink); }
     .stat-box .stat-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color: var(--school-muted); }
     .table-rapprochement th { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color: var(--school-muted); font-weight:600; }
@@ -31,7 +30,7 @@
     .num { text-align:right; font-variant-numeric: tabular-nums; }
     .pastille { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:.4rem; }
     .btn-primary-red { background: linear-gradient(135deg, var(--school-red-dark), var(--school-red)); color:#fff; border:none; border-radius:8px; font-weight:600; padding:.6rem 1.5rem; font-size:.9rem; }
-    .btn-primary-red:hover { color:#fff; box-shadow: 0 4px 12px rgba(200,30,58,.3); }
+    .btn-primary-red:hover { color:#fff; box-shadow: 0 4px 12px rgba(227,30,36,.3); }
 </style>
 @endsection
 
@@ -55,13 +54,13 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-box">
-            <div class="stat-value" style="color:#1c7a4d;">{{ count($matched) }}</div>
+            <div class="stat-value" style="color:var(--eim-success);">{{ count($matched) }}</div>
             <div class="stat-label">Correspondances exactes</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-box">
-            <div class="stat-value" style="color:#B8860B;">{{ count($ambiguous) }}</div>
+            <div class="stat-value" style="color:var(--eim-gold-deep);">{{ count($ambiguous) }}</div>
             <div class="stat-label">À vérifier</div>
         </div>
     </div>
@@ -84,13 +83,12 @@
     @csrf
 
     {{-- 1. Correspondances exactes : même numéro et même montant --}}
-    <div class="card main-card mb-4">
+    <x-carte class="mb-4">
         <div class="card-header bg-white py-3 px-4">
-            <h6 class="mb-0"><span class="pastille" style="background:#1c7a4d;"></span>Correspondances exactes</h6>
+            <h6 class="mb-0"><span class="pastille" style="background:var(--eim-success);"></span>Correspondances exactes</h6>
             <small class="text-muted">Même numéro et même montant qu'un chèque émis. Décochez une ligne pour ne pas la rapprocher.</small>
         </div>
-        <div class="table-responsive">
-            <table class="table table-rapprochement mb-0">
+        <x-tableau class="table-rapprochement mb-0">
                 <thead>
                     <tr>
                         <th style="width:44px;"></th>
@@ -118,19 +116,17 @@
                         <tr><td colspan="5" class="text-center text-muted py-4">Aucune correspondance exacte.</td></tr>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
-    </div>
+            </x-tableau>
+    </x-carte>
 
     {{-- 2. Lignes ambiguës : numéro OU montant identique, pas les deux --}}
     @if (count($ambiguous) > 0)
-        <div class="card main-card mb-4">
+        <x-carte class="mb-4">
             <div class="card-header bg-white py-3 px-4">
-                <h6 class="mb-0"><span class="pastille" style="background:#B8860B;"></span>Lignes à vérifier</h6>
+                <h6 class="mb-0"><span class="pastille" style="background:var(--eim-gold-deep);"></span>Lignes à vérifier</h6>
                 <small class="text-muted">Le numéro ou le montant correspond à un chèque émis, mais pas les deux. Choisissez le chèque concerné, ou laissez « Ne pas rapprocher ».</small>
             </div>
-            <div class="table-responsive">
-                <table class="table table-rapprochement mb-0">
+            <x-tableau class="table-rapprochement mb-0">
                     <thead>
                         <tr>
                             <th>Ligne du relevé</th>
@@ -166,20 +162,18 @@
                             @php $index++; @endphp
                         @endforeach
                     </tbody>
-                </table>
-            </div>
-        </div>
+                </x-tableau>
+        </x-carte>
     @endif
 
     {{-- 3. Lignes sans chèque --}}
     @if (count($unmatched) > 0)
-        <div class="card main-card mb-4">
+        <x-carte class="mb-4">
             <div class="card-header bg-white py-3 px-4">
                 <h6 class="mb-0"><span class="pastille" style="background:#b13b3b;"></span>Lignes sans chèque correspondant</h6>
                 <small class="text-muted">Aucun chèque émis de cette banque ne porte ce numéro ni ce montant. Ces lignes ne seront pas rapprochées.</small>
             </div>
-            <div class="table-responsive">
-                <table class="table table-rapprochement mb-0">
+            <x-tableau class="table-rapprochement mb-0">
                     <thead>
                         <tr>
                             <th>N° sur le relevé</th>
@@ -198,9 +192,8 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
-            </div>
-        </div>
+                </x-tableau>
+        </x-carte>
     @endif
 
     <div class="d-flex justify-content-between align-items-center">

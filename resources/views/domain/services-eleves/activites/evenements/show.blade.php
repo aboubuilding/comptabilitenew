@@ -13,27 +13,25 @@
 @endsection
 
 @section('page_actions')
-    <a href="{{ route('services-eleves.activites-evenements.evenements.index') }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    <x-bouton variante="contour" href="{{ route('services-eleves.activites-evenements.evenements.index') }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Retour
-    </a>
-    <a href="{{ route('services-eleves.activites-evenements.evenements.export', ['search' => $evenement->nom]) }}"
-       class="btn btn-outline-scolarite btn-sm rounded-pill px-3">
+    </x-bouton>
+    <x-bouton variante="contour" href="{{ route('services-eleves.activites-evenements.evenements.export', ['search' => $evenement->nom]) }}" class="btn-sm rounded-pill px-3">
         <i class="fas fa-file-excel me-1"></i> Exporter
-    </a>
+    </x-bouton>
 @endsection
 
 @section('css')
 <style>
-    .show-page { --s-bg-soft:#faf6ee; --s-border:#ece4d6; }
-    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(122,15,28,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
+    .show-page { --s-bg-soft:var(--eim-cream); --s-border:var(--eim-border); }
+    .main-card { border:none; border-radius:16px; box-shadow:0 10px 30px rgba(142,18,22,.06); background:#fff; overflow:hidden; margin-bottom:1rem; }
     .main-card .card-header { border-bottom:1px solid var(--s-border) !important; }
 
     .evt-banner {
         background:linear-gradient(135deg,var(--school-red-dark),var(--school-red));
         color:#fff; border-radius:16px; padding:1.25rem 1.5rem;
         display:flex; align-items:center; gap:1.25rem;
-        box-shadow: 0 8px 24px rgba(122,15,28,.18);
+        box-shadow: 0 8px 24px rgba(142,18,22,.18);
         margin-bottom:1.25rem;
     }
     .evt-banner-icon {
@@ -53,26 +51,19 @@
 
     .stat-card { background:#fff; border:1px solid var(--s-border); border-radius:12px; padding:1rem 1.15rem; display:flex; align-items:center; gap:.9rem; }
     .stat-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
-    .stat-icon.green { background:rgba(28,122,77,.10); color:#1c7a4d; }
-    .stat-icon.gold  { background:rgba(212,169,77,.18); color:var(--school-gold-dark); }
-    .stat-icon.blue  { background:rgba(37,99,235,.10); color:#2563eb; }
-    .stat-icon.red   { background:rgba(200,30,58,.10); color:var(--school-red); }
     .stat-info .stat-value { font-size:1.1rem; font-weight:700; color:var(--school-ink); line-height:1.2; }
     .stat-info .stat-label { font-size:.72rem; color:var(--school-muted); margin:0; }
 
     .table-part thead tr { background:var(--s-bg-soft); }
     .table-part thead th { color:var(--school-red); font-size:.72rem; font-weight:700; text-transform:uppercase; padding:.7rem .9rem; border-bottom:1px solid var(--s-border); }
     .table-part tbody td { padding:.7rem .9rem; border-bottom:1px solid var(--s-border); font-size:.85rem; vertical-align:middle; }
-    .table-part tbody tr:hover { background:#fdfaf5; }
+    .table-part tbody tr:hover { background:var(--eim-hover); }
     .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
 
-    .badge-statut { display:inline-flex; align-items:center; gap:6px; padding:.35em .85em; border-radius:999px; font-size:.72rem; font-weight:600; }
     .badge-statut.pre-inscrit { background:#fdf4e0; color:var(--school-gold-dark); }
-    .badge-statut.confirme    { background:#e3f7ec; color:#1c7a4d; }
-    .badge-statut.annule      { background:#eceff2; color:#5b6b7a; }
-    .badge-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .badge-statut.confirme    { background:#e3f7ec; color:var(--eim-success); }
 
-    .empty-state { padding:2rem 1rem; text-align:center; color:#9aa7b2; font-size:.85rem; }
+    .empty-state { padding:2rem 1rem; text-align:center; color:#7A6A6A; font-size:.85rem; }
     .empty-state i { font-size:2rem; margin-bottom:.5rem; display:block; color:#d8c8ae; }
 </style>
 @endsection
@@ -112,49 +103,23 @@
     {{-- Stats --}}
     <div class="row g-3 mb-3">
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $conf }}</div>
-                    <div class="stat-label">Confirmés</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-check-circle" couleur="green" libelle="Confirmés">{{ $conf }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="fas fa-hourglass-half"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $pre }}</div>
-                    <div class="stat-label">Pré-inscrits en attente</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-hourglass-half" couleur="gold" libelle="Pré-inscrits en attente">{{ $pre }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ $evenement->capacite ?? '∞' }}</div>
-                    <div class="stat-label">Capacité</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-users" couleur="blue" libelle="Capacité">{{ $evenement->capacite ?? '∞' }}</x-stat>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon {{ $taux >= 90 ? 'red' : 'green' }}">
-                    <i class="fas fa-percentage"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value">{{ number_format($taux, 0, ',', ' ') }} %</div>
-                    <div class="stat-label">Remplissage</div>
-                </div>
-            </div>
+            <x-stat icone="fas fa-percentage" couleur="{{ $taux >= 90 ? 'red' : 'green' }}" libelle="Remplissage">{{ number_format($taux, 0, ',', ' ') }} %</x-stat>
         </div>
     </div>
 
     <div class="row g-3">
         {{-- Infos --}}
         <div class="col-lg-5">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle me-1" style="color:var(--school-gold-dark);"></i>
@@ -196,27 +161,26 @@
                             <span class="info-value">
                                 {{ optional($evenement->date_limite_confirmation)->format('d/m/Y') ?? '—' }}
                                 @if ($evenement->isDateLimitePassee())
-                                    <span class="badge-statut annule ms-1"
-                                          style="background:#fdecea;color:var(--school-red);">
+                                    <x-badge class="annule ms-1" style="background:#fdecea;color:var(--school-red);">
                                         Dépassée
-                                    </span>
+                                    </x-badge>
                                 @endif
                             </span>
                         </div>
                     @endif
                     @if ($evenement->description)
                         <div class="mt-3 p-2 rounded"
-                             style="background:#faf6ee;font-size:.85rem;color:#4a5560;">
+                             style="background:var(--eim-cream);font-size:.85rem;color:var(--eim-ink-soft);">
                             <strong>Description :</strong> {{ $evenement->description }}
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-carte>
         </div>
 
         {{-- Participations --}}
         <div class="col-lg-7">
-            <div class="card main-card">
+            <x-carte>
                 <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-users me-1" style="color:var(--school-gold-dark);"></i>
@@ -228,13 +192,9 @@
                 </div>
                 <div class="card-body p-0">
                     @if ($evenement->participations->isEmpty())
-                        <div class="empty-state">
-                            <i class="fas fa-users"></i>
-                            <p class="mb-0">Aucune participation enregistrée.</p>
-                        </div>
+                        <x-vide icone="fas fa-users" :paragraphe="false"><p class="mb-0">Aucune participation enregistrée.</p></x-vide>
                     @else
-                        <div class="table-responsive">
-                            <table class="table table-part mb-0">
+                        <x-tableau class="table-part mb-0">
                                 <thead>
                                     <tr>
                                         <th class="ps-4">Élève</th>
@@ -263,9 +223,8 @@
                                             {{ number_format((float) $p->montant_facture, 0, ',', ' ') }}
                                         </td>
                                         <td>
-                                            <span class="badge-statut {{ $p->statut?->css() }}">
-                                                <span class="badge-dot"></span>{{ $p->statut?->label() }}
-                                            </span>
+                                            <x-badge class="{{ $p->statut?->css() }}" point>{{ $p->statut?->label() }}
+                                            </x-badge>
                                         </td>
                                         <td class="text-sm text-muted">
                                             {{ optional($p->date_inscription)->format('d/m/Y') }}
@@ -273,11 +232,10 @@
                                     </tr>
                                 @endforeach
                                 </tbody>
-                            </table>
-                        </div>
+                            </x-tableau>
                     @endif
                 </div>
-            </div>
+            </x-carte>
         </div>
     </div>
 </div>

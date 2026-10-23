@@ -88,29 +88,36 @@ test.describe('4.1 Transport scolaire', () => {
     await expect(ligneDe(page, 'TG-1234-AB')).toContainText('SOSSOU');
   });
 
-  test('paramétrer une zone et une ligne de transport', async ({ page }) => {
+  test('paramétrer une ligne (chauffeur, véhicule, période) puis une de ses zones', async ({ page }) => {
+    await page.goto('/services-eleves/transport/lignes');
+    await page.locator('#btnNouvelleLigne').click();
+    await page.locator('#l-libelle').fill('Ligne 1 — Agoè / École');
+    const chauffeur = await page.locator('#l-chauffeur option', { hasText: 'SOSSOU' }).getAttribute('value');
+    await page.locator('#l-chauffeur').selectOption(chauffeur!);
+    const voiture = await page.locator('#l-voiture option', { hasText: 'TG-1234-AB' }).getAttribute('value');
+    await page.locator('#l-voiture').selectOption(voiture!);
+    await page.locator('#l-debut').fill('2026-09-15');
+    await page.locator('#l-fin').fill('2027-07-15');
+    await page.locator('#ligne-form button[type=submit]').click();
+    await attendreToast(page);
+    const ligne = ligneDe(page, 'Ligne 1');
+    await expect(ligne).toContainText('SOSSOU');
+    await expect(ligne).toContainText('15/09/2026');
+
     await page.goto('/services-eleves/transport/zones');
     await page.locator('#btnNouvelleZone').click();
     await page.locator('#z-libelle').fill('Zone Nord — Agoè');
     await page.locator('#z-description').fill('Agoè, Adidogomé');
-    const chauffeur = await page.locator('#z-chauffeur option', { hasText: 'SOSSOU' }).getAttribute('value');
-    await page.locator('#z-chauffeur').selectOption(chauffeur!);
-    const voiture = await page.locator('#z-voiture option', { hasText: 'TG-1234-AB' }).getAttribute('value');
-    await page.locator('#z-voiture').selectOption(voiture!);
+    const idLigne = await page.locator('#z-ligne option', { hasText: 'Ligne 1' }).getAttribute('value');
+    await page.locator('#z-ligne').selectOption(idLigne!);
+    await page.locator('#z-tarif').fill('15000');
     await page.locator('#zone-form button[type=submit]').click();
     await attendreToast(page);
     const zone = ligneDe(page, 'Zone Nord');
+    await expect(zone).toContainText('Ligne 1');
     await expect(zone).toContainText('SOSSOU');
     await expect(zone).toContainText('TG-1234-AB');
-
-    await page.goto('/services-eleves/transport/lignes');
-    await page.locator('#btnNouvelleLigne').click();
-    await page.locator('#l-libelle').fill('Ligne 1 — Agoè / École');
-    await page.locator('#l-min').fill('10000');
-    await page.locator('#l-max').fill('20000');
-    await page.locator('#ligne-form button[type=submit]').click();
-    await attendreToast(page);
-    await expect(ligneDe(page, 'Ligne 1')).toContainText(/10\s?000/);
+    await expect(zone).toContainText(/15\s?000/);
   });
 
   test('enregistrer un entretien, un plein de carburant et une assurance pour le véhicule', async ({ page }) => {
@@ -174,14 +181,13 @@ test.describe('4.1 Transport scolaire', () => {
     await page.locator('#btnNouvelAbonnement').click();
     const modale = page.locator('#abonnementModal');
     await choisirEleve(page, '#abonnementModal', 'Ama', 'E2E0001');
-    await modale.locator('[name=montant_mensuel]').fill('15000');
-    await modale.locator('[name=nombre_mois]').fill('9');
+    // On choisit la zone seule : son tarif est proposé ; ligne et véhicule en découlent
     const zone = await modale.locator('[name=zone_id] option', { hasText: 'Zone Nord' }).getAttribute('value');
     await modale.locator('[name=zone_id]').selectOption(zone!);
-    const voiture = await modale.locator('[name=voiture_id] option', { hasText: 'TG-1234-AB' }).getAttribute('value');
-    await modale.locator('[name=voiture_id]').selectOption(voiture!);
+    await expect(modale.locator('[name=montant_mensuel]')).toHaveValue('15000');
+    await expect(modale.locator('[name=voiture_id], [name=ligne_id], [name=point_arret]')).toHaveCount(0);
+    await modale.locator('[name=nombre_mois]').fill('9');
     await modale.locator('[name=sens]').selectOption({ label: 'Aller-retour' });
-    await modale.locator('[name=point_arret]').fill('Carrefour Agoè');
     await modale.locator('button[type=submit]').click();
     await attendreToast(page);
 
@@ -215,20 +221,29 @@ test.describe('4.1 Transport scolaire', () => {
     await expect(ligneDe(page, 'KOFFI Ama')).toHaveCount(1);
   });
 
-  test('modifier l\'assignation d\'un abonnement (sens, point d\'arrêt), puis enregistrer un abandon', async ({ page }) => {
+  test('changer le trajet d\'un abonnement, renseigner la position GPS du domicile, puis enregistrer un abandon', async ({ page }) => {
     await page.goto('/services-eleves/transport/abonnements');
 
     let abonnement = ligneDe(page, 'KOFFI Ama');
     await abonnement.locator('.btn-action').click();
     await abonnement.locator('.btn-assigner').click();
     await page.locator('#assign-sens').selectOption({ label: 'Aller simple' });
-    await page.locator('#assign-arret').fill('Pharmacie du Nord');
     await page.locator('#assigner-form button[type=submit]').click();
     await attendreToast(page);
 
     abonnement = ligneDe(page, 'KOFFI Ama');
     await expect(abonnement).toContainText('Aller simple');
-    await expect(abonnement).toContainText('Pharmacie du Nord');
+
+    // Position GPS du domicile, renseignée après la souscription : on colle « latitude, longitude »
+    await abonnement.locator('.btn-action').click();
+    await abonnement.locator('.btn-position').click();
+    await page.locator('#position-coller').fill('6.1725, 1.2314');
+    await expect(page.locator('#position-lat')).toHaveValue('6.1725');
+    await expect(page.locator('#position-lng')).toHaveValue('1.2314');
+    await page.locator('#position-form button[type=submit]').click();
+    await attendreToast(page);
+    abonnement = ligneDe(page, 'KOFFI Ama');
+    await expect(abonnement.getByRole('link', { name: /Domicile sur la carte/ })).toHaveAttribute('href', /6\.1725.*1\.2314/);
 
     await abonnement.locator('.btn-action').click();
     await abonnement.locator('.btn-abandonner').click();
@@ -247,7 +262,11 @@ test.describe('4.1 Transport scolaire', () => {
     await page.goto('/tableau');
     const menu = page.locator('#hbtp-nav-items > .hnav-item').filter({ hasText: 'Services aux Élèves' }).first();
     await menu.hover();
-    await menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord transport' }).click();
+    const lien = menu.locator('.hnav-drop-item', { hasText: 'Tableau de bord transport' });
+    // Menu long : le groupe ouvre ses écrans dans un second niveau
+    const groupe = menu.locator('.hnav-sub').filter({ has: page.locator('.hnav-drop-item', { hasText: 'Tableau de bord transport' }) });
+    if (await groupe.count()) await groupe.hover();
+    await lien.click();
     await expect(page.locator('main.content-area')).toBeVisible();
     await expect(page.locator('main')).toContainText(/Véhicule|véhicule/);
 

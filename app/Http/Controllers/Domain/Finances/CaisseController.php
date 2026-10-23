@@ -37,25 +37,68 @@ class CaisseController extends Controller
         $this->middleware('permission:caisses.voir')->only(['exportPdf']);
     }
 
-    /** Écran index : liste paginée + filtres + stats + modale d'ouverture. */
+    /**
+     * Onglets de la liste : « Mes caisses » (qui ouvre une caisse : le
+     * caissier) et « Toutes les caisses » (Administrateur et Direction).
+     *
+     * @return array<int, string>
+     */
+    private function onglets(User $user): array
+    {
+        return array_values(array_filter([
+            $user->can('caisses.ouvrir') ? 'mes' : null,
+            $user->can('toutes-caisses.consulter') ? 'toutes' : null,
+        ]));
+    }
+
+    /**
+     * Filtres de la liste pour l'onglet : l'année est celle de l'en-tête ;
+     * « Mes caisses » ne montre que celles dont on est responsable.
+     */
+    private function filtresListe(Request $request, string $onglet): array
+    {
+        $filters = $request->only(['statut', 'search'])
+            + ['annee_id' => app(\App\Support\AnneeScolaireContext::class)->id()];
+
+        if ($onglet === 'mes') {
+            $filters['responsable_id'] = (int) $request->user()->id;
+        } elseif ($onglet === 'toutes') {
+            $filters['responsable_id'] = $request->input('responsable_id');
+        } else {
+            $filters['responsable_id'] = -1;   // aucun onglet : aucune caisse
+        }
+
+        return $filters;
+    }
+
+    /** Écran index : onglets, liste paginée, filtres, tableau de bord, modale d'ouverture. */
     public function index(Request $request)
     {
-        $filters = $request->only(['statut', 'responsable_id', 'search']);
-        // Cloisonnement : les caisses de l'année scolaire choisie en haut de page
-        $annee = Annee::find(app(\App\Support\AnneeScolaireContext::class)->id());
-        $filters['annee_id'] = $annee?->id;
-
         $user = $request->user();
+        $onglets = $this->onglets($user);
+        // Par défaut : « Toutes les caisses » pour la Direction et l'Administrateur, sinon « Mes caisses »
+        $parDefaut = in_array('toutes', $onglets, true) ? 'toutes' : ($onglets[0] ?? 'aucun');
+        $onglet = in_array($request->input('onglet'), $onglets, true) ? $request->input('onglet') : $parDefaut;
+
+        $filters = $this->filtresListe($request, $onglet);
+        // Cloisonnement : les caisses de l'année scolaire choisie en haut de page
+        $annee = Annee::find($filters['annee_id']);
+        $voitTout = in_array('toutes', $onglets, true);
 
         return view('domain.finances.caisses.index', [
             'caisses'      => $this->caisses->listePaginee($filters),
             'filters'      => $filters,
+            'onglet'       => $onglet,
+            'onglets'      => $onglets,
             'annee'        => $annee,
             'anneeCloturee' => (bool) $annee?->isCloturee(),
             'statuts'      => CaisseStatut::options(),
-            'caissiers'    => User::query()->where('etat', 1)->orderBy('nom')->orderBy('prenom')->get(['id', 'nom', 'prenom']),
-            // Compteurs réservés à l'Administrateur (et au superadmin)
-            'compteurs'    => $user->isAdmin() ? $this->caisses->compterParStatutAnnee($annee?->id) : null,
+            // Filtre « Caissier » : ceux qui ont réellement encaissé sur l'année de l'en-tête
+            'caissiers'    => $voitTout ? $this->caisses->caissiersAyantEncaisse($annee?->id) : collect(),
+            'nbMesCaisses' => in_array('mes', $onglets, true)
+                ? $this->caisses->listePaginee(['annee_id' => $annee?->id, 'responsable_id' => (int) $user->id], 1)->total() : 0,
+            // Tableau de bord réservé à l'Administrateur et à la Direction
+            'compteurs'    => $voitTout ? $this->caisses->tableauDeBord($annee?->id) : null,
             // Responsables possibles quand l'Administrateur confie une caisse : lui-même et ceux qui encaissent
             'responsables' => $user->isAdmin()
                 ? User::query()->where('etat', 1)->orderBy('nom')->orderBy('prenom')->get()
@@ -68,8 +111,9 @@ class CaisseController extends Controller
     /** Export de la liste des caisses (sessions), avec les filtres de l'écran. */
     public function exportListe(Request $request): StreamedResponse
     {
-        $filters = $request->only(['annee_id', 'statut', 'responsable_id', 'search']);
-        $caisses = $this->caisses->listePaginee($filters, perPage: 10000);
+        $onglets = $this->onglets($request->user());
+        $onglet = in_array($request->input('onglet'), $onglets, true) ? $request->input('onglet') : ($onglets[0] ?? 'aucun');
+        $caisses = $this->caisses->listePaginee($this->filtresListe($request, $onglet), perPage: 10000);
 
         return response()->streamDownload(function () use ($caisses) {
             $out = fopen('php://output', 'w');
@@ -232,6 +276,13 @@ public function exportPdf(int $caisse)
 
     $totauxParType = $this->service->totauxEncaissesParType($caisse);
     $entreesManuelles = $journal['mouvements']->filter(fn ($m) => $m->type_mouvement === MouvementType::ENTREE_MANUELLE);
+    // Décaissements : totaux par type (dépenses réglées en espèces, sorties manuelles)
+    $decaissementsParType = $journal['mouvements']
+        ->filter(fn ($m) => $m->type_mouvement && ! $m->type_mouvement->isEntree())
+        ->groupBy(fn ($m) => $m->type_mouvement->label())
+        ->map(fn ($groupe, $libelle) => ['libelle' => $libelle, 'nb' => $groupe->count(), 'montant' => round((float) $groupe->sum('montant'), 2)])
+        ->sortByDesc('montant')
+        ->values();
 
     $pdf = Pdf::loadView('domain.finances.caisses.print', [
         'journal'    => $journal,
@@ -240,6 +291,7 @@ public function exportPdf(int $caisse)
         'totalEncaisse'  => round((float) $totauxParType->sum('montant'), 2),
         'totalManuel'    => round((float) $entreesManuelles->sum('montant'), 2),
         'nbManuelles'    => $entreesManuelles->count(),
+        'decaissementsParType' => $decaissementsParType,
         'genereLe'   => now(),
         'generePar'  => auth()->user(),
     ])
